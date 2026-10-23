@@ -14,6 +14,8 @@
     "@capacitor/haptics": "^8.0.2",
     "@capacitor/screen-orientation": "^8.0.2",
     "@capacitor/status-bar": "^8.0.4",
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^13.0.3",
     "express": "^4.19.2",
     "socket.io": "^4.7.5",
     "ws": "^8.21.3"

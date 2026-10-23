@@ -34,6 +34,11 @@ function emitToPlayer(playerId, event, data) {
   }
 }
 
+const db = require('./db.js');
+const ADMIN_SECRET_KEY = process.env.ADMIN_KEY || 'admin2026';
+
+app.use(express.json());
+
 // Serve static frontend files
 app.use((req, res, next) => {
   if (req.path === '/' || req.path.endsWith('.html')) {
@@ -45,6 +50,138 @@ app.use((req, res, next) => {
 });
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/cards', express.static(path.join(__dirname, 'public', 'cards')));
+
+// --- AUTHENTICATION REST API ---
+
+app.post('/api/register', (req, res) => {
+  try {
+    const { username, password, avatar } = req.body;
+    const result = db.registerUser(username, password, avatar);
+    res.json({ success: true, ...result });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/login', (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const result = db.loginUser(username, password);
+    res.json({ success: true, ...result });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/me', (req, res) => {
+  const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '') || req.query.token;
+  const user = db.getUserByToken(token);
+  if (!user) {
+    return res.status(401).json({ success: false, error: 'غير مصرح أو الجلسة منتهية' });
+  }
+  res.json({ success: true, user });
+});
+
+app.post('/api/customization', (req, res) => {
+  const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+  const user = db.getUserByToken(token);
+  if (!user) return res.status(401).json({ success: false, error: 'غير مصرح' });
+  const updated = db.updateCustomization(user.id, req.body);
+  res.json({ success: true, user: updated });
+});
+
+// --- ADMIN DASHBOARD REST API ---
+
+function checkAdminAuth(req, res, next) {
+  const key = req.headers['x-admin-key'] || req.query.adminKey || req.body?.adminKey;
+  if (key === ADMIN_SECRET_KEY) {
+    return next();
+  }
+  res.status(403).json({ success: false, error: 'كلمة مرور الإدارة غير صحيحة!' });
+}
+
+app.post('/api/admin/login', (req, res) => {
+  const { password } = req.body;
+  if (password === ADMIN_SECRET_KEY) {
+    res.json({ success: true, adminKey: ADMIN_SECRET_KEY });
+  } else {
+    res.status(401).json({ success: false, error: 'كلمة مرور الإدارة غير صحيحة!' });
+  }
+});
+
+app.get('/api/admin/stats', checkAdminAuth, (req, res) => {
+  const stats = db.getServerStats();
+  const activeRoomsList = [];
+  for (const [code, r] of rooms.entries()) {
+    activeRoomsList.push({
+      code,
+      status: r.status,
+      playerCount: r.players.length,
+      maxPlayers: r.maxPlayers,
+      players: r.players.map(p => ({ name: p.name, isBot: p.isBot, isHost: p.isHost }))
+    });
+  }
+  res.json({
+    success: true,
+    stats: {
+      ...stats,
+      activeRooms: activeRoomsList.length,
+      connectedSockets: io.engine.clientsCount
+    },
+    rooms: activeRoomsList
+  });
+});
+
+app.get('/api/admin/players', checkAdminAuth, (req, res) => {
+  const search = req.query.search || '';
+  const players = db.getAllPlayersForAdmin(search);
+  res.json({ success: true, players });
+});
+
+app.post('/api/admin/update-balance', checkAdminAuth, (req, res) => {
+  const { userId, coins, gems } = req.body;
+  const updated = db.updateUserBalance(userId, coins, gems, 'admin_manual_edit');
+  if (!updated) return res.status(404).json({ success: false, error: 'اللاعب غير موجود!' });
+  
+  // Realtime Socket notify if player is online
+  for (const [sockId, sock] of io.sockets.sockets) {
+    if (sock.userId == userId) {
+      sock.emit('balance_updated', { coins: updated.coins, gems: updated.gems });
+    }
+  }
+
+  res.json({ success: true, balance: updated });
+});
+
+app.post('/api/admin/ban', checkAdminAuth, (req, res) => {
+  const { userId, isBanned } = req.body;
+  db.setPlayerBan(userId, isBanned);
+
+  if (isBanned) {
+    for (const [sockId, sock] of io.sockets.sockets) {
+      if (sock.userId == userId) {
+        sock.emit('banned_notice', 'تم حظر حسابك من قبل إدارة اللعبة!');
+        sock.disconnect(true);
+      }
+    }
+  }
+
+  res.json({ success: true, isBanned });
+});
+
+app.post('/api/admin/reset-password', checkAdminAuth, (req, res) => {
+  try {
+    const { userId, newPassword } = req.body;
+    db.adminResetPassword(userId, newPassword);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
 
 // ====== CARD DEFINITIONS & DECK (85 CARDS TOTAL) ======
 const ACTION_CARDS_META = {
@@ -700,6 +837,26 @@ function finalizeGameOver(room) {
   room.winner = winners.map(w => `${w.name} (${getPlayerSetsScore(w)} لِمّة)`).join(' و ');
   room.logs.push(`🏆 انتهت اللعبة رسمياً! الفائز: ${room.winner}!`);
   room.lastEvent = { type: 'gameover', winner: room.winner };
+
+  // Persistent Database Stats & Rewards for registered players
+  for (const player of room.players) {
+    if (!player.isBot && player.userId) {
+      const isWinner = winners.some(w => w.id === player.id);
+      const setsCount = player.sets ? player.sets.length : 0;
+      try {
+        db.recordGameStats(player.userId, isWinner, setsCount);
+        const rewardCoins = isWinner ? 100 : 25;
+        const rewardGems = isWinner ? 2 : 0;
+        const updated = db.adjustUserBalance(player.userId, rewardCoins, rewardGems, 'match_reward');
+        if (updated) {
+          emitToPlayer(player.id, 'balance_updated', updated);
+        }
+      } catch(e) {
+        console.warn('Gameover db record err:', e?.message);
+      }
+    }
+  }
+
   broadcastRoomState(room);
   return true;
 }
@@ -1941,9 +2098,15 @@ function registerSocketHandlers(socket) {
     broadcastRoomState(room);
   }
 
+  // User Session Registration (Syncs User ID with Socket for real-time balance updates)
+  socket.on('set_user_session', ({ userId } = {}) => {
+    if (userId) socket.userId = userId;
+  });
+
   // Create Room
   socket.on('create_room', ({ name, avatar, userId, sessionToken } = {}) => {
     if (!checkRateLimit()) return;
+    if (userId) socket.userId = userId;
     const cleanName = sanitizeName(name, 'لاعب VIP');
     const room = createRoom(socket.id, cleanName, avatar, userId, sessionToken);
     currentRoomCode = room.code;
@@ -1955,6 +2118,7 @@ function registerSocketHandlers(socket) {
   // Create Bot Training Room (Instant 1-Click Game against 3 Bots)
   socket.on('create_bot_room', ({ name, avatar, userId, sessionToken } = {}) => {
     if (!checkRateLimit()) return;
+    if (userId) socket.userId = userId;
     const cleanName = sanitizeName(name, 'لاعب VIP');
     const room = createRoom(socket.id, cleanName, avatar, userId, sessionToken);
     currentRoomCode = room.code;
@@ -2029,6 +2193,7 @@ function registerSocketHandlers(socket) {
   // Reconnect Room (Secure Token-Based Recovery, Seat-Hijacking Protected)
   socket.on('reconnect_room', ({ code, userId, sessionToken } = {}) => {
     if (!checkRateLimit()) return;
+    if (userId) socket.userId = userId;
     const rCode = (code || '').toUpperCase().trim();
     const room = rooms.get(rCode);
     if (!room) {
@@ -2054,6 +2219,7 @@ function registerSocketHandlers(socket) {
   // Join Room
   socket.on('join_room', ({ code, name, avatar, userId, sessionToken } = {}) => {
     if (!checkRateLimit()) return;
+    if (userId) socket.userId = userId;
     const rCode = (code || '').toUpperCase().trim();
     const room = rooms.get(rCode);
 

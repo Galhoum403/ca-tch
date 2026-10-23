@@ -28,3 +28,7 @@ Thumbs.db
 png cards/
 *.webp
 *.jpg
+
+# Local Database
+data/*.db*
+data/*.sqlite*

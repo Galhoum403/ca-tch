@@ -1228,8 +1228,8 @@ function App() {
   const [errorMsg, setErrorMsg] = useState('');
   const [muted, setMuted] = useState(false);
 
-  // Persistent User Account & Lifetime Stats
-  const [userId] = useState(() => {
+  // Persistent User Account & Database Auth
+  const [userId, setUserId] = useState(() => {
     let id = localStorage.getItem('catch_user_id');
     if (!id) {
       id = 'u_' + Math.random().toString(36).slice(2, 9) + '_' + Date.now().toString(36);
@@ -1245,6 +1245,16 @@ function App() {
     }
     return token;
   });
+
+  // Registered Account State & Auth Modal
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isGuest, setIsGuest] = useState(() => localStorage.getItem('catch_is_guest') === 'true');
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authTab, setAuthTab] = useState('login'); // 'login' | 'register'
+  const [authUsername, setAuthUsername] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState('');
   const [stats, setStats] = useState(() => {
     try {
       const saved = localStorage.getItem('catch_stats');
@@ -1532,6 +1542,7 @@ function App() {
         setAvatar(av.emoji);
         localStorage.setItem('catch_avatar', av.emoji);
         soundFx.play('celebration');
+        syncCustomization(av.emoji, selectedCardBack);
       } else {
         setErrorMsg('جواهر غير كافية! اجمع جواهر من المهام اليومية 💎');
         setTimeout(() => setErrorMsg(''), 2500);
@@ -1540,7 +1551,24 @@ function App() {
       setAvatar(av.emoji);
       localStorage.setItem('catch_avatar', av.emoji);
       soundFx.play('snap');
+      syncCustomization(av.emoji, selectedCardBack);
     }
+  };
+  const syncCustomization = (newAvatar, newCardBack) => {
+    const token = localStorage.getItem('catch_token');
+    if (!token) return;
+    const base = getServerBaseUrl();
+    fetch(`${base}/api/customization`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        avatar: newAvatar,
+        card_back: newCardBack
+      })
+    }).catch(() => {});
   };
   const handleSelectCardBack = cb => {
     soundFx.init();
@@ -1557,6 +1585,7 @@ function App() {
         setSelectedCardBack(cb.id);
         localStorage.setItem('catch_card_back', cb.id);
         soundFx.play('celebration');
+        syncCustomization(avatar, cb.id);
       } else {
         setErrorMsg('جواهر غير كافية! اجمع جواهر من المهام اليومية 💎');
         setTimeout(() => setErrorMsg(''), 2500);
@@ -1565,8 +1594,131 @@ function App() {
       setSelectedCardBack(cb.id);
       localStorage.setItem('catch_card_back', cb.id);
       soundFx.play('snap');
+      syncCustomization(avatar, cb.id);
     }
   };
+
+  // Auth Operations: Register / Login / Logout / Guest Play
+  const handleAuthSubmit = async e => {
+    if (e) e.preventDefault();
+    setAuthError('');
+    const u = authUsername.trim();
+    const p = authPassword.trim();
+    if (!u || !p) {
+      setAuthError(lang === 'en' ? 'Please enter username and password' : 'يرجى إدخال اسم المستخدم وكلمة المرور');
+      return;
+    }
+    setAuthLoading(true);
+    try {
+      const base = getServerBaseUrl();
+      const endpoint = authTab === 'register' ? '/api/register' : '/api/login';
+      const res = await fetch(`${base}${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          username: u,
+          password: p,
+          avatar: avatar || '😎'
+        })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setAuthError(data.error || (lang === 'en' ? 'Authentication failed' : 'فشل تسجيل الدخول أو إنشاء الحساب'));
+        setAuthLoading(false);
+        return;
+      }
+
+      // Persist auth session
+      localStorage.setItem('catch_token', data.token);
+      localStorage.setItem('catch_user_id', data.user.id);
+      localStorage.setItem('catch_name', data.user.username);
+      localStorage.setItem('catch_coins', data.user.coins);
+      localStorage.setItem('catch_gems', data.user.gems);
+      localStorage.removeItem('catch_is_guest');
+      setCurrentUser(data.user);
+      setUserId(data.user.id);
+      setPlayerName(data.user.username);
+      setCoins(data.user.coins);
+      setGems(data.user.gems);
+      if (data.user.avatar) setAvatar(data.user.avatar);
+      if (data.user.card_back) setSelectedCardBack(data.user.card_back);
+      setIsGuest(false);
+      setShowAuthModal(false);
+      setAuthPassword('');
+      if (socketRef.current?.connected) {
+        socketRef.current.emit('set_user_session', {
+          userId: data.user.id
+        });
+      }
+      soundFx.init();
+      soundFx.play('celebration');
+      showVoiceNotice(lang === 'en' ? `Welcome back, ${data.user.username}! 🌟` : `أهلاً بك يا ${data.user.username}! 🌟`);
+    } catch (err) {
+      setAuthError(lang === 'en' ? 'Cannot connect to server' : 'تعذر الاتصال بالسيرفر، تأكد من اتصال الشبكة');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+  const handleGuestPlay = () => {
+    localStorage.setItem('catch_is_guest', 'true');
+    setIsGuest(true);
+    setShowAuthModal(false);
+    soundFx.init();
+    soundFx.play('snap');
+    showVoiceNotice(lang === 'en' ? 'Playing as Guest 🚀' : 'أنت تلعب الآن كزائر 🚀');
+  };
+  const handleLogout = () => {
+    localStorage.removeItem('catch_token');
+    localStorage.setItem('catch_is_guest', 'true');
+    setCurrentUser(null);
+    setIsGuest(true);
+    setShowSettingsModal(false);
+    setShowAuthModal(true);
+    soundFx.init();
+    soundFx.play('snap');
+  };
+
+  // Verify stored token on startup
+  useEffect(() => {
+    const token = localStorage.getItem('catch_token');
+    const guest = localStorage.getItem('catch_is_guest') === 'true';
+    const base = getServerBaseUrl();
+    if (token) {
+      fetch(`${base}/api/me`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }).then(res => res.json()).then(data => {
+        if (data && data.user) {
+          setCurrentUser(data.user);
+          setUserId(data.user.id);
+          setPlayerName(data.user.username);
+          setCoins(data.user.coins);
+          setGems(data.user.gems);
+          if (data.user.avatar) setAvatar(data.user.avatar);
+          if (data.user.card_back) setSelectedCardBack(data.user.card_back);
+          localStorage.setItem('catch_name', data.user.username);
+          localStorage.setItem('catch_coins', data.user.coins);
+          localStorage.setItem('catch_gems', data.user.gems);
+          localStorage.setItem('catch_user_id', data.user.id);
+          if (socketRef.current?.connected) {
+            socketRef.current.emit('set_user_session', {
+              userId: data.user.id
+            });
+          }
+        } else {
+          localStorage.removeItem('catch_token');
+          if (!guest) setShowAuthModal(true);
+        }
+      }).catch(err => {
+        console.warn('Auth check error:', err);
+      });
+    } else if (!guest) {
+      setShowAuthModal(true);
+    }
+  }, []);
 
   // Drag & Drop States (Phase 2)
   const [draggingCard, setDraggingCard] = useState(null);
@@ -1609,6 +1761,9 @@ function App() {
     // Realtime connection tracking
     socket.on('connect', () => {
       setConnectionStatus('connected');
+      socket.emit('set_user_session', {
+        userId
+      });
       const savedRoom = localStorage.getItem('catch_last_room');
       const savedName = localStorage.getItem('catch_name') || playerName;
       if (savedRoom) {
@@ -1788,6 +1943,25 @@ function App() {
       soundFx.play(data.success ? 'celebration' : 'impact');
       setJokerShowdownAnim(data);
       setTimeout(() => setJokerShowdownAnim(null), 4500);
+    });
+    socket.on('balance_updated', ({
+      coins: newCoins,
+      gems: newGems,
+      diffCoins,
+      diffGems,
+      reason
+    }) => {
+      if (typeof newCoins === 'number') {
+        setCoins(newCoins);
+        localStorage.setItem('catch_coins', newCoins);
+      }
+      if (typeof newGems === 'number') {
+        setGems(newGems);
+        localStorage.setItem('catch_gems', newGems);
+      }
+      soundFx.init();
+      soundFx.play('celebration');
+      showVoiceNotice(reason || '⚡ تم تحديث رصيدك من الإدارة!');
     });
     socket.on('error_message', msg => {
       setErrorMsg(msg);
@@ -3036,7 +3210,58 @@ function App() {
         setShowRulesModal(true);
       },
       className: "btn-emerald px-3 py-1 rounded-lg text-xs font-black"
-    }, t('readRules'))), /*#__PURE__*/React.createElement("div", {
+    }, t('readRules'))), currentUser ? /*#__PURE__*/React.createElement("div", {
+      className: "bg-gradient-to-r from-purple-950/70 to-black/70 p-3 rounded-2xl border border-purple-500/40 space-y-2"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center justify-between"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-2"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-2xl"
+    }, avatar), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+      className: "text-xs font-black text-yellow-300"
+    }, currentUser.username, " 👑"), /*#__PURE__*/React.createElement("p", {
+      className: "text-[10px] text-purple-200/60 font-mono"
+    }, "ID: ", currentUser.id.slice(0, 12)))), /*#__PURE__*/React.createElement("span", {
+      className: "text-[10px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full"
+    }, lang === 'en' ? 'Saved Account ✓' : 'حساب مسجل ✓')), /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center justify-between text-[11px] bg-black/40 px-2 py-1 rounded-xl border border-white/5 font-bold"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-amber-300"
+    }, "⭐ ", coins, " عملة"), /*#__PURE__*/React.createElement("span", {
+      className: "text-cyan-300"
+    }, "💎 ", gems, " جوهرة")), /*#__PURE__*/React.createElement("div", {
+      className: "flex gap-2 pt-1"
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: handleLogout,
+      className: "flex-1 bg-red-900/40 hover:bg-red-900/60 text-red-200 border border-red-500/40 py-1.5 rounded-xl text-[11px] font-black transition"
+    }, "🚪 ", lang === 'en' ? 'Log Out' : 'تسجيل الخروج'), /*#__PURE__*/React.createElement("a", {
+      href: "/admin",
+      target: "_blank",
+      rel: "noopener noreferrer",
+      className: "px-3 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/40 py-1.5 rounded-xl text-[11px] font-black flex items-center justify-center transition"
+    }, "🛡️ ", lang === 'en' ? 'Admin' : 'الإدارة'))) : /*#__PURE__*/React.createElement("div", {
+      className: "bg-gradient-to-r from-amber-950/70 to-black/70 p-3 rounded-2xl border border-amber-500/40 space-y-2"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center justify-between"
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+      className: "text-xs font-black text-amber-300"
+    }, "🚀 ", lang === 'en' ? 'Playing as Guest' : 'أنت تلعب الآن كزائر مؤقت'), /*#__PURE__*/React.createElement("p", {
+      className: "text-[10px] text-amber-200/60"
+    }, lang === 'en' ? 'Register to save your balance & rank!' : 'سجل حسابك لضمان عدم ضياع العملات والجواهر'))), /*#__PURE__*/React.createElement("div", {
+      className: "flex gap-2 pt-1"
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: () => {
+        setShowSettingsModal(false);
+        setShowAuthModal(true);
+      },
+      className: "flex-1 btn-gold py-1.5 rounded-xl text-[11px] font-black shadow-md"
+    }, "🔑 ", lang === 'en' ? 'Sign In / Register' : 'تسجيل الدخول / حساب جديد'), /*#__PURE__*/React.createElement("a", {
+      href: "/admin",
+      target: "_blank",
+      rel: "noopener noreferrer",
+      className: "px-3 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/40 py-1.5 rounded-xl text-[11px] font-black flex items-center justify-center transition"
+    }, "🛡️ ", lang === 'en' ? 'Admin' : 'لوحة الإدارة'))), /*#__PURE__*/React.createElement("div", {
       className: "bg-black/40 p-2.5 rounded-xl border border-white/10 space-y-1.5"
     }, /*#__PURE__*/React.createElement("div", {
       className: "flex items-center justify-between text-xs"
@@ -3144,7 +3369,82 @@ function App() {
     }, "🧲 كروت الأكشن التكتيكية:"), /*#__PURE__*/React.createElement("p", null, "• ", /*#__PURE__*/React.createElement("b", null, "المغناطيس:"), " اسحب الرقم المختار من كل اللاعبين فوراً.", /*#__PURE__*/React.createElement("br", null), "• ", /*#__PURE__*/React.createElement("b", null, "الحرباية:"), " اختر أي كارت نزل على الأرض في الديسكارد ونفذ قوته.", /*#__PURE__*/React.createElement("br", null), "• ", /*#__PURE__*/React.createElement("b", null, "العب تاني:"), " يمنحك دوراً إضافياً فوراً دون تمرير الدور.", /*#__PURE__*/React.createElement("br", null), "• ", /*#__PURE__*/React.createElement("b", null, "الكداب:"), " يتيح لك الكذب بقول \"معيش\" عند سؤالك عن رقم."))), /*#__PURE__*/React.createElement("button", {
       onClick: () => setShowRulesModal(false),
       className: "btn-gold w-full py-2.5 rounded-xl text-xs font-black mt-2"
-    }, "فهمت القواعد.. يلا نلعب! 🚀"))), errorMsg && /*#__PURE__*/React.createElement("div", {
+    }, "فهمت القواعد.. يلا نلعب! 🚀"))), showAuthModal && /*#__PURE__*/React.createElement("div", {
+      className: "fixed inset-0 z-[400] bg-black/90 backdrop-blur-md flex items-center justify-center p-4"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "bg-gradient-to-b from-[#1c0828] via-[#12031c] to-[#08020c] border-2 border-amber-400/80 rounded-3xl p-5 w-full max-w-sm shadow-[0_0_35px_rgba(251,191,36,0.3)] text-right space-y-3.5 relative"
+    }, (isGuest || currentUser) && /*#__PURE__*/React.createElement("button", {
+      onClick: () => setShowAuthModal(false),
+      className: "absolute top-4 left-4 text-white/50 hover:text-white text-xl font-bold transition"
+    }, "✕"), /*#__PURE__*/React.createElement("div", {
+      className: "text-center pt-1"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-amber-500 via-yellow-400 to-amber-600 border-2 border-yellow-200 flex items-center justify-center text-3xl shadow-[0_0_20px_rgba(250,204,21,0.5)] mb-2"
+    }, "👑"), /*#__PURE__*/React.createElement("h3", {
+      className: "text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-400"
+    }, "كازينو كاتش VIP"), /*#__PURE__*/React.createElement("p", {
+      className: "text-[11px] text-amber-200/70 mt-0.5 font-bold"
+    }, "سجل حسابك لحفظ رصيدك من العملات والجواهر الملكية")), /*#__PURE__*/React.createElement("div", {
+      className: "flex bg-black/60 p-1 rounded-2xl border border-white/10 text-xs font-black"
+    }, /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: () => {
+        setAuthTab('login');
+        setAuthError('');
+      },
+      className: `flex-1 py-2 rounded-xl transition ${authTab === 'login' ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-black shadow-md' : 'text-amber-200/60 hover:text-white'}`
+    }, "🔑 ", lang === 'en' ? 'Sign In' : 'تسجيل الدخول'), /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: () => {
+        setAuthTab('register');
+        setAuthError('');
+      },
+      className: `flex-1 py-2 rounded-xl transition ${authTab === 'register' ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-black shadow-md' : 'text-amber-200/60 hover:text-white'}`
+    }, "📝 ", lang === 'en' ? 'New Account' : 'حساب جديد')), /*#__PURE__*/React.createElement("form", {
+      onSubmit: handleAuthSubmit,
+      className: "space-y-3"
+    }, authError && /*#__PURE__*/React.createElement("div", {
+      className: "bg-red-500/20 border border-red-500/50 text-red-200 text-xs px-3 py-2 rounded-xl font-bold text-center"
+    }, authError), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+      className: "text-[11px] font-black text-amber-200 block mb-1"
+    }, "👤 ", lang === 'en' ? 'Username' : 'اسم المستخدم'), /*#__PURE__*/React.createElement("input", {
+      type: "text",
+      required: true,
+      maxLength: 20,
+      value: authUsername,
+      onChange: e => setAuthUsername(e.target.value),
+      placeholder: lang === 'en' ? 'e.g. CatchMaster' : 'مثال: الملك_كاتش',
+      className: "w-full bg-black/70 border border-amber-500/40 rounded-xl px-3 py-2 text-white text-sm font-bold focus:border-yellow-400 focus:outline-none transition placeholder-white/20"
+    })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+      className: "text-[11px] font-black text-amber-200 block mb-1"
+    }, "🔒 ", lang === 'en' ? 'Password' : 'كلمة المرور'), /*#__PURE__*/React.createElement("input", {
+      type: "password",
+      required: true,
+      value: authPassword,
+      onChange: e => setAuthPassword(e.target.value),
+      placeholder: "••••••••",
+      className: "w-full bg-black/70 border border-amber-500/40 rounded-xl px-3 py-2 text-white text-sm font-bold focus:border-yellow-400 focus:outline-none transition placeholder-white/20"
+    })), /*#__PURE__*/React.createElement("button", {
+      type: "submit",
+      disabled: authLoading,
+      className: "btn-gold w-full py-2.5 rounded-xl text-sm font-black shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
+    }, authLoading ? /*#__PURE__*/React.createElement("span", {
+      className: "inline-block animate-spin"
+    }, "⏳") : authTab === 'login' ? /*#__PURE__*/React.createElement("span", null, "🔑 ", lang === 'en' ? 'Sign In' : 'دخول الحساب') : /*#__PURE__*/React.createElement("span", null, "💾 ", lang === 'en' ? 'Create Account & Save Data' : 'إنشاء حساب وحفظ البيانات'))), /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-3 my-1"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex-1 h-px bg-amber-500/25"
+    }), /*#__PURE__*/React.createElement("span", {
+      className: "text-amber-300/50 text-xs font-bold"
+    }, lang === 'en' ? 'OR' : 'أو'), /*#__PURE__*/React.createElement("div", {
+      className: "flex-1 h-px bg-amber-500/25"
+    })), /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: handleGuestPlay,
+      className: "w-full py-2.5 rounded-xl text-xs font-black bg-white/10 hover:bg-white/20 text-white border border-white/20 transition flex items-center justify-center gap-2"
+    }, /*#__PURE__*/React.createElement("span", null, "🚀"), /*#__PURE__*/React.createElement("span", null, lang === 'en' ? 'Play Instantly as Guest' : 'دخول فوري كزائر (بدون تسجيل)')), /*#__PURE__*/React.createElement("p", {
+      className: "text-[10px] text-amber-200/50 text-center font-semibold leading-tight"
+    }, "💡 ", lang === 'en' ? 'Guests can link their account anytime from Settings.' : 'يمكنك ربط حسابك أو تعديل بياناتك في أي وقت من الإعدادات ⚙️'))), errorMsg && /*#__PURE__*/React.createElement("div", {
       className: "fixed bottom-14 left-4 right-4 bg-red-600 text-white px-4 py-2 rounded-2xl font-bold shadow-2xl z-50 text-xs text-center"
     }, errorMsg));
   }
