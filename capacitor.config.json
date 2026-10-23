@@ -1,0 +1,19 @@
+{
+  "appId": "com.catch.vip",
+  "appName": "CATCH",
+  "webDir": "public",
+  "server": {
+    "androidScheme": "https",
+    "cleartext": true
+  },
+  "plugins": {
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#140306",
+      "overlaysWebView": true
+    },
+    "ScreenOrientation": {
+      "orientation": "portrait"
+    }
+  }
+}

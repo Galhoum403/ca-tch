@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">CATCH - كاتش</string>
+    <string name="title_activity_main">CATCH - كاتش</string>
+    <string name="package_name">com.catch.vip</string>
+    <string name="custom_url_scheme">com.catch.vip</string>
+</resources>

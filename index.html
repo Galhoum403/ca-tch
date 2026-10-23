@@ -1,0 +1,451 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CATCH - Card Game</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap");
+    * { box-sizing: border-box; }
+    body { font-family: "Nunito", sans-serif; margin: 0; padding: 0; background: #0a3d1f; overflow: hidden; height: 100vh; }
+    .felt-table { background: radial-gradient(ellipse at center, #1a6b3a 0%, #145c30 40%, #0e4724 80%, #0a3d1f 100%); border: 6px solid #2d8c4e; box-shadow: inset 0 0 60px rgba(0,0,0,0.5), 0 0 40px rgba(0,0,0,0.8); }
+    .card { width: 72px; height: 108px; border-radius: 10px; position: relative; cursor: pointer; transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.22s ease; user-select: none; flex-shrink: 0; }
+    .card:hover:not(.card-disabled) { transform: translateY(-10px) scale(1.05); box-shadow: 0 16px 32px rgba(0,0,0,0.5); }
+    .card.selected { transform: translateY(-20px) scale(1.08) !important; box-shadow: 0 0 0 4px #facc15, 0 20px 40px rgba(0,0,0,0.6) !important; }
+    .card-back { background: linear-gradient(135deg,#1e1b4b 0%,#312e81 50%,#1e1b4b 100%); border: 2px solid #4338ca; }
+    .card-back-pattern { position: absolute; inset: 6px; border-radius: 6px; border: 2px solid rgba(99,102,241,0.4); background: repeating-linear-gradient(45deg,transparent,transparent 5px,rgba(99,102,241,0.15) 5px,rgba(99,102,241,0.15) 6px); display: flex; align-items: center; justify-content: center; }
+    .draw-pile-stack::before, .draw-pile-stack::after { content: ""; position: absolute; width: 72px; height: 108px; border-radius: 10px; background: linear-gradient(135deg,#1e1b4b,#312e81); border: 2px solid #4338ca; }
+    .draw-pile-stack::before { top: -4px; left: -4px; z-index: 0; }
+    .draw-pile-stack::after  { top: -8px; left: -8px; z-index: -1; }
+    .toast { animation: toastIn 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards, toastOut 0.3s ease 3.2s forwards; }
+    @keyframes toastIn { from { opacity: 0; transform: translateY(-16px) scale(0.92); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    @keyframes toastOut { from { opacity: 1; transform: translateY(0) scale(1); } to { opacity: 0; transform: translateY(-8px) scale(0.96); } }
+    .set-burst { animation: burstIn 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards, burstOut 0.4s ease 1.8s forwards; }
+    @keyframes burstIn { from { opacity: 0; transform: scale(0.4) rotate(-10deg); } to { opacity: 1; transform: scale(1) rotate(0deg); } }
+    @keyframes burstOut { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(1.2); } }
+    .log-scroll { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent; }
+    .log-scroll::-webkit-scrollbar { width: 4px; }
+    .log-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 2px; }
+    .hand-container { display: flex; align-items: flex-end; justify-content: center; flex-wrap: nowrap; overflow: visible; }
+    .thinking-dot { animation: blink 1s ease-in-out infinite; }
+    .thinking-dot:nth-child(2) { animation-delay: 0.2s; }
+    .thinking-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes blink { 0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); } 40% { opacity: 1; transform: scale(1.2); } }
+    .win-screen { animation: fadeIn 0.5s ease forwards; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .trophy-bounce { animation: trophyBounce 0.8s cubic-bezier(0.34,1.56,0.64,1) 0.3s both; }
+    @keyframes trophyBounce { from { opacity: 0; transform: scale(0) rotate(-20deg); } to { opacity: 1; transform: scale(1) rotate(0deg); } }
+    .pulse-ring { animation: pulseRing 1.5s ease-in-out infinite; }
+    @keyframes pulseRing { 0%, 100% { box-shadow: 0 0 0 0 rgba(250,204,21,0.6); } 50% { box-shadow: 0 0 0 8px rgba(250,204,21,0); } }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+const CARD_COLORS = {
+  1: { bg: "bg-blue-50",    border: "border-blue-400",    text: "text-blue-600",    suit: "♠" },
+  2: { bg: "bg-red-50",     border: "border-red-400",     text: "text-red-600",     suit: "♥" },
+  3: { bg: "bg-emerald-50", border: "border-emerald-400", text: "text-emerald-600", suit: "♣" },
+  4: { bg: "bg-purple-50",  border: "border-purple-400",  text: "text-purple-600",  suit: "♦" },
+  5: { bg: "bg-amber-50",   border: "border-amber-400",   text: "text-amber-600",   suit: "★" },
+};
+
+function makeDeck() {
+  const deck = [];
+  let id = 0;
+  for (let n = 1; n <= 5; n++) {
+    for (let c = 0; c < 4; c++) {
+      deck.push({ id: id++, value: n });
+    }
+  }
+  return deck;
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function checkSets(hand) {
+  const counts = {};
+  hand.forEach(c => { counts[c.value] = (counts[c.value] || 0) + 1; });
+  return Object.entries(counts).filter(([, cnt]) => cnt >= 4).map(([v]) => Number(v));
+}
+
+function removeSet(hand, value) {
+  let removed = 0;
+  return hand.filter(c => { if (c.value === value && removed < 4) { removed++; return false; } return true; });
+}
+
+function CardFace({ card, selected, onClick, disabled }) {
+  const col = CARD_COLORS[card.value];
+  return (
+    <div
+      onClick={disabled ? undefined : onClick}
+      className={"card border-2 " + col.bg + " " + col.border + (selected ? " selected pulse-ring" : "") + (disabled ? " card-disabled opacity-70 cursor-default" : "") + " flex flex-col justify-between p-1.5 shadow-lg"}
+    >
+      <div className={col.text + " font-black text-sm leading-none"}>
+        <div>{card.value}</div>
+        <div className="text-xs">{col.suit}</div>
+      </div>
+      <div className={col.text + " font-black text-3xl text-center leading-none"}>{card.value}</div>
+      <div className={col.text + " font-black text-sm leading-none self-end rotate-180"}>
+        <div>{card.value}</div>
+        <div className="text-xs">{col.suit}</div>
+      </div>
+    </div>
+  );
+}
+
+function CardBack() {
+  return (
+    <div className="card card-back shadow-xl">
+      <div className="card-back-pattern">
+        <span className="text-indigo-300 font-black" style={{fontSize:"9px",letterSpacing:"2px"}}>CATCH</span>
+      </div>
+    </div>
+  );
+}
+
+function DrawPile({ count }) {
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <div className="relative draw-pile-stack" style={{zIndex:1}}>
+        <div className="card card-back shadow-xl" style={{zIndex:2,position:"relative"}}>
+          <div className="card-back-pattern">
+            <span className="text-indigo-300 font-black" style={{fontSize:"9px",letterSpacing:"2px"}}>CATCH</span>
+          </div>
+        </div>
+      </div>
+      <span className="text-white font-bold text-sm mt-1 bg-black/30 px-2 py-0.5 rounded-full">{count} left</span>
+    </div>
+  );
+}
+
+function Toast({ toasts }) {
+  return (
+    <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none" style={{maxWidth:320}}>
+      {toasts.map(t => (
+        <div key={t.id} className={"toast rounded-xl px-4 py-3 shadow-2xl text-white font-bold text-sm " + (t.type==="catch"?"bg-red-600 border border-red-400":t.type==="success"?"bg-emerald-600 border border-emerald-400":t.type==="set"?"bg-amber-500 border border-amber-300":t.type==="bot"?"bg-slate-700 border border-slate-500":"bg-indigo-700 border border-indigo-500")}>
+          {t.type==="catch"&&"🚫 "}{t.type==="success"&&"✅ "}{t.type==="set"&&"🏅 "}{t.type==="info"&&"ℹ️ "}{t.type==="bot"&&"🤖 "}
+          {t.message}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SetBurst({ bursts }) {
+  return (
+    <div className="fixed inset-0 pointer-events-none z-40 flex items-center justify-center">
+      {bursts.map(b => (
+        <div key={b.id} className="set-burst absolute text-center">
+          <div className="text-7xl mb-2">🃏</div>
+          <div className="bg-amber-400 text-black font-black text-2xl px-6 py-2 rounded-2xl shadow-2xl">
+            {b.who==="player"?"🏅 YOU":"🤖 BOT"} GOT A SET OF {b.value}s!
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function GameLog({ logs }) {
+  const ref = useRef(null);
+  useEffect(() => { if (ref.current) ref.current.scrollTop = ref.current.scrollHeight; }, [logs]);
+  return (
+    <div ref={ref} className="log-scroll bg-black/30 rounded-xl p-2 h-28 overflow-y-auto text-xs text-white/80 flex flex-col gap-0.5">
+      {logs.length === 0 && <span className="text-white/40 italic">Game events will appear here…</span>}
+      {logs.map((l, i) => (
+        <div key={i} className={l.type==="catch"?"text-red-300":l.type==="set"?"text-amber-300 font-bold":l.type==="success"?"text-emerald-300":"text-white/70"}>
+          <span className="text-white/40 mr-1">#{i+1}</span>{l.msg}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ScoreBadge({ who, score, sets }) {
+  return (
+    <div className="flex items-center gap-2 bg-black/30 rounded-2xl px-3 py-2 flex-wrap">
+      <span className="text-xl">{who==="player"?"🧑":"🤖"}</span>
+      <div>
+        <div className="text-white font-black text-xs">{who==="player"?"YOU":"BOT"}</div>
+        <div className="text-amber-400 font-black text-base leading-none">{score} Sets</div>
+      </div>
+      {sets.map(v => {
+        const col = CARD_COLORS[v];
+        return (
+          <div key={v} className={"w-7 h-7 rounded-lg flex items-center justify-center font-black text-xs " + col.bg + " " + col.text + " border-2 " + col.border}>{v}</div>
+        );
+      })}
+    </div>
+  );
+}
+
+function WinScreen({ playerSets, botSets, onRestart }) {
+  const playerWon = playerSets > botSets;
+  const tie = playerSets === botSets;
+  return (
+    <div className="win-screen fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
+      <div className="bg-white rounded-3xl shadow-2xl p-10 text-center max-w-sm mx-4">
+        <div className="trophy-bounce text-8xl mb-4">{tie?"🤝":playerWon?"🏆":"🤖"}</div>
+        <h2 className={"font-black text-4xl mb-2 " + (tie?"text-gray-700":playerWon?"text-amber-500":"text-red-500")}>
+          {tie?"It's a Tie!":playerWon?"You Win!":"Bot Wins!"}
+        </h2>
+        <p className="text-gray-500 font-bold mb-6">You: {playerSets} sets &nbsp;|&nbsp; Bot: {botSets} sets</p>
+        <button onClick={onRestart} className="bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-black text-lg px-8 py-3 rounded-2xl shadow-lg transition-all">
+          Play Again 🔄
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function CatchGame() {
+  const initState = () => {
+    const deck = shuffle(makeDeck());
+    const playerHand = deck.splice(0, 5);
+    const botHand    = deck.splice(0, 5);
+    return {
+      playerHand, botHand, drawDeck: deck,
+      playerScore: 0, botScore: 0,
+      playerSets: [], botSets: [],
+      turn: "player", selectedCard: null,
+      phase: "select",
+      logs: [], toasts: [], bursts: [],
+    };
+  };
+
+  const [state, setState] = useState(initState);
+  const toastCounter = useRef(0);
+  const burstCounter = useRef(0);
+
+  const addToast = useCallback((message, type) => {
+    const id = toastCounter.current++;
+    setState(s => ({ ...s, toasts: [...s.toasts, { id, message, type }] }));
+    setTimeout(() => setState(s => ({ ...s, toasts: s.toasts.filter(t => t.id !== id) })), 3800);
+  }, []);
+
+  const addBurst = useCallback((who, value) => {
+    const id = burstCounter.current++;
+    setState(s => ({ ...s, bursts: [...s.bursts, { id, who, value }] }));
+    setTimeout(() => setState(s => ({ ...s, bursts: s.bursts.filter(b => b.id !== id) })), 2600);
+  }, []);
+
+  const processSets = useCallback((s) => {
+    let ns = { ...s };
+    const pvs = checkSets(ns.playerHand);
+    pvs.forEach(v => {
+      ns.playerHand  = removeSet(ns.playerHand, v);
+      ns.playerScore = ns.playerScore + 1;
+      ns.playerSets  = [...ns.playerSets, v];
+      ns.logs = [...ns.logs, { msg: "🏅 YOU formed a set of " + v + "s!", type: "set" }];
+      addBurst("player", v); addToast("You formed a set of " + v + "s! 🏅", "set");
+    });
+    const bvs = checkSets(ns.botHand);
+    bvs.forEach(v => {
+      ns.botHand   = removeSet(ns.botHand, v);
+      ns.botScore  = ns.botScore + 1;
+      ns.botSets   = [...ns.botSets, v];
+      ns.logs = [...ns.logs, { msg: "🤖 BOT formed a set of " + v + "s!", type: "set" }];
+      addBurst("bot", v); addToast("Bot formed a set of " + v + "s! 🤖", "set");
+    });
+    const deckEmpty = ns.drawDeck.length === 0;
+    const allEmpty  = ns.playerHand.length === 0 && ns.botHand.length === 0;
+    if (deckEmpty && allEmpty) { ns.phase = "gameover"; ns.turn = "gameover"; }
+    return ns;
+  }, [addBurst, addToast]);
+
+  const handleSelectCard = (card) => {
+    if (state.turn !== "player" || state.phase === "bot-thinking") return;
+    setState(s => ({
+      ...s,
+      selectedCard: s.selectedCard?.id === card.id ? null : card,
+      phase: s.selectedCard?.id === card.id ? "select" : "ask",
+    }));
+  };
+
+  const handleAsk = () => {
+    if (!state.selectedCard) return;
+    const asked = state.selectedCard.value;
+    const matching = state.botHand.filter(c => c.value === asked);
+    setState(s => {
+      let ns = { ...s, selectedCard: null, phase: "select" };
+      if (matching.length > 0) {
+        ns.playerHand = [...ns.playerHand, ...matching];
+        ns.botHand    = ns.botHand.filter(c => c.value !== asked);
+        ns.logs = [...ns.logs, { msg: "You asked for " + asked + ". Bot had " + matching.length + "! Took them. 🎉", type: "success" }];
+        ns.turn = "player"; ns.phase = "select";
+        addToast("Got it! Bot had " + matching.length + " card(s) of " + asked + ". Your turn again!", "success");
+      } else {
+        ns.logs = [...ns.logs, { msg: "You asked for " + asked + ". Bot didn't have it. CATCH! Drew a card.", type: "catch" }];
+        if (ns.drawDeck.length > 0) { const [drawn, ...rest] = ns.drawDeck; ns.playerHand = [...ns.playerHand, drawn]; ns.drawDeck = rest; }
+        ns.turn = "bot"; ns.phase = "bot-thinking";
+        addToast("CATCH! 🚫 Bot didn't have " + asked + ". You drew a card. Bot's turn!", "catch");
+      }
+      return processSets(ns);
+    });
+  };
+
+  useEffect(() => {
+    if (state.phase !== "bot-thinking" || state.turn !== "bot") return;
+    if (state.botHand.length === 0) {
+      setState(s => ({ ...s, turn: "player", phase: "select", logs: [...s.logs, { msg: "Bot has no cards. Your turn!", type: "info" }] }));
+      return;
+    }
+    const delay = 1400 + Math.random() * 600;
+    const timer = setTimeout(() => {
+      setState(s => {
+        if (s.phase !== "bot-thinking" || s.turn !== "bot") return s;
+        const values = [...new Set(s.botHand.map(c => c.value))];
+        const asked  = values[Math.floor(Math.random() * values.length)];
+        const matching = s.playerHand.filter(c => c.value === asked);
+        let ns = { ...s };
+        if (matching.length > 0) {
+          ns.botHand    = [...ns.botHand, ...matching];
+          ns.playerHand = ns.playerHand.filter(c => c.value !== asked);
+          ns.logs = [...ns.logs, { msg: "Bot asked for " + asked + ". You had " + matching.length + "! Bot took them. 😬", type: "info" }];
+          ns.turn = "bot"; ns.phase = "bot-thinking";
+          addToast("Bot asked for " + asked + ". You had " + matching.length + " card(s)! Bot takes them. 🤖", "bot");
+        } else {
+          ns.logs = [...ns.logs, { msg: "Bot asked for " + asked + ". You didn't have it. Bot drew a card.", type: "info" }];
+          if (ns.drawDeck.length > 0) { const [drawn, ...rest] = ns.drawDeck; ns.botHand = [...ns.botHand, drawn]; ns.drawDeck = rest; }
+          ns.turn = "player"; ns.phase = "select";
+          addToast("Bot asked for " + asked + ". You didn't have it. Bot drew. Your turn! 🧑", "info");
+        }
+        return processSets(ns);
+      });
+    }, delay);
+    return () => clearTimeout(timer);
+  }, [state.phase, state.turn, processSets, addToast]);
+
+  useEffect(() => {
+    if (state.turn === "player" && state.phase === "select" && state.playerHand.length === 0 && state.drawDeck.length > 0) {
+      setState(s => {
+        if (s.playerHand.length > 0 || s.drawDeck.length === 0) return s;
+        const [drawn, ...rest] = s.drawDeck;
+        return { ...s, playerHand: [drawn], drawDeck: rest, logs: [...s.logs, { msg: "Your hand was empty – drew a card.", type: "info" }] };
+      });
+    }
+  }, [state.turn, state.phase, state.playerHand.length, state.drawDeck.length]);
+
+  const handleRestart = () => { toastCounter.current = 0; burstCounter.current = 0; setState(initState()); };
+
+  const isPlayerTurn  = state.turn === "player";
+  const isBotThinking = state.phase === "bot-thinking";
+  const gameOver      = state.phase === "gameover";
+  const selectedValue = state.selectedCard?.value;
+
+  return (
+    <div className="felt-table w-screen h-screen flex flex-col select-none overflow-hidden">
+
+      {/* TOP: BOT */}
+      <div className="flex flex-col items-center pt-3 pb-1 px-4 gap-2">
+        <div className="flex items-center gap-3">
+          <ScoreBadge who="bot" score={state.botScore} sets={state.botSets} />
+          {isBotThinking && (
+            <div className="flex items-center gap-1 bg-black/40 rounded-full px-3 py-1.5">
+              <span className="text-white/80 text-xs font-bold mr-1">Bot thinking</span>
+              <span className="thinking-dot inline-block w-2 h-2 rounded-full bg-indigo-300" />
+              <span className="thinking-dot inline-block w-2 h-2 rounded-full bg-indigo-300" />
+              <span className="thinking-dot inline-block w-2 h-2 rounded-full bg-indigo-300" />
+            </div>
+          )}
+        </div>
+        <div className="hand-container" style={{gap:"8px"}}>
+          {state.botHand.length === 0
+            ? <span className="text-white/40 italic text-sm">No cards</span>
+            : state.botHand.map((c, i) => (
+                <div key={c.id} style={{marginLeft: i===0 ? 0 : -18}}><CardBack /></div>
+              ))
+          }
+        </div>
+      </div>
+
+      {/* CENTER */}
+      <div className="flex-1 flex items-center justify-center px-4 gap-6">
+        <div className="flex flex-col items-center">
+          {state.drawDeck.length > 0
+            ? <DrawPile count={state.drawDeck.length} />
+            : <div className="flex flex-col items-center gap-1">
+                <div className="w-[72px] h-[108px] rounded-xl border-2 border-dashed border-white/20 flex items-center justify-center">
+                  <span className="text-white/30 text-xs text-center">Empty</span>
+                </div>
+                <span className="text-white/40 text-xs">0 left</span>
+              </div>
+          }
+        </div>
+
+        <div className="flex flex-col items-center gap-3 bg-black/25 rounded-2xl p-4 min-w-[220px] max-w-[280px]">
+          <div className={"rounded-xl px-4 py-1.5 font-black text-sm " + (isPlayerTurn && !isBotThinking ? "bg-emerald-500 text-white" : "bg-indigo-700 text-white")}>
+            {isBotThinking ? "🤖 Bot's Turn" : isPlayerTurn ? "🧑 Your Turn" : "🤖 Bot's Turn"}
+          </div>
+          <div className="text-white/80 text-xs text-center leading-relaxed font-semibold">
+            {isBotThinking && "Bot is thinking…"}
+            {isPlayerTurn && state.phase === "select" && "Click a card to select it, then ask the Bot!"}
+            {isPlayerTurn && state.phase === "ask" && ("Ask the Bot for " + selectedValue + "s?")}
+          </div>
+          {isPlayerTurn && state.phase === "ask" && state.selectedCard && (
+            <button onClick={handleAsk} className="bg-amber-400 hover:bg-amber-300 active:scale-95 text-black font-black text-base px-5 py-2 rounded-xl shadow-lg transition-all w-full text-center">
+              Ask for {selectedValue}s 🃏
+            </button>
+          )}
+          {isPlayerTurn && state.phase === "ask" && (
+            <button onClick={() => setState(s => ({ ...s, selectedCard: null, phase: "select" }))} className="text-white/50 hover:text-white/80 text-xs underline transition-colors">
+              Cancel
+            </button>
+          )}
+          <div className="border-t border-white/10 w-full pt-2 flex justify-around text-xs text-white/60 font-bold">
+            <span>🏅 You: {state.playerScore}</span>
+            <span>🤖 Bot: {state.botScore}</span>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-1" style={{width:220}}>
+          <span className="text-white/50 text-xs font-bold tracking-wider uppercase">Game Log</span>
+          <GameLog logs={state.logs} />
+        </div>
+      </div>
+
+      {/* BOTTOM: PLAYER */}
+      <div className="flex flex-col items-center pb-3 pt-1 px-4 gap-2">
+        <div className="hand-container" style={{gap:"8px"}}>
+          {state.playerHand.length === 0
+            ? <span className="text-white/40 italic text-sm">No cards in hand</span>
+            : state.playerHand.map((c, i) => (
+                <div key={c.id} style={{marginLeft: i===0 ? 0 : -18}}>
+                  <CardFace card={c} selected={state.selectedCard?.id === c.id} onClick={() => handleSelectCard(c)} disabled={!isPlayerTurn || isBotThinking} />
+                </div>
+              ))
+          }
+        </div>
+        <div className="flex items-center gap-3">
+          <ScoreBadge who="player" score={state.playerScore} sets={state.playerSets} />
+          <button onClick={handleRestart} className="bg-white/10 hover:bg-white/20 active:scale-95 text-white font-bold text-sm px-4 py-2 rounded-xl border border-white/20 transition-all">
+            Restart 🔄
+          </button>
+        </div>
+      </div>
+
+      <Toast toasts={state.toasts} />
+      <SetBurst bursts={state.bursts} />
+      {gameOver && <WinScreen playerSets={state.playerScore} botSets={state.botScore} onRestart={handleRestart} />}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<CatchGame />);
+</script>
+</body>
+</html>

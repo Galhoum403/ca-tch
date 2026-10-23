@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Build outputs
+android/app/build/
+android/.gradle/
+android/build/
+dist/
+
+# Godot binaries & caches
+godot/
+godot_project/.godot/
+*.exe
+*.jfif
+Screenshot*.png
+Video*.exe
+
+# OS & Logs
+.DS_Store
+Thumbs.db
+*.log
+
+# Heavy raw assets & video
+*.mp4
+*.psd
+png cards/
+*.webp
+*.jpg

@@ -1,0 +1,26 @@
+{
+  "name": "CATCH - لعبة كاتش الأصلية",
+  "short_name": "CATCH",
+  "start_url": "./index.html",
+  "display": "fullscreen",
+  "orientation": "portrait-primary",
+  "background_color": "#140306",
+  "theme_color": "#180407",
+  "description": "لعبة كروت كاتش المصرية الأونلاين - العب مع أصحابك وبوتات ذكية",
+  "lang": "ar",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "./app_icon_192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./app_icon_512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

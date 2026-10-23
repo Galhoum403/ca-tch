@@ -1,0 +1,1329 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>🃏 CATCH</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  *{box-sizing:border-box;}
+  body{margin:0;padding:0;font-family:'Cairo','Tajawal',sans-serif;background:#1a0505;overflow:hidden;height:100vh;}
+  .cw{transition:transform .2s cubic-bezier(.34,1.56,.64,1),box-shadow .2s;cursor:pointer;display:inline-block;}
+  .cw:hover:not(.dis){transform:translateY(-14px) scale(1.06);}
+  .cw.sel{transform:translateY(-22px) scale(1.12)!important;filter:drop-shadow(0 0 12px #facc15);}
+  .cw.dis{cursor:default;opacity:.8;}
+  @keyframes tin{from{opacity:0;transform:translateY(-10px) scale(.9)}to{opacity:1;transform:none}}
+  @keyframes tout{0%{opacity:1}70%{opacity:1}100%{opacity:0;transform:translateY(-6px)}}
+  .ta{animation:tin .25s ease forwards,tout .4s ease 3.6s forwards;}
+  @keyframes blink{0%,100%{opacity:.15}50%{opacity:1}}
+  .blink{animation:blink .9s infinite;}
+  @keyframes burst{0%{opacity:0;transform:scale(.3) rotate(-20deg)}25%{opacity:1;transform:scale(1.15) rotate(3deg)}75%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.2) translateY(-20px)}}
+  .burst{animation:burst 2.2s ease forwards;}
+  @keyframes sup{from{transform:translateY(18px);opacity:0}to{transform:none;opacity:1}}
+  .sup{animation:sup .28s ease;}
+  ::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:2px;}
+  .btn{transition:all .15s;cursor:pointer;}
+  .btn:hover{filter:brightness(1.2);transform:scale(1.03);}
+  .btn:active{transform:scale(.97);}
+  .felt{background:radial-gradient(ellipse at 50% 50%,#2d0a0a 0%,#130404 100%);}
+  @keyframes shake{0%,100%{transform:none}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+  .shake{animation:shake .35s ease;}
+</style>
+</head>
+<body class="felt">
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useReducer,useEffect,useRef,useCallback,useMemo}=React;
+
+// ====== IMAGES ======
+const IMG=n=>`file:///z:/CA%20TCH/cards/${n}`;
+const NIMG=n=>IMG(`number_${n}.png`);
+const BACK=IMG('card_TCH.png');
+
+// ====== ACTION CARD META ======
+const AM={
+  bos_bosa:    {name:'بص بصة',    img:IMG('bos_bosa.png'),    color:'#0d6b5e',border:'#0a4f47',emoji:'👁️', desc:'بص على كارت عند حد'},
+  magnatees:   {name:'مغناطيس',   img:IMG('magnatees.png'),   color:'#7a5800',border:'#5a4000',emoji:'🧲', desc:'اطلب رقم معاك من الكل'},
+  herbaiya:    {name:'الحرباية',  img:IMG('herbaiya.png'),    color:'#5a1d75',border:'#3d1254',emoji:'🦎', desc:'اسرق أكشن كارت'},
+  sayad:       {name:'صياد',      img:IMG('sayad2.png'),      color:'#7a3300',border:'#5a2500',emoji:'🎯', desc:'اسحب كارت عشوائي من لاعب'},
+  special:     {name:'اسبيشيال', img:IMG('special.png'),     color:'#7a6000',border:'#5a4500',emoji:'💎', desc:'اطلب رقم مش معاك'},
+  badl_edain:  {name:'بدل إيدي', img:IMG('badl_edain.png'),  color:'#065843',border:'#043d2e',emoji:'🤝', desc:'بدل إيدك مع لاعب'},
+  el3ab_tani:  {name:'العب تاني',img:IMG('el3ab_tani.png'),  color:'#0e3a76',border:'#092660',emoji:'🔄', desc:'العب دور تاني'},
+  hat_enta:    {name:'هات انت',  img:IMG('hat_enta.png'),    color:'#6e0b0b',border:'#4e0808',emoji:'✋', desc:'اعكس الطلب - انت اللي تاخد'},
+  kefaya_3leik:{name:'كفاية عليك',img:IMG('kefaya_3leik.png'),color:'#7a0a0a',border:'#5a0707',emoji:'🖐️',desc:'وقف لاعب بعد أول طلب'},
+  joker:       {name:'جوكر',      img:IMG('joker.png'),       color:'#5b005b',border:'#3d003d',emoji:'🃏', desc:'3 كروت + جوكر = سيت'},
+  msh_shaifak: {name:'مش شايفك', img:IMG('msh_shaifak.png'), color:'#260044',border:'#1a002d',emoji:'🙈', desc:'لاعب ميلعبش دوره الجاي'},
+  od_le7afak:  {name:'قد لحافك', img:IMG('od_le7afak.png'),  color:'#3d0060',border:'#280040',emoji:'📜', desc:'صفقة تبادلية'},
+  kdab:        {name:'كداب',      img:IMG('kdab.png'),        color:'#480048',border:'#300030',emoji:'🤥', desc:'مسموحلك تكدب في طلبك'},
+  mana3a:      {name:'مناعة',     img:IMG('mana3a.png'),      color:'#0e2560',border:'#091840',emoji:'🛡️', desc:'حماية راوند كامل من الطلبات'},
+  lef_w_erga3: {name:'لف وارجع',img:IMG('lef_w_erga3.png'), color:'#5e2d00',border:'#3e1e00',emoji:'🔙', desc:'اعكس اتجاه الأدوار'},
+};
+
+// ====== DECK ======
+function buildDeck(){
+  let id=0; const cards=[];
+  for(let n=0;n<=10;n++) for(let c=0;c<4;c++) cards.push({id:id++,type:'number',value:n});
+  const cnts={bos_bosa:3,magnatees:3,herbaiya:2,sayad:3,special:3,badl_edain:3,
+    el3ab_tani:3,hat_enta:3,kefaya_3leik:3,joker:2,msh_shaifak:3,
+    od_le7afak:2,kdab:2,mana3a:3,lef_w_erga3:3};
+  for(const[t,n] of Object.entries(cnts))
+    for(let c=0;c<n;c++) cards.push({id:id++,type:t,value:null});
+  return cards;
+}
+function shuffle(a){
+  const r=[...a];
+  for(let i=r.length-1;i>0;i--){const j=0|Math.random()*(i+1);[r[i],r[j]]=[r[j],r[i]];}
+  return r;
+}
+
+// ====== SET DETECTION ======
+function detectSets(hand){
+  const m={};
+  hand.filter(c=>c.type==='number').forEach(c=>{(m[c.value]=m[c.value]||[]).push(c);});
+  return Object.entries(m).filter(([,cs])=>cs.length>=4).map(([v,cs])=>({value:+v,cards:cs.slice(0,4)}));
+}
+function detectJokerSets(hand){
+  const jokers=hand.filter(c=>c.type==='joker');
+  if(!jokers.length) return [];
+  const m={};
+  hand.filter(c=>c.type==='number').forEach(c=>{(m[c.value]=m[c.value]||[]).push(c);});
+  return Object.entries(m).filter(([,cs])=>cs.length===3)
+    .map(([v,cs])=>({value:+v,cards:cs,joker:jokers[0],isJoker:true}));
+}
+
+// ====== HELPERS ======
+let _tid=0,_bid=0;
+const rmv=(hand,ids)=>{const s=new Set(ids);return hand.filter(c=>!s.has(c.id));};
+const nxt=(cur,dir,n)=>((cur+dir)+n)%n;
+const addLog=(s,logs)=>[...logs.slice(-40),s];
+function toast(s,type,st){
+  const id=_tid++;
+  return{...st,toasts:[...st.toasts,{id,msg:s,type:type||'info'}]};
+}
+function burst(s,st){
+  const id=_bid++;
+  return{...st,bursts:[...st.bursts,{id,msg:s}]};
+}
+
+// Auto set-check pass
+function applySetCheck(st){
+  let ns={...st,players:[...st.players]};
+  let changed=true;
+  while(changed){
+    changed=false;
+    for(let pi=0;pi<ns.players.length;pi++){
+      const p=ns.players[pi];
+      for(const s of detectSets(p.hand)){
+        ns.players=ns.players.map((pp,i)=>i!==pi?pp:{...pp,
+          hand:rmv(pp.hand,s.cards.map(c=>c.id)),sets:[...pp.sets,s.value]});
+        ns=toast(`🏅 ${p.name} جمع سيت ${s.value}!`,'set',ns);
+        ns=burst(`${p.name} — سيت ${s.value}! 🎉`,ns);
+        ns.log=addLog(`🏅 ${p.name} جمع سيت ${s.value}`,ns.log);
+        changed=true;break;
+      }
+      if(changed)break;
+      for(const s of detectJokerSets(p.hand)){
+        ns.players=ns.players.map((pp,i)=>i!==pi?pp:{...pp,
+          hand:rmv(pp.hand,[...s.cards.map(c=>c.id),s.joker.id]),sets:[...pp.sets,s.value]});
+        ns=toast(`🃏 ${p.name} جمع سيت جوكر ${s.value}!`,'set',ns);
+        ns=burst(`${p.name} — جوكر سيت ${s.value}! 🃏`,ns);
+        ns.log=addLog(`🃏 ${p.name} جمع سيت جوكر ${s.value}`,ns.log);
+        changed=true;break;
+      }
+      if(changed)break;
+    }
+  }
+  return ns;
+}
+
+function checkGameOver(st){
+  if(st.deck.length===0&&st.players.every(p=>p.hand.length===0)){
+    const mx=Math.max(...st.players.map(p=>p.sets.length));
+    const w=st.players.filter(p=>p.sets.length===mx);
+    return{...st,gameOver:true,winner:w.length===1?w[0]:null,phase:'gameover'};
+  }
+  return st;
+}
+
+function drawCard(st,pi){
+  if(!st.deck.length) return st;
+  const[drawn,...rest]=st.deck;
+  return{...st,deck:rest,players:st.players.map((p,i)=>i!==pi?p:{...p,hand:[...p.hand,drawn]})};
+}
+
+function nextTurn(st){
+  let ns={...st};
+  const n=ns.players.length;
+  let ni=nxt(ns.currentIdx,ns.direction,n);
+  if(ns.players[ni].skipNext){
+    ns.players=ns.players.map((p,i)=>i!==ni?p:{...p,skipNext:false});
+    ns.log=addLog(`⏭️ ${ns.players[ni].name} تخطى دوره`,ns.log);
+    ni=nxt(ni,ns.direction,n);
+  }
+  ns.currentIdx=ni;
+  ns.phase=ns.players[ni].isBot?'bot-turn':'idle';
+  ns.selCard=null;ns.actionCard=null;ns.targetIdx=null;ns.askedNum=null;
+  ns.specialActive=false;ns.kdabActive=false;ns.kefTarget=null;ns.successCount=0;
+  ns.swapMode=null;ns.swapT1=null;
+  ns.players=ns.players.map((p,i)=>i===ni?{...p,immune:false}:p);
+  return ns;
+}
+
+// ====== INIT ======
+function initGame(){
+  const deck=shuffle(buildDeck());
+  const ph=deck.splice(0,5),bh=deck.splice(0,5);
+  return{deck,players:[
+    {id:0,name:'انت',hand:ph,sets:[],immune:false,skipNext:false,isBot:false},
+    {id:1,name:'البوت',hand:bh,sets:[],immune:false,skipNext:false,isBot:true},
+  ],currentIdx:0,direction:1,phase:'idle',
+  selCard:null,actionCard:null,targetIdx:null,askedNum:null,
+  specialActive:false,kdabActive:false,kefTarget:null,extraTurns:0,successCount:0,
+  peekInfo:null,swapMode:null,swapT1:null,
+  log:['🎮 بدأت اللعبة! دورك انت 🎴'],
+  toasts:[],bursts:[],gameOver:false,winner:null};
+}
+
+// ====== ASK LOGIC ======
+function doAsk(st,tIdx,num){
+  const cur=st.players[st.currentIdx];
+  const tar=st.players[tIdx];
+  let ns={...st,targetIdx:tIdx,askedNum:num};
+
+  // Immunity check (magnet bypasses, not normal ask)
+  if(tar.immune){
+    ns=toast(`🛡️ ${tar.name} محمي! الطلب فشل`,'info',ns);
+    ns.log=addLog(`🛡️ ${tar.name} محمي - الطلب رفض`,ns.log);
+    ns.phase='idle';ns.selCard=null;ns.actionCard=null;ns.targetIdx=null;ns.askedNum=null;
+    return ns;
+  }
+
+  const matching=tar.hand.filter(c=>c.type==='number'&&c.value===num);
+
+  if(matching.length>0){
+    // SUCCESS
+    ns.players=ns.players.map((p,i)=>{
+      if(i===tIdx) return{...p,hand:rmv(p.hand,matching.map(c=>c.id))};
+      if(i===st.currentIdx) return{...p,hand:[...p.hand,...matching]};
+      return p;
+    });
+    // Discard special/kdab card
+    if(ns.specialActive&&ns.actionCard){
+      ns.players=ns.players.map((p,i)=>i!==st.currentIdx?p:{...p,hand:rmv(p.hand,[ns.actionCard.id])});
+      ns.specialActive=false;
+    }
+    ns=toast(`✅ ${cur.name} طلب ${num} من ${tar.name} — نجح! (+${matching.length})`,'success',ns);
+    ns.log=addLog(`✅ ${cur.name} طلب ${num} من ${tar.name} — نجح! أخد ${matching.length}`,ns.log);
+    ns.successCount=(ns.successCount||0)+1;
+
+    // Kefaya 3leik check
+    if(ns.kefTarget===st.currentIdx&&ns.successCount>=1){
+      ns=toast(`🖐️ كفاية عليك! دور ${cur.name} انتهى`,'info',ns);
+      ns.log=addLog(`🖐️ كفاية عليك على ${cur.name}`,ns.log);
+      ns.kefTarget=null;
+      ns=applySetCheck(ns);
+      return nextTurn(ns);
+    }
+
+    ns=applySetCheck(ns);
+    ns=checkGameOver(ns);
+    if(ns.gameOver)return ns;
+    // Go again
+    ns.phase='idle';ns.selCard=null;ns.actionCard=null;ns.targetIdx=null;ns.askedNum=null;
+    return ns;
+  } else {
+    // CATCH!
+    if(ns.specialActive&&ns.actionCard){
+      ns.players=ns.players.map((p,i)=>i!==st.currentIdx?p:{...p,hand:rmv(p.hand,[ns.actionCard.id])});
+      ns.specialActive=false;
+    }
+    if(ns.kdabActive&&ns.actionCard){
+      ns.kdabActive=false;
+    }
+    ns=toast(`🚫 CATCH! ${cur.name} طلب ${num} — مش معاه`,'catch',ns);
+    ns.log=addLog(`🚫 ${cur.name} طلب ${num} من ${tar.name} — CATCH!`,ns.log);
+    ns=drawCard(ns,st.currentIdx);
+    // Check if drawn card is el3ab_tani
+    const drawn=ns.players[st.currentIdx].hand.slice(-1)[0];
+    if(drawn&&drawn.type==='el3ab_tani'){
+      ns=toast('🔄 سحبت العب تاني! دور تاني','info',ns);
+      ns.log=addLog('🔄 سحبت العب تاني - دور تاني!',ns.log);
+      ns=applySetCheck(ns);ns=checkGameOver(ns);
+      if(ns.gameOver)return ns;
+      ns.phase='idle';ns.selCard=null;ns.actionCard=null;ns.targetIdx=null;ns.askedNum=null;
+      return ns;
+    }
+    ns=applySetCheck(ns);ns=checkGameOver(ns);
+    if(ns.gameOver)return ns;
+    return nextTurn(ns);
+  }
+}
+
+// ====== MAGNET ======
+function doMagnet(st,num){
+  const cur=st.players[st.currentIdx];
+  const ac=st.actionCard||st.selCard;
+  let ns={...st};
+  let all=[];
+  ns.players=ns.players.map((p,i)=>{
+    if(i===st.currentIdx)return p;
+    // Magnet bypasses immunity
+    const m=p.hand.filter(c=>c.type==='number'&&c.value===num);
+    all=[...all,...m];
+    return{...p,hand:rmv(p.hand,m.map(c=>c.id))};
+  });
+  ns.players=ns.players.map((p,i)=>i!==st.currentIdx?p:{
+    ...p,hand:rmv(p.hand,ac?[ac.id]:[]).concat(all)
+  });
+  if(all.length>0){
+    ns=toast(`🧲 مغناطيس! جمعت ${all.length} كارت ${num} من الكل!`,'success',ns);
+    ns.log=addLog(`🧲 ${cur.name} مغناطيس ${num} — اخد ${all.length}`,ns.log);
+    ns=applySetCheck(ns);ns=checkGameOver(ns);
+    if(ns.gameOver)return ns;
+    ns.phase='idle';ns.selCard=null;ns.actionCard=null;ns.askedNum=null;
+    return ns;
+  } else {
+    ns=toast(`🚫 مغناطيس CATCH! محدش عنده ${num}`,'catch',ns);
+    ns.log=addLog(`🚫 ${cur.name} مغناطيس ${num} — CATCH!`,ns.log);
+    ns=drawCard(ns,st.currentIdx);
+    ns=applySetCheck(ns);ns=checkGameOver(ns);
+    if(ns.gameOver)return ns;
+    return nextTurn(ns);
+  }
+}
+
+// ====== ACTION HANDLERS ======
+function handleActionTarget(st,action){
+  const cur=st.players[st.currentIdx];
+  const ac=st.actionCard||st.selCard;
+  const tIdx=action.targetIdx;
+  const tar=st.players[tIdx];
+
+  switch(st.phase){
+    case 'action-bos_bosa':
+      return{...st,targetIdx:tIdx,phase:'bos_bosa-pick'};
+
+    case 'bos_bosa-pick':{
+      const card=tar.hand[action.cardIdx];
+      if(!card)return st;
+      let ns={...st,peekInfo:{card,pIdx:tIdx}};
+      if(ac)ns.players=ns.players.map((p,i)=>i!==st.currentIdx?p:{...p,hand:rmv(p.hand,[ac.id])});
+      ns.log=addLog(`👁️ ${cur.name} بص على كارت ${tar.name}`,ns.log);
+      ns=toast(`👁️ بصت على كارت ${tar.name}!`,'info',ns);
+      ns.phase='peek-reveal';
+      return ns;
+    }
+
+    case 'action-herbaiya':
+      return{...st,targetIdx:tIdx,phase:'herbaiya-pick'};
+
+    case 'herbaiya-pick':{
+      const stolen=tar.hand.find(c=>c.id===action.cardId);
+      if(!stolen||stolen.type==='number')return st;
+      let ns={...st};
+      ns.players=ns.players.map((p,i)=>{
+        if(i===tIdx)return{...p,hand:rmv(p.hand,[stolen.id])};
+        if(i===st.currentIdx)return{...p,hand:rmv(p.hand,ac?[ac.id]:[]).concat([stolen])};
+        return p;
+      });
+      ns=toast(`🦎 سرقت ${AM[stolen.type]?.name||stolen.type} من ${tar.name}!`,'success',ns);
+      ns.log=addLog(`🦎 ${cur.name} سرق ${AM[stolen.type]?.name} من ${tar.name}`,ns.log);
+      ns.phase='idle';ns.selCard=null;ns.actionCard=null;ns.targetIdx=null;
+      return ns;
+    }
+
+    case 'action-sayad':{
+      if(!tar.hand.length){
+        ns=toast(`🎯 ${tar.name} ما عندهوش كروت!`,'info',st);
+        return{...st,phase:'idle',selCard:null,actionCard:null};
+      }
+      const ri=0|Math.random()*tar.hand.length;
+      const tc=tar.hand[ri];
+      let ns={...st};
+      ns.players=ns.players.map((p,i)=>{
+        if(i===tIdx)return{...p,hand:rmv(p.hand,[tc.id])};
+        if(i===st.currentIdx)return{...p,hand:rmv(p.hand,ac?[ac.id]:[]).concat([tc])};
+        return p;
+      });
+      const cl=tc.type==='number'?`رقم ${tc.value}`:(AM[tc.type]?.name||tc.type);
+      ns=toast(`🎯 سحبت "${cl}" من ${tar.name}!`,'success',ns);
+      ns.log=addLog(`🎯 ${cur.name} صياد — سحب ${cl} من ${tar.name}`,ns.log);
+      ns.phase='idle';ns.selCard=null;ns.actionCard=null;ns.targetIdx=null;
+      ns=applySetCheck(ns);
+      return ns;
+    }
+
+    case 'action-kefaya_3leik':{
+      let ns={...st,kefTarget:tIdx};
+      if(ac)ns.players=ns.players.map((p,i)=>i!==st.currentIdx?p:{...p,hand:rmv(p.hand,[ac.id])});
+      ns=toast(`🖐️ كفاية عليك على ${tar.name}!`,'info',ns);
+      ns.log=addLog(`🖐️ ${cur.name} كفاية عليك على ${tar.name}`,ns.log);
+      ns.phase='idle';ns.selCard=null;ns.actionCard=null;
+      return ns;
+    }
+
+    case 'action-msh_shaifak':{
+      let ns={...st};
+      ns.players=ns.players.map((p,i)=>{
+        if(i===st.currentIdx)return{...p,hand:ac?rmv(p.hand,[ac.id]):p.hand};
+        if(i===tIdx)return{...p,skipNext:true};
+        return p;
+      });
+      ns=toast(`🙈 مش شايفك! ${tar.name} هيتخطى دوره`,'info',ns);
+      ns.log=addLog(`🙈 ${cur.name} مش شايفك على ${tar.name}`,ns.log);
+      ns.phase='idle';ns.selCard=null;ns.actionCard=null;
+      return ns;
+    }
+
+    case 'action-hat_enta':{
+      // Steal a random card from target
+      if(!tar.hand.length)return{...st,phase:'idle',selCard:null,actionCard:null};
+      const ri2=0|Math.random()*tar.hand.length;
+      const tc2=tar.hand[ri2];
+      let ns2={...st};
+      ns2.players=ns2.players.map((p,i)=>{
+        if(i===tIdx)return{...p,hand:rmv(p.hand,[tc2.id])};
+        if(i===st.currentIdx)return{...p,hand:rmv(p.hand,ac?[ac.id]:[]).concat([tc2])};
+        return p;
+      });
+      const cl2=tc2.type==='number'?`رقم ${tc2.value}`:(AM[tc2.type]?.name||tc2.type);
+      ns2=toast(`✋ هات انت! اخدت "${cl2}" من ${tar.name}`,'success',ns2);
+      ns2.log=addLog(`✋ ${cur.name} هات انت — اخد ${cl2} من ${tar.name}`,ns2.log);
+      ns2.phase='idle';ns2.selCard=null;ns2.actionCard=null;ns2.targetIdx=null;
+      ns2=applySetCheck(ns2);
+      return ns2;
+    }
+
+    case 'action-badl_edain':{
+      // Swap hands
+      const ph1=rmv(st.players[st.currentIdx].hand,ac?[ac.id]:[]);
+      const ph2=[...tar.hand];
+      let ns={...st};
+      ns.players=ns.players.map((p,i)=>{
+        if(i===st.currentIdx)return{...p,hand:ph2};
+        if(i===tIdx)return{...p,hand:ph1};
+        return p;
+      });
+      ns=toast(`🤝 بدلت إيدك مع ${tar.name}!`,'info',ns);
+      ns.log=addLog(`🤝 ${cur.name} بدل إيده مع ${tar.name}`,ns.log);
+      ns.phase='idle';ns.selCard=null;ns.actionCard=null;ns.targetIdx=null;
+      ns=applySetCheck(ns);
+      return ns;
+    }
+
+    case 'action-od_le7afak':{
+      if(!tar.hand.length)return{...st,phase:'idle',selCard:null,actionCard:null};
+      const ri3=0|Math.random()*tar.hand.length;
+      const tc3=tar.hand[ri3];
+      let ns3={...st};
+      ns3.players=ns3.players.map((p,i)=>{
+        if(i===tIdx)return{...p,hand:rmv(p.hand,[tc3.id])};
+        if(i===st.currentIdx)return{...p,hand:rmv(p.hand,ac?[ac.id]:[]).concat([tc3])};
+        return p;
+      });
+      ns3=toast(`📜 قد لحافك! اخدت من ${tar.name}`,'success',ns3);
+      ns3.log=addLog(`📜 ${cur.name} قد لحافك على ${tar.name}`,ns3.log);
+      ns3.phase='idle';ns3.selCard=null;ns3.actionCard=null;
+      ns3=applySetCheck(ns3);
+      return ns3;
+    }
+
+    default: return{...st,phase:'idle',selCard:null,actionCard:null,targetIdx:null};
+  }
+}
+
+// ====== BOT AI ======
+function doBotTurn(st){
+  let ns={...st};
+  const bot=ns.players[1];
+  const pl=ns.players[0];
+  if(!bot.hand.length) return nextTurn(ns);
+
+  // Strategy: 30% chance to play an action card first
+  const acs=bot.hand.filter(c=>c.type!=='number');
+  if(acs.length&&Math.random()<0.35){
+    const ac=acs[0|Math.random()*acs.length];
+    switch(ac.type){
+      case 'mana3a':
+        ns.players=ns.players.map((p,i)=>i!==1?p:{...p,hand:rmv(p.hand,[ac.id]),immune:true});
+        ns=toast('🛡️ البوت لعب مناعة — محمي!','bot',ns);
+        ns.log=addLog('🛡️ البوت لعب مناعة',ns.log);
+        break;
+      case 'lef_w_erga3':
+        ns.players=ns.players.map((p,i)=>i!==1?p:{...p,hand:rmv(p.hand,[ac.id])});
+        ns.direction*=-1;
+        ns=toast('🔙 البوت لف وارجع!','bot',ns);
+        ns.log=addLog('🔙 البوت لعب لف وارجع',ns.log);
+        break;
+      case 'msh_shaifak':
+        ns.players=ns.players.map((p,i)=>{
+          if(i===1)return{...p,hand:rmv(p.hand,[ac.id])};
+          if(i===0)return{...p,skipNext:true};
+          return p;
+        });
+        ns=toast('🙈 البوت لعب مش شايفك عليك!','bot',ns);
+        ns.log=addLog('🙈 البوت مش شايفك على اللاعب',ns.log);
+        break;
+      case 'sayad':
+        if(pl.hand.length){
+          const ri=0|Math.random()*pl.hand.length;
+          const tc=pl.hand[ri];
+          ns.players=ns.players.map((p,i)=>{
+            if(i===0)return{...p,hand:rmv(p.hand,[tc.id])};
+            if(i===1)return{...p,hand:rmv(p.hand,[ac.id]).concat([tc])};
+            return p;
+          });
+          const cl=tc.type==='number'?`رقم ${tc.value}`:(AM[tc.type]?.name||tc.type);
+          ns=toast(`🎯 البوت سحب "${cl}" منك!`,'bot',ns);
+          ns.log=addLog(`🎯 البوت صياد — سحب ${cl}`,ns.log);
+          ns=applySetCheck(ns);
+        }
+        break;
+      case 'magnatees':{
+        const nm=ns.players[1].hand.filter(c=>c.type==='number');
+        const cnt={};nm.forEach(c=>{cnt[c.value]=(cnt[c.value]||0)+1;});
+        const best=Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0];
+        if(best&&+best[1]>=2){
+          const n=+best[0];
+          const m=pl.hand.filter(c=>c.type==='number'&&c.value===n);
+          if(m.length){
+            ns.players=ns.players.map((p,i)=>{
+              if(i===0)return{...p,hand:rmv(p.hand,m.map(c=>c.id))};
+              if(i===1)return{...p,hand:rmv(p.hand,[ac.id]).concat(m)};
+              return p;
+            });
+            ns=toast(`🧲 البوت مغناطيس ${n}! اخد ${m.length} منك`,'bot',ns);
+            ns.log=addLog(`🧲 البوت مغناطيس ${n} — اخد ${m.length}`,ns.log);
+            ns=applySetCheck(ns);
+          }
+        }
+        break;
+      }
+      case 'badl_edain':
+        if(pl.hand.length>ns.players[1].hand.length+2){
+          const bh=rmv(ns.players[1].hand,[ac.id]);
+          const ph=[...pl.hand];
+          ns.players=ns.players.map((p,i)=>{
+            if(i===0)return{...p,hand:bh};
+            if(i===1)return{...p,hand:ph};
+            return p;
+          });
+          ns=toast('🤝 البوت بدل إيده معاك!','bot',ns);
+          ns.log=addLog('🤝 البوت بدل إيده مع اللاعب',ns.log);
+          ns=applySetCheck(ns);
+        }
+        break;
+      default: break;
+    }
+  }
+
+  ns=applySetCheck(ns);ns=checkGameOver(ns);
+  if(ns.gameOver)return ns;
+
+  // Normal ask
+  const botNums=ns.players[1].hand.filter(c=>c.type==='number');
+  if(!botNums.length) return nextTurn(ns);
+  const cnt2={};botNums.forEach(c=>{cnt2[c.value]=(cnt2[c.value]||0)+1;});
+  const best2=Object.entries(cnt2).sort((a,b)=>b[1]-a[1])[0];
+  if(!best2) return nextTurn(ns);
+  const askN=+best2[0];
+  const plMatch=ns.players[0].hand.filter(c=>c.type==='number'&&c.value===askN);
+
+  ns=toast(`🤖 البوت بيطلب ${askN} منك...`,'bot',ns);
+
+  if(plMatch.length&&!ns.players[0].immune){
+    ns.players=ns.players.map((p,i)=>{
+      if(i===0)return{...p,hand:rmv(p.hand,plMatch.map(c=>c.id))};
+      if(i===1)return{...p,hand:[...p.hand,...plMatch]};
+      return p;
+    });
+    ns=toast(`🤖 البوت اخد ${plMatch.length} كارت ${askN} منك!`,'bot',ns);
+    ns.log=addLog(`🤖 البوت طلب ${askN} — نجح! (+${plMatch.length})`,ns.log);
+    ns.successCount=(ns.successCount||0)+1;
+    // Check kefaya on bot
+    if(ns.kefTarget===1&&ns.successCount>=1){
+      ns.kefTarget=null;
+      ns=applySetCheck(ns);return nextTurn(ns);
+    }
+    ns=applySetCheck(ns);ns=checkGameOver(ns);
+    if(ns.gameOver)return ns;
+    // Bot goes again (one more time)
+    ns.successCount=99; // prevent infinite
+    ns.phase='bot-turn';return ns;
+  } else {
+    if(ns.players[0].immune){
+      ns=toast(`🛡️ انت محمي! البوت CATCH`,'info',ns);
+      ns.log=addLog(`🛡️ اللاعب محمي — بوت CATCH`,ns.log);
+    } else {
+      ns.log=addLog(`🚫 البوت طلب ${askN} — CATCH!`,ns.log);
+    }
+    ns=drawCard(ns,1);
+    ns=applySetCheck(ns);ns=checkGameOver(ns);
+    if(ns.gameOver)return ns;
+    return nextTurn(ns);
+  }
+}
+
+// ====== REDUCER ======
+function reducer(st,act){
+  switch(act.type){
+    case 'SELECT_CARD':{
+      const c=act.card;
+      if(c.type==='number')
+        return{...st,selCard:c,actionCard:null,askedNum:c.value,
+          phase:st.specialActive?'ask-special':'choose-target'};
+      return{...st,selCard:c,actionCard:c,phase:'use-action'};
+    }
+    case 'DESELECT':
+      return{...st,selCard:null,actionCard:null,phase:'idle',targetIdx:null,askedNum:null};
+    case 'ASK_PLAYER':
+      return doAsk(st,act.targetIdx,st.askedNum||act.num);
+    case 'ASK_SPECIAL':
+      return doAsk(st,act.targetIdx,act.num);
+    case 'PLAY_ACTION':{
+      const ac=st.actionCard||st.selCard;
+      if(!ac)return st;
+      switch(ac.type){
+        case 'bos_bosa': return{...st,phase:'action-bos_bosa'};
+        case 'magnatees': return{...st,phase:'action-magnatees'};
+        case 'herbaiya': return{...st,phase:'action-herbaiya'};
+        case 'sayad': return{...st,phase:'action-sayad'};
+        case 'special':{
+          let ns={...st,specialActive:true,selCard:null,actionCard:ac,phase:'ask-special'};
+          ns=toast('💎 اسبيشيال! اطلب أي رقم عايزه','info',ns);
+          ns.log=addLog(`💎 ${st.players[st.currentIdx].name} لعب اسبيشيال`,ns.log);
+          return ns;
+        }
+        case 'badl_edain': return{...st,phase:'action-badl_edain'};
+        case 'el3ab_tani':{
+          let ns={...st};
+          ns.players=ns.players.map((p,i)=>i!==st.currentIdx?p:{...p,hand:rmv(p.hand,[ac.id])});
+          ns=toast('🔄 العب تاني! دور تاني مجاني','info',ns);
+          ns.log=addLog(`🔄 ${st.players[st.currentIdx].name} العب تاني`,ns.log);
+          ns.phase='idle';ns.selCard=null;ns.actionCard=null;
+          return ns;
+        }
+        case 'mana3a':{
+          let ns={...st};
+          ns.players=ns.players.map((p,i)=>i!==st.currentIdx?p:{...p,hand:rmv(p.hand,[ac.id]),immune:true});
+          ns=toast('🛡️ مناعة! محمي من أي طلب لراوند','info',ns);
+          ns.log=addLog(`🛡️ ${st.players[st.currentIdx].name} لعب مناعة`,ns.log);
+          ns.phase='idle';ns.selCard=null;ns.actionCard=null;
+          return ns;
+        }
+        case 'lef_w_erga3':{
+          let ns={...st};
+          ns.players=ns.players.map((p,i)=>i!==st.currentIdx?p:{...p,hand:rmv(p.hand,[ac.id])});
+          ns.direction*=-1;
+          ns=toast('🔙 لف وارجع! اتعكس الاتجاه','info',ns);
+          ns.log=addLog(`🔙 ${st.players[st.currentIdx].name} لعب لف وارجع`,ns.log);
+          ns.phase='idle';ns.selCard=null;ns.actionCard=null;
+          return ns;
+        }
+        case 'kdab':{
+          let ns={...st,kdabActive:true};
+          ns.players=ns.players.map((p,i)=>i!==st.currentIdx?p:{...p,hand:rmv(p.hand,[ac.id])});
+          ns=toast('🤥 كداب! مسموحلك تطلب أي رقم','info',ns);
+          ns.log=addLog(`🤥 ${st.players[st.currentIdx].name} لعب كداب`,ns.log);
+          ns.phase=st.specialActive?'ask-special':'idle';
+          ns.selCard=null;ns.actionCard=null;
+          return ns;
+        }
+        case 'kefaya_3leik': return{...st,phase:'action-kefaya_3leik'};
+        case 'msh_shaifak': return{...st,phase:'action-msh_shaifak'};
+        case 'hat_enta': return{...st,phase:'action-hat_enta'};
+        case 'od_le7afak': return{...st,phase:'action-od_le7afak'};
+        default: return{...st,phase:'idle',selCard:null,actionCard:null};
+      }
+    }
+    case 'ACTION_TARGET': return handleActionTarget(st,act);
+    case 'MAGNET_ASK': return doMagnet(st,act.num);
+    case 'DISMISS_PEEK':
+      return{...st,peekInfo:null,phase:'idle',selCard:null,actionCard:null};
+    case 'BOT_TURN': return doBotTurn(st);
+    case 'NEXT_TURN':{let ns=nextTurn(st);ns=applySetCheck(ns);return checkGameOver(ns);}
+    case 'REMOVE_TOAST':
+      return{...st,toasts:st.toasts.filter(t=>t.id!==act.id)};
+    case 'REMOVE_BURST':
+      return{...st,bursts:st.bursts.filter(b=>b.id!==act.id)};
+    case 'RESTART': return initGame();
+    default: return st;
+  }
+}
+
+// ====== CARD RENDER COMPONENTS ======
+function NumCard({val,sel,onClick,dis,sm}){
+  const w=sm?56:88,h=sm?84:132;
+  return(
+    <div onClick={dis?undefined:onClick}
+      className={`cw${sel?' sel':''}${dis?' dis':''}`}
+      style={{width:w,height:h,margin:'0 3px',position:'relative'}}>
+      <img src={NIMG(val)} alt={val}
+        style={{width:'100%',height:'100%',borderRadius:10,objectFit:'cover',display:'block'}}
+        onError={e=>{e.target.style.cssText='display:none';e.target.nextSibling.style.display='flex';}}/>
+      <div style={{display:'none',width:'100%',height:'100%',borderRadius:10,position:'absolute',top:0,left:0,
+        background:'linear-gradient(160deg,#1e3a5f,#0f2040)',border:'2px solid #3b82f6',
+        alignItems:'center',justifyContent:'center',flexDirection:'column',color:'white'}}>
+        <span style={{fontSize:sm?28:40,fontWeight:900}}>{val}</span>
+      </div>
+      {sel&&<div style={{position:'absolute',inset:0,borderRadius:10,border:'3px solid #facc15',boxShadow:'0 0 16px #facc1588',pointerEvents:'none'}}/>}
+    </div>
+  );
+}
+
+function ACard({type,sel,onClick,dis,sm}){
+  const m=AM[type]||{name:type,color:'#333',border:'#111',emoji:'🃏'};
+  const w=sm?56:88,h=sm?84:132;
+  return(
+    <div onClick={dis?undefined:onClick} title={m.desc}
+      className={`cw${sel?' sel':''}${dis?' dis':''}`}
+      style={{width:w,height:h,margin:'0 3px',position:'relative'}}>
+      <img src={m.img||''} alt={m.name}
+        style={{width:'100%',height:'100%',borderRadius:10,objectFit:'cover',display:'block'}}
+        onError={e=>{e.target.style.display='none';if(e.target.nextSibling)e.target.nextSibling.style.display='flex';}}/>
+      <div style={{display:'none',width:'100%',height:'100%',borderRadius:10,position:'absolute',top:0,left:0,
+        background:`linear-gradient(160deg,${m.color},${m.border})`,border:`2px solid ${m.border}`,
+        alignItems:'center',justifyContent:'center',flexDirection:'column',color:'white',textAlign:'center',gap:2}}>
+        <span style={{fontSize:sm?18:24}}>{m.emoji||'🃏'}</span>
+        <span style={{fontSize:sm?9:11,fontWeight:900,padding:'0 3px'}}>{m.name}</span>
+      </div>
+      {sel&&<div style={{position:'absolute',inset:0,borderRadius:10,border:'3px solid #facc15',boxShadow:'0 0 16px #facc1588',pointerEvents:'none'}}/>}
+    </div>
+  );
+}
+
+function CardBack({sm}){
+  const w=sm?56:88,h=sm?84:132;
+  return(
+    <div className="cw dis" style={{width:w,height:h,margin:'0 3px',position:'relative'}}>
+      <img src={BACK} alt="back" style={{width:'100%',height:'100%',borderRadius:10,objectFit:'cover'}}
+        onError={e=>{e.target.style.display='none';e.target.nextSibling.style.display='flex';}}/>
+      <div style={{display:'none',width:'100%',height:'100%',borderRadius:10,
+        background:'linear-gradient(160deg,#1e1b4b,#312e81)',border:'2px solid #4338ca',
+        alignItems:'center',justifyContent:'center'}}>
+        <span style={{color:'#a5b4fc',fontWeight:900,fontSize:10,letterSpacing:2}}>CATCH</span>
+      </div>
+    </div>
+  );
+}
+
+function GCard({card,sel,onClick,dis,sm}){
+  if(!card)return null;
+  if(card.type==='number')return<NumCard val={card.value} sel={sel} onClick={onClick} dis={dis} sm={sm}/>;
+  return<ACard type={card.type} sel={sel} onClick={onClick} dis={dis} sm={sm}/>;
+}
+
+// ====== DECK PILE ======
+function DeckPile({count}){
+  return(
+    <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:6}}>
+      <div style={{position:'relative',width:72,height:108}}>
+        {count>=3&&<div style={{position:'absolute',top:-8,left:-6,width:72,height:108,borderRadius:10,
+          background:'linear-gradient(160deg,#1e1b4b,#312e81)',border:'2px solid #4338ca',opacity:.5}}/>}
+        {count>=2&&<div style={{position:'absolute',top:-4,left:-3,width:72,height:108,borderRadius:10,
+          background:'linear-gradient(160deg,#1e1b4b,#312e81)',border:'2px solid #4338ca',opacity:.7}}/>}
+        {count>=1?
+          <div style={{position:'absolute',top:0,left:0,width:72,height:108,borderRadius:10,overflow:'hidden'}}>
+            <img src={BACK} alt="deck" style={{width:'100%',height:'100%',objectFit:'cover'}}
+              onError={e=>{e.target.style.display='none';e.target.nextSibling.style.display='flex';}}/>
+            <div style={{display:'none',width:'100%',height:'100%',borderRadius:10,
+              background:'linear-gradient(160deg,#1e1b4b,#312e81)',alignItems:'center',justifyContent:'center'}}>
+              <span style={{color:'#a5b4fc',fontWeight:900,fontSize:10}}>CATCH</span>
+            </div>
+          </div>
+          :<div style={{width:72,height:108,borderRadius:10,border:'2px dashed rgba(255,255,255,.15)',
+            display:'flex',alignItems:'center',justifyContent:'center'}}>
+            <span style={{color:'rgba(255,255,255,.2)',fontSize:11}}>فاضي</span>
+          </div>
+        }
+      </div>
+      <div style={{background:'rgba(0,0,0,.5)',color:'#fbbf24',fontWeight:700,fontSize:12,
+        padding:'2px 10px',borderRadius:10,border:'1px solid rgba(251,191,36,.3)'}}>{count} كارت</div>
+    </div>
+  );
+}
+
+// ====== PLAYER ZONE ======
+function PlayerZone({player,isBot,isCur,onCardClick,selCard,dis}){
+  const sm=player.hand.length>7;
+  return(
+    <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:8,
+      padding:'10px 20px',borderRadius:20,minWidth:320,maxWidth:700,
+      background:'rgba(0,0,0,.35)',
+      border:`2px solid ${isCur?'#facc15':'rgba(255,255,255,.1)'}`,
+      boxShadow:isCur?'0 0 20px rgba(250,204,21,.15)':'none',
+      transition:'border .3s,box-shadow .3s'}}>
+      {/* Header */}
+      <div style={{display:'flex',alignItems:'center',gap:12,width:'100%',justifyContent:'center'}}>
+        <span style={{fontSize:28}}>{isBot?'🤖':'🧑'}</span>
+        <div>
+          <div style={{color:'white',fontWeight:900,fontSize:17}}>{player.name}</div>
+          <div style={{color:'#fbbf24',fontWeight:700,fontSize:13}}>
+            {player.sets.length} سيتات 🏅
+          </div>
+        </div>
+        <div style={{display:'flex',gap:6}}>
+          {player.immune&&<span style={{background:'#1a3a8a',color:'#93c5fd',padding:'2px 8px',borderRadius:8,fontSize:11,fontWeight:700}}>🛡️ محمي</span>}
+          {player.skipNext&&<span style={{background:'#3d0066',color:'#c084fc',padding:'2px 8px',borderRadius:8,fontSize:11,fontWeight:700}}>⏭️ يُتخطى</span>}
+          {isCur&&<span style={{background:'#14532d',color:'#86efac',padding:'2px 8px',borderRadius:8,fontSize:11,fontWeight:700,animation:'blink 1.5s infinite'}}>● دوره</span>}
+        </div>
+      </div>
+      {/* Collected sets */}
+      {player.sets.length>0&&(
+        <div style={{display:'flex',gap:4,flexWrap:'wrap',justifyContent:'center',
+          padding:'4px 8px',background:'rgba(251,191,36,.08)',borderRadius:10,border:'1px solid rgba(251,191,36,.2)'}}>
+          <span style={{color:'#fbbf24',fontSize:11,fontWeight:700,alignSelf:'center'}}>سيتات: </span>
+          {player.sets.map((v,i)=>(
+            <div key={i} style={{width:30,height:44,borderRadius:5,overflow:'hidden',border:'1.5px solid #fbbf24'}}>
+              <img src={NIMG(v)} alt={v} style={{width:'100%',height:'100%',objectFit:'cover'}}
+                onError={e=>{e.target.style.display='none';}}/>
+            </div>
+          ))}
+        </div>
+      )}
+      {/* Hand */}
+      <div style={{display:'flex',flexWrap:'wrap',justifyContent:'center',gap:2,padding:'4px 0',minHeight:sm?90:140}}>
+        {!player.hand.length
+          ?<span style={{color:'rgba(255,255,255,.25)',fontSize:13,fontStyle:'italic',alignSelf:'center'}}>إيد فاضية</span>
+          :isBot
+            ?player.hand.map(c=><CardBack key={c.id} sm={sm}/>)
+            :player.hand.map(c=>(
+              <GCard key={c.id} card={c}
+                sel={selCard?.id===c.id}
+                onClick={()=>onCardClick&&onCardClick(c)}
+                dis={dis}
+                sm={sm}/>
+            ))
+        }
+      </div>
+      {/* Hand count */}
+      <div style={{color:'rgba(255,255,255,.4)',fontSize:11}}>{player.hand.length} كروت في الإيد</div>
+    </div>
+  );
+}
+
+// ====== MODAL ======
+function Modal({title,sub,onClose,children}){
+  return(
+    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.88)',backdropFilter:'blur(6px)',
+      display:'flex',alignItems:'center',justifyContent:'center',zIndex:200,padding:16}}>
+      <div className="sup" style={{background:'#150505',border:'2px solid #7c2d12',borderRadius:20,
+        padding:24,width:'100%',maxWidth:480,maxHeight:'85vh',overflow:'auto',
+        boxShadow:'0 8px 40px rgba(0,0,0,.8)'}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:4}}>
+          <h2 style={{color:'#fbbf24',fontWeight:900,fontSize:20,margin:0}}>{title}</h2>
+          {onClose&&<button onClick={onClose} style={{background:'none',border:'none',color:'#6b7280',
+            fontSize:22,cursor:'pointer',lineHeight:1,padding:0,marginRight:-4}}>✕</button>}
+        </div>
+        {sub&&<p style={{color:'#9ca3af',fontSize:13,margin:'0 0 16px'}}>{sub}</p>}
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ====== TARGET BUTTONS ======
+function TargetButtons({players,currentIdx,onPick,color}){
+  return(
+    <div style={{display:'flex',gap:12,justifyContent:'center',flexWrap:'wrap'}}>
+      {players.map((p,i)=>i===currentIdx?null:(
+        <button key={p.id} className="btn" onClick={()=>onPick(i)}
+          style={{background:color||'#4b1d1d',color:'white',border:`2px solid ${color?color+'88':'#7c2d12'}`,
+            padding:'14px 32px',borderRadius:14,fontWeight:700,fontSize:18,cursor:'pointer',
+            display:'flex',alignItems:'center',gap:8}}>
+          <span style={{fontSize:24}}>{p.isBot?'🤖':'🧑'}</span>
+          <span>{p.name}</span>
+          <span style={{color:'rgba(255,255,255,.5)',fontSize:13}}>({p.hand.length} كروت)</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ====== NUMBER SELECTOR ======
+function NumberSelector({onPick,highlight}){
+  return(
+    <div style={{display:'flex',flexWrap:'wrap',gap:8,justifyContent:'center'}}>
+      {[0,1,2,3,4,5,6,7,8,9,10].map(n=>(
+        <button key={n} className="btn" onClick={()=>onPick(n)}
+          style={{width:52,height:52,borderRadius:12,fontWeight:900,fontSize:22,
+            background:highlight===n?'#166534':'rgba(255,255,255,.08)',
+            color:highlight===n?'#86efac':'white',
+            border:`2px solid ${highlight===n?'#16a34a':'rgba(255,255,255,.15)'}`,cursor:'pointer'}}>
+          {n}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ====== TOAST ======
+function Toasts({toasts}){
+  const TS={catch:{bg:'#7f1d1d',b:'#dc2626'},success:{bg:'#14532d',b:'#16a34a'},
+    set:{bg:'#78350f',b:'#d97706'},bot:{bg:'#1e1b4b',b:'#4338ca'},info:{bg:'#1e3a5f',b:'#2563eb'}};
+  return(
+    <div style={{position:'fixed',top:14,left:'50%',transform:'translateX(-50%)',
+      display:'flex',flexDirection:'column',gap:8,zIndex:300,pointerEvents:'none',width:360,maxWidth:'95vw'}}>
+      {toasts.map(t=>{const s=TS[t.type]||TS.info;return(
+        <div key={t.id} className="ta"
+          style={{background:s.bg,border:`1.5px solid ${s.b}`,borderRadius:14,
+            padding:'10px 18px',color:'white',fontWeight:700,fontSize:14,
+            boxShadow:'0 6px 24px rgba(0,0,0,.6)',textAlign:'center'}}>
+          {t.msg}
+        </div>
+      );})}
+    </div>
+  );
+}
+
+// ====== BURST ======
+function Burst({bursts,dispatch}){
+  useEffect(()=>{
+    if(!bursts.length)return;
+    const t=setTimeout(()=>dispatch({type:'REMOVE_BURST',id:bursts[0].id}),2400);
+    return()=>clearTimeout(t);
+  },[bursts.length]);
+  if(!bursts.length)return null;
+  return(
+    <div style={{position:'fixed',inset:0,pointerEvents:'none',zIndex:250,
+      display:'flex',alignItems:'center',justifyContent:'center'}}>
+      <div className="burst" style={{textAlign:'center'}}>
+        <div style={{fontSize:90,lineHeight:1}}>🃏</div>
+        <div style={{background:'linear-gradient(135deg,#fbbf24,#f59e0b)',color:'black',fontWeight:900,fontSize:22,
+          padding:'14px 28px',borderRadius:18,boxShadow:'0 8px 32px rgba(0,0,0,.8)',
+          border:'3px solid #fbbf24',marginTop:8}}>
+          {bursts[0].msg}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ====== LOG ======
+function GameLog({log}){
+  const ref=useRef();
+  useEffect(()=>{if(ref.current)ref.current.scrollTop=ref.current.scrollHeight;},[log]);
+  return(
+    <div ref={ref} style={{height:130,overflowY:'auto',background:'rgba(0,0,0,.4)',
+      borderRadius:12,padding:'6px 10px',display:'flex',flexDirection:'column',gap:1}}>
+      {[...log].reverse().map((l,i)=>(
+        <div key={i} style={{fontSize:11,color:`rgba(255,255,255,${i===0?.9:.5})`,
+          borderBottom:'1px solid rgba(255,255,255,.04)',paddingBottom:2,fontWeight:i===0?700:400}}>
+          {l}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ====== ACTION UI ======
+function ActionUI({st,dispatch}){
+  const{phase,players,currentIdx,targetIdx,peekInfo,actionCard,selCard,specialActive}=st;
+  const ac=actionCard||selCard;
+  const cur=players[currentIdx];
+
+  // Peek reveal
+  if(phase==='peek-reveal'&&peekInfo){
+    const tp=players[peekInfo.pIdx];
+    return(
+      <Modal title="👁️ بصت على الكارت" sub={`كارت من إيد ${tp.name}`}>
+        <div style={{textAlign:'center'}}>
+          <div style={{display:'flex',justifyContent:'center',marginBottom:16}}>
+            <GCard card={peekInfo.card} dis/>
+          </div>
+          {peekInfo.card.type==='number'
+            ?<div style={{color:'#fbbf24',fontWeight:900,fontSize:28}}>رقم {peekInfo.card.value}</div>
+            :<div style={{color:'#fbbf24',fontWeight:900,fontSize:22}}>{AM[peekInfo.card.type]?.emoji} {AM[peekInfo.card.type]?.name}</div>
+          }
+          <p style={{color:'#9ca3af',fontSize:13,marginTop:8}}>{AM[peekInfo.card.type]?.desc||''}</p>
+          <button className="btn" onClick={()=>dispatch({type:'DISMISS_PEEK'})}
+            style={{marginTop:16,background:'#166534',color:'white',border:'none',
+              padding:'12px 32px',borderRadius:14,fontWeight:700,fontSize:16,cursor:'pointer'}}>
+            فهمت ✓
+          </button>
+        </div>
+      </Modal>
+    );
+  }
+
+  // Bos bosa - choose player
+  if(phase==='action-bos_bosa'){
+    return(
+      <Modal title="👁️ بص بصة" sub="اختار لاعب تبص على كارت من إيده"
+        onClose={()=>dispatch({type:'DESELECT'})}>
+        <TargetButtons players={players} currentIdx={currentIdx} color="#0d6b5e"
+          onPick={i=>dispatch({type:'ACTION_TARGET',targetIdx:i})}/>
+      </Modal>
+    );
+  }
+
+  // Bos bosa - choose card
+  if(phase==='bos_bosa-pick'){
+    const tp=players[targetIdx];
+    return(
+      <Modal title={`👁️ اختار كارت من إيد ${tp.name}`} sub={`${tp.hand.length} كروت — اختار واحد`}
+        onClose={()=>dispatch({type:'DESELECT'})}>
+        <div style={{display:'flex',flexWrap:'wrap',gap:10,justifyContent:'center'}}>
+          {tp.hand.map((_,i)=>(
+            <button key={i} className="btn" onClick={()=>dispatch({type:'ACTION_TARGET',targetIdx,cardIdx:i})}
+              style={{background:'#1a3a5c',color:'white',border:'1.5px solid #2563eb',
+                padding:'10px 20px',borderRadius:12,fontWeight:700,fontSize:14,cursor:'pointer'}}>
+              كارت {i+1}
+            </button>
+          ))}
+        </div>
+      </Modal>
+    );
+  }
+
+  // Magnet - choose number
+  if(phase==='action-magnatees'){
+    const myNums=[...new Set(cur.hand.filter(c=>c.type==='number').map(c=>c.value))];
+    return(
+      <Modal title="🧲 مغناطيس" sub="اختار رقم معاك — هيجيلك من كل اللاعبين"
+        onClose={()=>dispatch({type:'DESELECT'})}>
+        <div style={{display:'flex',flexWrap:'wrap',gap:10,justifyContent:'center'}}>
+          {myNums.map(n=>(
+            <button key={n} className="btn" onClick={()=>dispatch({type:'MAGNET_ASK',num:n})}
+              style={{width:56,height:56,borderRadius:14,fontWeight:900,fontSize:24,
+                background:'#7a5800',color:'#fbbf24',border:'2px solid #d97706',cursor:'pointer'}}>
+              {n}
+            </button>
+          ))}
+        </div>
+        {!myNums.length&&<p style={{color:'#9ca3af',textAlign:'center'}}>مافيش أرقام في إيدك!</p>}
+      </Modal>
+    );
+  }
+
+  // Herbaiya - choose player
+  if(phase==='action-herbaiya'){
+    return(
+      <Modal title="🦎 الحرباية" sub="اختار لاعب تسرق منه أكشن كارت"
+        onClose={()=>dispatch({type:'DESELECT'})}>
+        <TargetButtons players={players} currentIdx={currentIdx} color="#5a1d75"
+          onPick={i=>dispatch({type:'ACTION_TARGET',targetIdx:i})}/>
+      </Modal>
+    );
+  }
+
+  // Herbaiya - choose card
+  if(phase==='herbaiya-pick'){
+    const tp=players[targetIdx];
+    const acs=tp.hand.filter(c=>c.type!=='number');
+    if(!acs.length) return(
+      <Modal title="🦎 الحرباية" onClose={()=>dispatch({type:'DESELECT'})}>
+        <p style={{color:'#9ca3af',textAlign:'center'}}>{tp.name} مافيش عنده أكشن كروت!</p>
+        <button className="btn" onClick={()=>dispatch({type:'DESELECT'})}
+          style={{display:'block',margin:'16px auto',background:'#4b1d1d',color:'white',
+            border:'none',padding:'10px 24px',borderRadius:12,fontWeight:700,cursor:'pointer'}}>إلغاء</button>
+      </Modal>
+    );
+    return(
+      <Modal title={`🦎 اختار كارت تسرقه من ${tp.name}`}
+        onClose={()=>dispatch({type:'DESELECT'})}>
+        <div style={{display:'flex',gap:12,flexWrap:'wrap',justifyContent:'center'}}>
+          {acs.map(c=>(
+            <div key={c.id} onClick={()=>dispatch({type:'ACTION_TARGET',targetIdx,cardId:c.id})}
+              style={{display:'flex',flexDirection:'column',alignItems:'center',gap:6,cursor:'pointer'}}>
+              <GCard card={c} dis/>
+              <span style={{color:'white',fontSize:12,fontWeight:700}}>{AM[c.type]?.name}</span>
+            </div>
+          ))}
+        </div>
+      </Modal>
+    );
+  }
+
+  // Single target modals
+  const singleTargetMeta={
+    'action-sayad':    {title:'🎯 صياد',          sub:'اختار لاعب تسحب منه كارت عشوائي',color:'#7a3300'},
+    'action-kefaya_3leik':{title:'🖐️ كفاية عليك',sub:'اختار لاعب — هيتوقف بعد أول طلب',color:'#7a0a0a'},
+    'action-msh_shaifak': {title:'🙈 مش شايفك',   sub:'اختار لاعب — مش هيلعب دوره الجاي',color:'#260044'},
+    'action-hat_enta':    {title:'✋ هات انت',      sub:'اختار لاعب تاخد منه كارت',        color:'#6e0b0b'},
+    'action-badl_edain':  {title:'🤝 بدل إيدي',    sub:'اختار لاعب تبدل معاه إيدك',        color:'#065843'},
+    'action-od_le7afak':  {title:'📜 قد لحافك',    sub:'اختار لاعب للصفقة التبادلية',       color:'#3d0060'},
+  };
+  if(singleTargetMeta[phase]){
+    const m=singleTargetMeta[phase];
+    return(
+      <Modal title={m.title} sub={m.sub} onClose={()=>dispatch({type:'DESELECT'})}>
+        <TargetButtons players={players} currentIdx={currentIdx} color={m.color}
+          onPick={i=>dispatch({type:'ACTION_TARGET',targetIdx:i})}/>
+      </Modal>
+    );
+  }
+
+  // Normal choose target (after selecting number card)
+  if(phase==='choose-target'){
+    return(
+      <Modal title={`اطلب رقم ${st.askedNum} من مين؟`}
+        sub="اختار اللاعب اللي هتطلب منه"
+        onClose={()=>dispatch({type:'DESELECT'})}>
+        <TargetButtons players={players} currentIdx={currentIdx} color="#3b1a1a"
+          onPick={i=>dispatch({type:'ASK_PLAYER',targetIdx:i})}/>
+      </Modal>
+    );
+  }
+
+  // Special ask - choose number and target
+  if(phase==='ask-special'){
+    const [sNum,setSNum]=useState(null);
+    return(
+      <Modal title="💎 اسبيشيال — اطلب أي رقم"
+        sub="اختار الرقم الأول، وبعدين اختار من تطلب منه"
+        onClose={()=>dispatch({type:'DESELECT'})}>
+        <div style={{marginBottom:16}}>
+          <p style={{color:'#9ca3af',fontSize:13,marginBottom:8}}>اختار الرقم:</p>
+          <NumberSelector onPick={n=>setSNum(n)} highlight={sNum}/>
+        </div>
+        {sNum!==null&&(
+          <>
+            <p style={{color:'#9ca3af',fontSize:13,marginBottom:8}}>اطلب من:</p>
+            <TargetButtons players={players} currentIdx={currentIdx} color="#7a6000"
+              onPick={i=>dispatch({type:'ASK_SPECIAL',targetIdx:i,num:sNum})}/>
+          </>
+        )}
+      </Modal>
+    );
+  }
+
+  // kdab same as special
+  if(phase==='use-action'&&ac){
+    const m=AM[ac.type]||{};
+    return(
+      <Modal title={`${m.emoji||'🃏'} ${m.name}`} sub={m.desc}
+        onClose={()=>dispatch({type:'DESELECT'})}>
+        <div style={{textAlign:'center'}}>
+          <div style={{display:'flex',justifyContent:'center',marginBottom:16}}>
+            <GCard card={ac} dis/>
+          </div>
+          <div style={{display:'flex',gap:12,justifyContent:'center',flexWrap:'wrap'}}>
+            <button className="btn" onClick={()=>dispatch({type:'PLAY_ACTION'})}
+              style={{background:'#166534',color:'white',border:'none',
+                padding:'13px 30px',borderRadius:14,fontWeight:700,fontSize:17,cursor:'pointer'}}>
+              العب ✓
+            </button>
+            <button className="btn" onClick={()=>dispatch({type:'DESELECT'})}
+              style={{background:'#4b1d1d',color:'#fca5a5',border:'none',
+                padding:'13px 24px',borderRadius:14,fontWeight:700,fontSize:17,cursor:'pointer'}}>
+              إلغاء ✕
+            </button>
+          </div>
+        </div>
+      </Modal>
+    );
+  }
+
+  return null;
+}
+
+// ====== APP ======
+function App(){
+  const[st,dispatch]=useReducer(reducer,null,initGame);
+  const botRef=useRef();
+
+  // Remove old toasts
+  useEffect(()=>{
+    if(!st.toasts.length)return;
+    const t=setTimeout(()=>dispatch({type:'REMOVE_TOAST',id:st.toasts[0].id}),4200);
+    return()=>clearTimeout(t);
+  },[st.toasts.length,st.toasts[0]?.id]);
+
+  // Bot turn
+  useEffect(()=>{
+    if(st.phase==='bot-turn'&&!st.gameOver){
+      const delay=800+Math.random()*700;
+      botRef.current=setTimeout(()=>dispatch({type:'BOT_TURN'}),delay);
+      return()=>clearTimeout(botRef.current);
+    }
+  },[st.phase,st.gameOver,st.currentIdx,st.successCount]);
+
+  const isPlayerTurn=st.currentIdx===0&&!st.gameOver;
+  const canAct=isPlayerTurn&&st.phase==='idle';
+  const isBotTurn=st.currentIdx===1||st.phase==='bot-turn';
+
+  const handleCardClick=c=>{
+    if(!canAct)return;
+    if(st.selCard?.id===c.id) dispatch({type:'DESELECT'});
+    else dispatch({type:'SELECT_CARD',card:c});
+  };
+
+  // Game Over screen
+  if(st.gameOver){
+    const p=st.players[0],b=st.players[1];
+    const pw=p.sets.length>b.sets.length,tie=p.sets.length===b.sets.length;
+    return(
+      <div style={{height:'100vh',display:'flex',alignItems:'center',justifyContent:'center',
+        background:'radial-gradient(ellipse at center,#2d0a0a,#0a0202)',fontFamily:'Cairo,Tajawal,sans-serif'}}>
+        <div style={{background:'#1a0505',border:'2px solid #7c2d12',borderRadius:24,
+          padding:40,textAlign:'center',maxWidth:480,width:'90%',
+          boxShadow:'0 12px 60px rgba(0,0,0,.9)'}}>
+          <div style={{fontSize:90,marginBottom:8,animation:'burst 1s ease 0s 1 both'}}>
+            {tie?'🤝':pw?'🏆':'🤖'}
+          </div>
+          <h1 style={{margin:'0 0 4px',fontSize:38,fontWeight:900,
+            color:tie?'#9ca3af':pw?'#fbbf24':'#f87171'}}>
+            {tie?'تعادل!':pw?'أنت فزت!':'البوت فاز!'}
+          </h1>
+          <p style={{color:'#6b7280',fontSize:14,marginBottom:20}}>
+            {tie?'نفس عدد السيتات!':pw?'برافو عليك!':'حاول تاني!'}
+          </p>
+          <div style={{display:'flex',justifyContent:'center',gap:28,marginBottom:24}}>
+            {[p,b].map(pl=>(
+              <div key={pl.id} style={{textAlign:'center',padding:'16px 24px',borderRadius:16,
+                background:pl.sets.length===Math.max(p.sets.length,b.sets.length)&&!tie
+                  ?'rgba(251,191,36,.08)':'rgba(255,255,255,.03)',
+                border:pl.sets.length===Math.max(p.sets.length,b.sets.length)&&!tie
+                  ?'1.5px solid rgba(251,191,36,.3)':'1.5px solid rgba(255,255,255,.07)'}}>
+                <div style={{fontSize:32}}>{pl.isBot?'🤖':'🧑'}</div>
+                <div style={{color:'white',fontWeight:700,fontSize:16,marginTop:4}}>{pl.name}</div>
+                <div style={{color:'#fbbf24',fontWeight:900,fontSize:40,lineHeight:1.1}}>{pl.sets.length}</div>
+                <div style={{color:'#9ca3af',fontSize:12}}>سيتات</div>
+                {pl.sets.length>0&&(
+                  <div style={{display:'flex',gap:3,flexWrap:'wrap',justifyContent:'center',marginTop:8}}>
+                    {pl.sets.map((v,i)=>(
+                      <div key={i} style={{width:24,height:36,borderRadius:4,overflow:'hidden',
+                        border:'1px solid #fbbf24'}}>
+                        <img src={NIMG(v)} alt={v} style={{width:'100%',height:'100%',objectFit:'cover'}}
+                          onError={e=>{e.target.style.display='none';}}/>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+          <button className="btn" onClick={()=>dispatch({type:'RESTART'})}
+            style={{background:'linear-gradient(135deg,#166534,#14532d)',color:'white',border:'none',
+              padding:'16px 48px',borderRadius:16,fontWeight:900,fontSize:20,cursor:'pointer',
+              boxShadow:'0 4px 20px rgba(22,101,52,.4)'}}>
+            🔄 العب تاني
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const dirArrow=st.direction===1?'↩':'↪';
+  const statusMsg=isBotTurn?'🤖 البوت بيلعب...':canAct?'🎴 اختار كارت من إيدك':'⏳ اكمل حركتك...';
+
+  return(
+    <div style={{height:'100vh',display:'flex',flexDirection:'column',overflow:'hidden',
+      fontFamily:'Cairo,Tajawal,sans-serif',
+      background:'radial-gradient(ellipse at 50% 50%,#2d0a0a 0%,#130404 100%)'}}>
+
+      <Toasts toasts={st.toasts}/>
+      <Burst bursts={st.bursts} dispatch={dispatch}/>
+      <ActionUI st={st} dispatch={dispatch}/>
+
+      {/* Top bar */}
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',
+        padding:'8px 16px',background:'rgba(0,0,0,.6)',
+        borderBottom:'1px solid rgba(255,255,255,.08)',flexShrink:0}}>
+        <div style={{display:'flex',alignItems:'center',gap:8}}>
+          <span style={{color:'#fbbf24',fontWeight:900,fontSize:22}}>🃏 CATCH</span>
+          <span style={{color:'rgba(255,255,255,.3)',fontSize:14}}>{dirArrow}</span>
+        </div>
+        <div style={{
+          background:isBotTurn?'rgba(99,102,241,.2)':canAct?'rgba(22,163,74,.2)':'rgba(251,191,36,.15)',
+          border:`1px solid ${isBotTurn?'#6366f1':canAct?'#16a34a':'#fbbf24'}`,
+          color:isBotTurn?'#a5b4fc':canAct?'#86efac':'#fbbf24',
+          padding:'4px 14px',borderRadius:12,fontWeight:700,fontSize:13,
+          display:'flex',alignItems:'center',gap:6}}>
+          {isBotTurn&&<span style={{display:'flex',gap:3}}>
+            <span className="blink">●</span>
+            <span className="blink" style={{animationDelay:'.2s'}}>●</span>
+            <span className="blink" style={{animationDelay:'.4s'}}>●</span>
+          </span>}
+          {statusMsg}
+        </div>
+        <button className="btn" onClick={()=>dispatch({type:'RESTART'})}
+          style={{background:'rgba(255,255,255,.07)',color:'rgba(255,255,255,.6)',
+            border:'1px solid rgba(255,255,255,.15)',padding:'6px 14px',borderRadius:10,
+            fontWeight:700,fontSize:12,cursor:'pointer'}}>
+          🔄 رستارت
+        </button>
+      </div>
+
+      {/* Bot zone */}
+      <div style={{flexShrink:0,padding:'8px 16px',display:'flex',justifyContent:'center'}}>
+        <PlayerZone player={st.players[1]} isBot={true}
+          isCur={isBotTurn} dis={true} selCard={null}/>
+      </div>
+
+      {/* Center */}
+      <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',
+        gap:16,padding:'0 16px',minHeight:0}}>
+
+        <DeckPile count={st.deck.length}/>
+
+        {/* Score + status */}
+        <div style={{background:'rgba(0,0,0,.35)',borderRadius:16,padding:'12px 16px',
+          display:'flex',flexDirection:'column',gap:8,minWidth:140,alignItems:'center',
+          border:'1px solid rgba(255,255,255,.08)'}}>
+          <div style={{color:'#9ca3af',fontSize:11,fontWeight:700}}>النقاط</div>
+          <div style={{display:'flex',flexDirection:'column',gap:4,width:'100%'}}>
+            <div style={{display:'flex',justifyContent:'space-between',
+              background:'rgba(255,255,255,.05)',borderRadius:8,padding:'6px 10px'}}>
+              <span style={{color:'white',fontSize:14}}>🧑 {st.players[0].name}</span>
+              <span style={{color:'#fbbf24',fontWeight:900,fontSize:16}}>{st.players[0].sets.length}</span>
+            </div>
+            <div style={{display:'flex',justifyContent:'space-between',
+              background:'rgba(255,255,255,.05)',borderRadius:8,padding:'6px 10px'}}>
+              <span style={{color:'white',fontSize:14}}>🤖 {st.players[1].name}</span>
+              <span style={{color:'#fbbf24',fontWeight:900,fontSize:16}}>{st.players[1].sets.length}</span>
+            </div>
+          </div>
+          {st.kefTarget!==null&&(
+            <div style={{background:'rgba(170,17,17,.2)',border:'1px solid #aa1111',
+              borderRadius:8,padding:'4px 8px',color:'#fca5a5',fontSize:11,fontWeight:700,textAlign:'center'}}>
+              🖐️ كفاية عليك على {st.players[st.kefTarget]?.name}
+            </div>
+          )}
+          {(st.specialActive||st.kdabActive)&&(
+            <div style={{background:'rgba(122,96,0,.2)',border:'1px solid #d97706',
+              borderRadius:8,padding:'4px 8px',color:'#fbbf24',fontSize:11,fontWeight:700,textAlign:'center'}}>
+              {st.specialActive?'💎 اسبيشيال فعّال':''}{st.kdabActive?'🤥 كداب فعّال':''}
+            </div>
+          )}
+        </div>
+
+        {/* Log */}
+        <div style={{flex:1,maxWidth:260}}>
+          <div style={{color:'#6b7280',fontSize:11,fontWeight:700,marginBottom:4,textAlign:'center'}}>
+            📋 سجل الأحداث
+          </div>
+          <GameLog log={st.log}/>
+        </div>
+      </div>
+
+      {/* Player zone */}
+      <div style={{flexShrink:0,padding:'8px 16px',display:'flex',justifyContent:'center'}}>
+        <PlayerZone player={st.players[0]} isBot={false}
+          isCur={!isBotTurn} onCardClick={handleCardClick}
+          selCard={st.selCard} dis={!canAct}/>
+      </div>
+
+      {/* Help bar */}
+      <div style={{flexShrink:0,padding:'4px 16px',
+        background:'rgba(0,0,0,.5)',borderTop:'1px solid rgba(255,255,255,.05)',
+        display:'flex',justifyContent:'center',gap:16,flexWrap:'wrap'}}>
+        {Object.entries(AM).map(([k,m])=>(
+          <span key={k} title={m.desc}
+            style={{color:'rgba(255,255,255,.35)',fontSize:10,cursor:'help'}}>
+            {m.emoji} {m.name}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
