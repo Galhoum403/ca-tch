@@ -1,4 +1,4 @@
-package com.catch.vip;
+﻿package com.catchgame.vip;
 
 import com.getcapacitor.BridgeActivity;
 
