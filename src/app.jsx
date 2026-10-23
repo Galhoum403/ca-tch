@@ -236,24 +236,134 @@ const CARD_BACK_SKINS = [
   { id: 'ruby_velvet', name: 'المخمل الأحمر', bg: 'from-red-600 to-rose-900', border: 'border-rose-300', cost: 20 },
 ];
 
-// Realistic Meme Photo Stickers inspired by Plan Images 1, 6, 7
+// Authentic Egyptian Card-Table Meme Reaction Stickers
 const MEME_REACTION_STICKERS = [
   { id: 'm1', text: 'ههههه شرير 😈', emoji: '😈', label: 'ضحكة الشر' },
-  { id: 'm2', text: 'شيل الصوبع! 👃', emoji: '👃', label: 'شيل الصوبع' },
-  { id: 'm3', text: 'يا خبر أبيض! 😱', emoji: '😱', label: 'صدمة' },
-  { id: 'm4', text: 'في الجبهة 🎯', emoji: '🎯', label: 'في الجبهة' },
-  { id: 'm5', text: 'شاي خمسينة ☕', emoji: '☕', label: 'شاي رايق' },
-  { id: 'm6', text: 'مبتهددش 😤', emoji: '😤', label: 'ولا بيهمني' },
-  { id: 'm7', text: 'خلاص شطبت 💀', emoji: '💀', label: 'ميت ضحك' },
-  { id: 'm8', text: 'عاش يا وحش 👏', emoji: '👏', label: 'تسقيف' },
+  { id: 'm2', text: 'يا خبر أبيض! 😱', emoji: '😱', label: 'صدمة' },
+  { id: 'm3', text: 'شاي خمسينة في المخ ☕', emoji: '☕', label: 'شاي رايق' },
+  { id: 'm4', text: 'عاش يا وحش! 👏', emoji: '👏', label: 'عاش يا بطل' },
+  { id: 'm5', text: 'اللعب ولّع نار! 🔥', emoji: '🔥', label: 'حريقة' },
+  { id: 'm6', text: 'ههههههه مش قادر 😂', emoji: '😂', label: 'ميت ضحك' },
+  { id: 'm7', text: 'ولا بيهمني ولا بتهدد 😤', emoji: '😤', label: 'مبتهددش' },
+  { id: 'm8', text: 'يا عيني عالورق! 😭', emoji: '😭', label: 'حرااام' },
+  { id: 'm9', text: 'في الجبهة في الجون 🎯', emoji: '🎯', label: 'في الجبهة' },
+  { id: 'm10', text: 'خلاص شطبت وودعت 💀', emoji: '💀', label: 'خلاص شطبت' },
 ];
 
-// Daily Quests inspired by Plan Image 2
+// Daily Quests with 0 initial progress
 const INITIAL_QUESTS = [
-  { id: 'q1', text: 'العب 3 جولات في أي مود', target: 3, progress: 1, rewardType: 'gems', rewardAmount: 5, claimed: false },
-  { id: 'q2', text: 'اقفل لِمّة واحدة بالجوكر أو الأرقام', target: 1, progress: 1, rewardType: 'coins', rewardAmount: 40, claimed: false },
-  { id: 'q3', text: 'مكافأة الدخول اليومية المجانية', target: 1, progress: 1, rewardType: 'coins', rewardAmount: 30, claimed: false },
+  { id: 'q1', text: 'العب 3 جولات في أي مود', textEn: 'Play 3 rounds in any mode', target: 3, progress: 0, rewardType: 'gems', rewardAmount: 5, claimed: false },
+  { id: 'q2', text: 'اقفل لِمّة واحدة بالجوكر أو الأرقام', textEn: 'Complete 1 set using numbers or Joker', target: 1, progress: 0, rewardType: 'coins', rewardAmount: 40, claimed: false },
+  { id: 'q3', text: 'مكافأة الدخول اليومية المجانية', textEn: 'Daily free login bonus', target: 1, progress: 1, rewardType: 'coins', rewardAmount: 30, claimed: false },
 ];
+
+// Bilingual Translations (Arabic / English)
+const TRANSLATIONS = {
+  ar: {
+    playNow: 'العب الآن',
+    privateTable: 'طاولة خاصة',
+    training: 'تدريب',
+    botTraining: 'تدريب فوري مع البوتات (أوفلاين)',
+    quickTable: 'طاولة سريعة (عامة)',
+    privateTableModalTitle: 'طاولة خاصة برمز سري',
+    settings: 'إعدادات اللعبة',
+    soundFx: 'مؤثرات الصوت',
+    editProfile: 'تعديل الملف الشخصي',
+    rules: 'قواعد اللعبة الرسمية',
+    serverIp: 'خادم اللعبة (Server IP):',
+    serverSubtitle: 'للهواتف والأونلاين على الشبكة',
+    saveAndReconnect: 'حفظ وإعادة الاتصال 🔄',
+    closeSettings: 'إغلاق الإعدادات ✓',
+    language: 'لغة اللعبة (Language):',
+    connected: 'متصل بالسيرفر',
+    disconnected: 'غير متصل بالسيرفر',
+    connecting: 'جاري الاتصال...',
+    notConnectedAlert: '⚠️ غير متصل بسيرفر اللعبة حالياً!\nتأكد من تشغيل السيرفر وأن هاتفك متصل بنفس شبكة الواي فاي.',
+    shop: 'المتجر',
+    custom: 'التخصيص',
+    home: 'الرئيسية',
+    friends: 'الأصدقاء',
+    leagues: 'المستويات',
+    dailyQuests: 'المهام اليومية',
+    resetsDaily: 'تتجدد يومياً',
+    claim: 'استلم',
+    claimed: 'تم ✓',
+    comingSoon: 'قريباً 🔒',
+    comingSoonAlert: 'الشحن والشراء عبر Google Play سيكون متاحاً قريباً! 🔒',
+    shareViaApps: 'دعوة أصحابك عبر واتساب / التطبيقات',
+    copyLink: 'نسخ رابط اللعبة المباشر 📋',
+    linkCopied: 'تم نسخ الرابط للحافظة! 📋',
+    leaveTable: '🚪 مغادرة',
+    tableNumber: 'طاولة رقم',
+    inviteCode: 'كود الطاولة للمشاركة والدعوة',
+    playersAroundTable: 'اللاعبين حول الطاولة',
+    waitingPlayers: 'في انتظار باقي اللاعبين للبدء...',
+    startGame: 'بدء اللعبة 🚀',
+    addBot: 'إضافة بوت 🤖',
+    createPrivateTable: '🏠 إنشاء طاولة خاصة جديدة',
+    orEnterCode: 'أو ادخل برمز طاولة صاحبك',
+    join: 'انضم ➜',
+    readRules: 'قراءة القواعد 📖',
+    rulesGotIt: 'فهمت القواعد.. يلا نلعب! 🚀',
+    saveProfile: 'حفظ الملف الشخصي ✓',
+    playerNameLabel: 'اسم اللاعب',
+    chooseAvatar: 'اختر شخصية VIP',
+    liveMic: '🎙️ مايك الطاولة',
+    micOn: '🎙️ مايك شغال',
+  },
+  en: {
+    playNow: 'Play Now',
+    privateTable: 'Private Table',
+    training: 'Training',
+    botTraining: 'Instant Bot Training',
+    quickTable: 'Quick Table (Public)',
+    privateTableModalTitle: 'Private Table with Code',
+    settings: 'Game Settings',
+    soundFx: 'Sound Effects',
+    editProfile: 'Edit Profile',
+    rules: 'Official Game Rules',
+    serverIp: 'Game Server (Server IP):',
+    serverSubtitle: 'For phones & local network play',
+    saveAndReconnect: 'Save & Reconnect 🔄',
+    closeSettings: 'Close Settings ✓',
+    language: 'Language:',
+    connected: 'Server Connected',
+    disconnected: 'Server Disconnected',
+    connecting: 'Connecting...',
+    notConnectedAlert: '⚠️ Not connected to the game server!\nPlease ensure the server is running and your phone is on the same Wi-Fi network.',
+    shop: 'Shop',
+    custom: 'Custom',
+    home: 'Home',
+    friends: 'Friends',
+    leagues: 'Leagues',
+    dailyQuests: 'Daily Quests',
+    resetsDaily: 'Resets daily',
+    claim: 'Claim',
+    claimed: 'Done ✓',
+    comingSoon: 'Coming Soon 🔒',
+    comingSoonAlert: 'Store purchases will be available soon in the upcoming update! 🔒',
+    shareViaApps: 'Invite Friends via WhatsApp / Apps',
+    copyLink: 'Copy Direct Game Link 📋',
+    linkCopied: 'Link copied to clipboard! 📋',
+    leaveTable: '🚪 Leave Table',
+    tableNumber: 'Table #',
+    inviteCode: 'Table Code for Invitation',
+    playersAroundTable: 'Players Around Table',
+    waitingPlayers: 'Waiting for players to start...',
+    startGame: 'Start Game 🚀',
+    addBot: 'Add Bot 🤖',
+    createPrivateTable: '🏠 Create New Private Table',
+    orEnterCode: 'Or enter a friend\'s table code',
+    join: 'Join ➜',
+    readRules: 'Read Rules 📖',
+    rulesGotIt: 'Understood.. Let\'s Play! 🚀',
+    saveProfile: 'Save Profile ✓',
+    playerNameLabel: 'Player Name',
+    chooseAvatar: 'Choose VIP Avatar',
+    liveMic: '🎙️ Table Mic',
+    micOn: '🎙️ Mic Active',
+  }
+};
 
 function getCardImage(card) {
   if (!card) return '/cards/card_TCH.png';
@@ -880,14 +990,31 @@ function App() {
   const [shopSubtab, setShopSubtab] = useState('stickers');
   const [customSubtab, setCustomSubtab] = useState('avatars');
 
-  // Economy States (Coins & Gems matching Plan Images)
+  // Language State (Default: Arabic, with English support)
+  const [lang, setLang] = useState(() => localStorage.getItem('catch_lang') || 'ar');
+  const t = (key) => TRANSLATIONS[lang]?.[key] || TRANSLATIONS['ar']?.[key] || key;
+
+  // Realtime Connection State
+  const [connectionStatus, setConnectionStatus] = useState('connecting'); // 'connected' | 'disconnected' | 'connecting'
+
+  // Economy States (Coins & Gems with clean starting defaults: 500 Coins, 10 Gems)
   const [coins, setCoins] = useState(() => {
     const saved = localStorage.getItem('catch_coins');
-    return saved !== null ? parseInt(saved, 10) : 1863;
+    if (saved !== null) {
+      const val = parseInt(saved, 10);
+      if (val === 1863) return 500; // Reset old mock value
+      return isNaN(val) ? 500 : val;
+    }
+    return 500;
   });
   const [gems, setGems] = useState(() => {
     const saved = localStorage.getItem('catch_gems');
-    return saved !== null ? parseInt(saved, 10) : 4615;
+    if (saved !== null) {
+      const val = parseInt(saved, 10);
+      if (val === 4615) return 10; // Reset old mock value
+      return isNaN(val) ? 10 : val;
+    }
+    return 10;
   });
 
   const [selectedCardBack, setSelectedCardBack] = useState(() => localStorage.getItem('catch_card_back') || 'classic');
@@ -906,11 +1033,25 @@ function App() {
     return ['classic'];
   });
 
-  // Daily Quests State
+  // Daily Quests State (tracks calendar day to prevent repeat claim exploit)
   const [quests, setQuests] = useState(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    const lastClaimDate = localStorage.getItem('catch_last_daily_claim');
     try {
       const saved = localStorage.getItem('catch_quests');
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed.map(q => {
+          if (q.id === 'q3') {
+            return { ...q, claimed: lastClaimDate === today, progress: 1 };
+          }
+          // Reset legacy mock progress
+          if ((q.id === 'q1' || q.id === 'q2') && q.progress > 0 && !localStorage.getItem('catch_stats')) {
+            return { ...q, progress: 0, claimed: false };
+          }
+          return q;
+        });
+      }
     } catch(e) {}
     return INITIAL_QUESTS;
   });
@@ -937,13 +1078,17 @@ function App() {
   };
 
   const handleClaimQuest = (questId) => {
+    const today = new Date().toISOString().slice(0, 10);
     setQuests(prev => {
       const next = prev.map(q => {
-        if (q.id === questId && !q.claimed) {
+        if (q.id === questId && !q.claimed && q.progress >= q.target) {
           if (q.rewardType === 'gems') addGems(q.rewardAmount);
           else addCoins(q.rewardAmount);
           soundFx.init();
           soundFx.play('celebration');
+          if (q.id === 'q3') {
+            localStorage.setItem('catch_last_daily_claim', today);
+          }
           return { ...q, claimed: true };
         }
         return q;
@@ -953,15 +1098,67 @@ function App() {
     });
   };
 
+  // Helper to get active server URL for sharing and connections
+  const getServerBaseUrl = () => {
+    const custom = localStorage.getItem('catch_server_url');
+    if (custom && custom.trim()) return custom.trim().replace(/\/+$/, '');
+    const isNativeCapacitor = window.Capacitor?.isNativePlatform?.() || window.location.protocol === 'capacitor:' || window.location.protocol === 'file:' || (window.location.hostname === 'localhost' && !window.location.port);
+    if (isNativeCapacitor) return 'http://192.168.1.15:3000';
+    return window.location.origin;
+  };
+
+  // Check connection before launching any room
+  const ensureConnected = () => {
+    if (connectionStatus !== 'connected' || !socketRef.current?.connected) {
+      soundFx.init();
+      soundFx.play('impact');
+      setErrorMsg(t('notConnectedAlert'));
+      setShowSettingsModal(true);
+      return false;
+    }
+    return true;
+  };
+
+  // Direct 1-Click Bot Match via Dedicated Server Event
   const handleStartBotTraining = () => {
     soundFx.init();
+    if (!ensureConnected()) return;
     soundFx.play('celebration');
-    autoStartBotsRef.current = true;
-    const finalName = playerName.trim() || 'لاعب VIP';
+    const finalName = playerName.trim() || (lang === 'en' ? 'VIP Player' : 'لاعب VIP');
     setPlayerName(finalName);
     localStorage.setItem('catch_name', finalName);
     localStorage.setItem('catch_avatar', avatar);
-    socketRef.current.emit('create_room', { name: finalName, avatar, userId, sessionToken });
+    socketRef.current.emit('create_bot_room', { name: finalName, avatar, userId, sessionToken });
+  };
+
+  // Native Multi-App Share sheet (WhatsApp, WA Business, Telegram, SMS, etc.)
+  const handleShareInvite = async (roomCode) => {
+    soundFx.init();
+    soundFx.play('snap');
+    const base = getServerBaseUrl();
+    const shareUrl = `${base}/?room=${roomCode || ''}`;
+    const title = 'CATCH VIP';
+    const text = lang === 'en'
+      ? `🃏 Join my CATCH table [${roomCode}]! Click the link to play:\n${shareUrl}`
+      : `🃏 تعال العب معايا كاتش أونلاين على طاولة VIP رقم [${roomCode}]!\nاضغط على الرابط للانضمام مباشرة:\n${shareUrl}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, text, url: shareUrl });
+        return;
+      } catch(err) {
+        if (err.name === 'AbortError') return;
+      }
+    }
+
+    try {
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(shareUrl);
+        setErrorMsg(t('linkCopied'));
+        setTimeout(() => setErrorMsg(''), 2500);
+      }
+    } catch(e) {}
+    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
   };
 
   const handleSelectAvatar = (av) => {
@@ -1037,7 +1234,7 @@ function App() {
   };
 
   const [serverUrlInput, setServerUrlInput] = useState(() => {
-    return localStorage.getItem('catch_server_url') || '';
+    return localStorage.getItem('catch_server_url') || 'http://192.168.1.15:3000';
   });
 
   useEffect(() => {
@@ -1051,8 +1248,9 @@ function App() {
     const socket = targetUrl ? io(targetUrl, { transports: ['websocket', 'polling'] }) : io({ transports: ['websocket', 'polling'] });
     socketRef.current = socket;
 
-    // Automatic reconnect on connect/reload if in an active room
+    // Realtime connection tracking
     socket.on('connect', () => {
+      setConnectionStatus('connected');
       const savedRoom = localStorage.getItem('catch_last_room');
       const savedName = localStorage.getItem('catch_name') || playerName;
       if (savedRoom) {
@@ -1063,6 +1261,15 @@ function App() {
           name: savedName
         });
       }
+    });
+
+    socket.on('disconnect', () => {
+      setConnectionStatus('disconnected');
+    });
+
+    socket.on('connect_error', (err) => {
+      setConnectionStatus('disconnected');
+      console.warn('Socket connect_error:', err?.message || err);
     });
 
     // Check URL parameter auto-join (?room=CODE)
@@ -1661,23 +1868,27 @@ function App() {
   };
 
   const handleCreateRoom = () => {
-    const finalName = playerName.trim() || 'لاعب VIP';
-    setPlayerName(finalName);
     soundFx.init();
+    if (!ensureConnected()) return;
+    soundFx.play('celebration');
+    const finalName = playerName.trim() || (lang === 'en' ? 'VIP Player' : 'لاعب VIP');
+    setPlayerName(finalName);
     localStorage.setItem('catch_name', finalName);
     localStorage.setItem('catch_avatar', avatar);
     socketRef.current.emit('create_room', { name: finalName, avatar, userId, sessionToken });
   };
 
   const handleJoinRoom = () => {
+    soundFx.init();
+    if (!ensureConnected()) return;
     if (joinCode.length !== 4) {
-      setErrorMsg('كود الغرفة يتكون من 4 أحرف!');
+      setErrorMsg(lang === 'en' ? 'Room code must be 4 characters!' : 'كود الغرفة يتكون من 4 أحرف!');
       setTimeout(() => setErrorMsg(''), 2500);
       return;
     }
-    const finalName = playerName.trim() || 'لاعب VIP';
+    soundFx.play('celebration');
+    const finalName = playerName.trim() || (lang === 'en' ? 'VIP Player' : 'لاعب VIP');
     setPlayerName(finalName);
-    soundFx.init();
     localStorage.setItem('catch_name', finalName);
     localStorage.setItem('catch_avatar', avatar);
     socketRef.current.emit('join_room', { code: joinCode, name: finalName, avatar, userId, sessionToken });
@@ -1801,26 +2012,42 @@ function App() {
         <header className="w-full shrink-0 px-3 pt-3 pb-2 flex items-center justify-between z-30 border-b"
                 style={{ paddingTop: 'max(10px, env(safe-area-inset-top))', borderColor:'rgba(0,212,255,0.15)', background:'rgba(5,8,16,0.9)', backdropFilter:'blur(12px)' }}>
           
-          {/* Left: Gems & Coins */}
+          {/* Left: Gems & Coins (Click opens Shop) */}
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 px-2.5 py-1 rounded-xl border text-xs font-black"
+            <div onClick={() => { setActiveTab('shop'); setShopSubtab('currency'); }}
+                 className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-xs font-black cursor-pointer transition hover:scale-105 active:scale-95"
+                 title="المتجر وبنك الجواهر"
                  style={{borderColor:'rgba(0,212,255,0.4)', background:'rgba(0,212,255,0.07)', color:'var(--neon-blue)', textShadow:'0 0 8px var(--neon-blue)'}}>
               <span>💎</span>
               <span>{gems}</span>
-              <button onClick={() => addGems(50)} className="w-4 h-4 rounded-full flex items-center justify-center text-xs font-black"
-                      style={{background:'var(--neon-blue)', color:'#000'}}>+</button>
+              <span className="text-[10px] opacity-70 font-bold">+</span>
             </div>
-            <div className="flex items-center gap-1 px-2.5 py-1 rounded-xl border text-xs font-black"
+            <div onClick={() => { setActiveTab('shop'); setShopSubtab('currency'); }}
+                 className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-xs font-black cursor-pointer transition hover:scale-105 active:scale-95"
+                 title="المتجر وبنك العملات"
                  style={{borderColor:'rgba(255,215,0,0.4)', background:'rgba(255,215,0,0.07)', color:'var(--neon-gold)', textShadow:'0 0 8px var(--neon-gold)'}}>
               <span>⭐</span>
               <span>{coins}</span>
-              <button onClick={() => addCoins(300)} className="w-4 h-4 rounded-full flex items-center justify-center text-xs font-black"
-                      style={{background:'var(--neon-gold)', color:'#000'}}>+</button>
+              <span className="text-[10px] opacity-70 font-bold">+</span>
             </div>
           </div>
 
-          {/* Right: Avatar Pill & Settings */}
+          {/* Right: Connection Status & Avatar Pill & Settings */}
           <div className="flex items-center gap-1.5">
+            <div onClick={() => setShowSettingsModal(true)}
+                 className={`flex items-center gap-1 px-2 py-1 rounded-xl border text-[10px] font-bold cursor-pointer transition ${
+                   connectionStatus === 'connected' 
+                     ? 'border-emerald-400/40 bg-emerald-500/10 text-emerald-300' 
+                     : connectionStatus === 'connecting'
+                       ? 'border-yellow-400/40 bg-yellow-500/10 text-yellow-300 animate-pulse'
+                       : 'border-red-500/50 bg-red-500/15 text-red-300 animate-pulse'
+                 }`}
+                 title={connectionStatus === 'connected' ? 'السيرفر متصل جاهز للعب' : 'انقر لضبط عنوان السيرفر'}>
+              <span className="w-1.5 h-1.5 rounded-full inline-block"
+                    style={{ backgroundColor: connectionStatus === 'connected' ? '#10b981' : connectionStatus === 'connecting' ? '#eab308' : '#ef4444' }}></span>
+              <span>{connectionStatus === 'connected' ? (lang === 'en' ? 'Online' : 'متصل') : connectionStatus === 'connecting' ? (lang === 'en' ? 'Connecting' : 'اتصال...') : (lang === 'en' ? 'Offline ⚙️' : 'غير متصل ⚙️')}</span>
+            </div>
+
             <div onClick={() => setIsEditingProfile(true)}
                  className="flex items-center gap-1.5 px-2 py-1 rounded-xl border cursor-pointer transition"
                  style={{borderColor:'rgba(180,77,255,0.4)', background:'rgba(180,77,255,0.08)'}}>
@@ -1828,8 +2055,8 @@ function App() {
                    style={{border:'2px solid var(--neon-purple)', boxShadow:'0 0 8px rgba(180,77,255,0.5)'}}>
                 {avatar}
               </div>
-              <span className="text-[11px] font-black max-w-[60px] truncate" style={{color:'var(--neon-purple)'}}>
-                {playerName || 'لاعب'}
+              <span className="text-[11px] font-black max-w-[55px] truncate" style={{color:'var(--neon-purple)'}}>
+                {playerName || (lang === 'en' ? 'Player' : 'لاعب')}
               </span>
             </div>
             <button onClick={() => setShowSettingsModal(true)}
@@ -1850,14 +2077,14 @@ function App() {
               {/* Daily Quests Floating Card (Plan Image 2) */}
               <div className="w-full bg-black/40 backdrop-blur-sm border border-amber-400/30 rounded-2xl p-2.5 shadow-lg space-y-1.5">
                 <div className="flex items-center justify-between text-xs font-black text-amber-300 px-1">
-                  <span className="flex items-center gap-1">📜 <span>المهام اليومية</span></span>
-                  <span className="text-[10px] text-amber-200/70 font-normal">تتجدد يومياً</span>
+                  <span className="flex items-center gap-1">📜 <span>{t('dailyQuests')}</span></span>
+                  <span className="text-[10px] text-amber-200/70 font-normal">{t('resetsDaily')}</span>
                 </div>
                 <div className="space-y-1.5 max-h-24 overflow-y-auto">
                   {quests.map(q => (
                     <div key={q.id} className="flex items-center justify-between bg-black/50 border border-white/10 rounded-xl px-2.5 py-1 text-xs">
                       <div className="text-right flex-1 min-w-0 pr-1">
-                        <p className="font-bold text-white text-[11px] truncate">{q.text}</p>
+                        <p className="font-bold text-white text-[11px] truncate">{lang === 'en' && q.textEn ? q.textEn : q.text}</p>
                         <div className="flex items-center gap-1.5 mt-0.5">
                           <div className="w-16 h-1.5 bg-gray-700 rounded-full overflow-hidden">
                             <div className="h-full bg-yellow-400 rounded-full" style={{ width: `${Math.min(100, (q.progress / q.target) * 100)}%` }}></div>
@@ -1873,7 +2100,7 @@ function App() {
                               ? 'btn-emerald text-white animate-pulse'
                               : 'bg-amber-600/30 text-amber-200 border-amber-500/30 opacity-60 cursor-not-allowed'
                         }`}>
-                        {q.claimed ? 'تم ✓' : `استلم +${q.rewardAmount} ${q.rewardType === 'gems' ? '💎' : '⭐'}`}
+                        {q.claimed ? t('claimed') : `${t('claim')} +${q.rewardAmount} ${q.rewardType === 'gems' ? '💎' : '⭐'}`}
                       </button>
                     </div>
                   ))}
@@ -1884,15 +2111,16 @@ function App() {
               {lastRoomCode && (
                 <div className="w-full bg-gradient-to-r from-red-950/90 via-[#451c04]/90 to-red-950/90 border-2 border-yellow-400 rounded-2xl p-2.5 shadow-xl text-center flex items-center justify-between my-1 animate-pulse">
                   <div className="text-right">
-                    <span className="text-xs font-black text-yellow-300 block">⚡ جولة جارية محفوظة! [{lastRoomCode}]</span>
-                    <span className="text-[10px] text-amber-200">مقعدك ودورك في انتظارك</span>
+                    <span className="text-xs font-black text-yellow-300 block">⚡ {lang === 'en' ? `Saved Active Round! [${lastRoomCode}]` : `جولة جارية محفوظة! [${lastRoomCode}]`}</span>
+                    <span className="text-[10px] text-amber-200">{lang === 'en' ? 'Your seat is waiting for you' : 'مقعدك ودورك في انتظارك'}</span>
                   </div>
                   <div className="flex gap-1.5">
                     <button onClick={() => {
                       soundFx.init();
+                      if (!ensureConnected()) return;
                       socketRef.current.emit('reconnect_room', { code: lastRoomCode, userId, sessionToken, name: playerName || 'لاعب VIP' });
                     }} className="btn-gold px-3 py-1.5 rounded-xl text-xs font-black shadow">
-                      استكمال 🚀
+                      {lang === 'en' ? 'Resume 🚀' : 'استكمال 🚀'}
                     </button>
                     <button onClick={() => {
                       localStorage.removeItem('catch_last_room');
@@ -1912,7 +2140,7 @@ function App() {
                   </div>
                   <div className="text-[11px] font-black tracking-[4px] text-center mt-1"
                        style={{color:'var(--neon-blue)', textShadow:'0 0 10px var(--neon-blue)'}}>
-                    ● لعبة الكروت ●
+                    ● {lang === 'en' ? 'THE CARD GAME' : 'لعبة الكروت'} ●
                   </div>
                 </div>
 
@@ -1925,17 +2153,17 @@ function App() {
                 <button onClick={() => setShowPlayModal(true)}
                   className="btn-neon-green w-full py-4 rounded-2xl text-xl font-black flex items-center justify-center gap-3 transition active:scale-95">
                   <span className="text-2xl">▶</span>
-                  <span>العب الآن</span>
+                  <span>{t('playNow')}</span>
                 </button>
 
                 <div className="grid grid-cols-2 gap-3">
                   <button onClick={() => setShowPrivateRoomModal(true)}
                     className="btn-neon-purple py-3 rounded-2xl text-sm font-black flex items-center justify-center gap-1.5 transition active:scale-95">
-                    <span>🔒</span><span>طاولة خاصة</span>
+                    <span>🔒</span><span>{t('privateTable')}</span>
                   </button>
                   <button onClick={handleStartBotTraining}
                     className="btn-neon-blue py-3 rounded-2xl text-sm font-black flex items-center justify-center gap-1.5 transition active:scale-95">
-                    <span>🤖</span><span>تدريب</span>
+                    <span>🤖</span><span>{t('training')}</span>
                   </button>
                 </div>
               </div>
@@ -2016,24 +2244,25 @@ function App() {
                 {shopSubtab === 'currency' && (
                   <div className="space-y-2">
                     {[
-                      { title: 'صرة عملات الكازينو', amount: '+500 عملة', cost: 'مجاني يومي 🎁', type: 'coins', val: 500 },
-                      { title: 'كيس الجواهر الملكي', amount: '+100 جوهرة', cost: 'مجاني للتجربة 💎', type: 'gems', val: 100 },
-                      { title: 'خزنة الفرعون الذهبية', amount: '+2,000 عملة', cost: 'مجاني 👑', type: 'coins', val: 2000 },
+                      { title: lang === 'en' ? 'Beginner Coins Pouch' : 'صرة عملات المبتدئين', amount: '+1,000 ⭐', price: '$0.99' },
+                      { title: lang === 'en' ? 'Golden Coin Bag' : 'كيس عملات ذهبية', amount: '+5,000 ⭐', price: '$2.99' },
+                      { title: lang === 'en' ? 'Royal Casino Vault' : 'خزانة الكازينو الملكية', amount: '+25,000 ⭐', price: '$9.99' },
+                      { title: lang === 'en' ? 'Royal Gem Pouch' : 'حزمة الجواهر الملكية', amount: '+100 💎', price: '$4.99' },
+                      { title: lang === 'en' ? 'Pharaoh Legend Chest' : 'صندوق أساطير الفراعنة', amount: '+500 💎', price: '$19.99' },
                     ].map((pack, i) => (
                       <div key={i} className="flex items-center justify-between p-3 rounded-2xl bg-black/50 border border-amber-500/20">
-                        <div className="text-right">
+                        <div className={lang === 'en' ? 'text-left' : 'text-right'}>
                           <p className="text-xs font-black text-yellow-300">{pack.title}</p>
                           <p className="text-sm font-black text-white">{pack.amount}</p>
                         </div>
                         <button onClick={() => {
-                          if (pack.type === 'gems') addGems(pack.val);
-                          else addCoins(pack.val);
                           soundFx.init();
-                          soundFx.play('celebration');
-                          setErrorMsg(`مبروك! استلمت ${pack.amount}`);
-                          setTimeout(() => setErrorMsg(''), 2000);
-                        }} className="btn-emerald px-3.5 py-1.5 rounded-xl text-xs font-black">
-                          {pack.cost}
+                          soundFx.play('snap');
+                          setErrorMsg(t('comingSoonAlert'));
+                          setTimeout(() => setErrorMsg(''), 2500);
+                        }} className="bg-white/10 hover:bg-white/20 border border-white/20 text-amber-200 px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1 transition active:scale-95">
+                          <span>🔒</span>
+                          <span>{pack.price} ({t('comingSoon')})</span>
                         </button>
                       </div>
                     ))}
@@ -2168,26 +2397,28 @@ function App() {
               <div className="flex-1 overflow-y-auto space-y-3 py-2">
                 <div className="bg-emerald-950/40 border border-emerald-500/40 rounded-2xl p-3 text-right">
                   <span className="text-xl block mb-1">💬</span>
-                  <h4 className="text-xs font-black text-emerald-300">دعوة سريعة عبر واتساب</h4>
+                  <h4 className="text-xs font-black text-emerald-300">{lang === 'en' ? 'Quick Invite via Apps' : 'دعوة سريعة عبر واتساب والتطبيقات'}</h4>
                   <p className="text-[11px] text-amber-100/80 mt-1 leading-relaxed">
-                    شارك الرابط مع أصحابك ليدخلوا فوراً على نفس الطاولة بدون أي تعقيد.
+                    {lang === 'en' ? 'Share link directly with friends to join your table instantly.' : 'شارك الرابط مع أصحابك ليدخلوا فوراً على نفس الطاولة بدون أي تعقيد.'}
                   </p>
-                  <a href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`🃏 تعال العب معايا كاتش أونلاين على كازينو كاتش الملكي VIP!\nادخل من هنا:\n${location.origin}`)}`}
-                     target="_blank" rel="noopener noreferrer"
+                  <button onClick={() => handleShareInvite('')}
                      className="btn-emerald w-full py-2.5 rounded-xl text-xs font-black mt-2 flex items-center justify-center gap-1.5 shadow">
                     <span>💬</span>
-                    <span>إرسال دعوة على واتساب</span>
-                  </a>
+                    <span>{t('shareViaApps')}</span>
+                  </button>
                 </div>
 
                 <div className="bg-black/50 border border-white/10 rounded-2xl p-3 text-right">
-                  <h4 className="text-xs font-black text-amber-300">📋 نسخ رابط اللعبة المباشر</h4>
-                  <button onClick={() => {
-                    navigator.clipboard?.writeText(location.origin);
-                    setErrorMsg('تم نسخ الرابط للحافظة! 📋');
-                    setTimeout(() => setErrorMsg(''), 2000);
+                  <h4 className="text-xs font-black text-amber-300">📋 {t('copyLink')}</h4>
+                  <button onClick={async () => {
+                    const shareUrl = `${getServerBaseUrl()}/`;
+                    try {
+                      await navigator.clipboard.writeText(shareUrl);
+                      setErrorMsg(t('linkCopied'));
+                    } catch(e) {}
+                    setTimeout(() => setErrorMsg(''), 2500);
                   }} className="btn-gold w-full py-2.5 rounded-xl text-xs font-black mt-2">
-                    نسخ الرابط ومشاركته 📋
+                    {t('copyLink')}
                   </button>
                 </div>
               </div>
@@ -2204,14 +2435,14 @@ function App() {
           <button onClick={() => { soundFx.init(); soundFx.play('snap'); setActiveTab('shop'); }}
             className={`flex flex-col items-center py-1 px-2.5 rounded-xl transition ${activeTab === 'shop' ? 'ticket-tab-active font-black' : 'text-amber-200/70 hover:text-white'}`}>
             <span className="text-lg leading-none">🛒</span>
-            <span className="text-[10px] mt-0.5">المتجر</span>
+            <span className="text-[10px] mt-0.5">{t('shop')}</span>
           </button>
 
           {/* Tab 2: Customization */}
           <button onClick={() => { soundFx.init(); soundFx.play('snap'); setActiveTab('custom'); }}
             className={`flex flex-col items-center py-1 px-2.5 rounded-xl transition ${activeTab === 'custom' ? 'ticket-tab-active font-black' : 'text-amber-200/70 hover:text-white'}`}>
             <span className="text-lg leading-none">🎨</span>
-            <span className="text-[10px] mt-0.5">التخصيص</span>
+            <span className="text-[10px] mt-0.5">{t('custom')}</span>
           </button>
 
           {/* Tab 3: Home (Raised 3D Center Hub) */}
@@ -2224,21 +2455,21 @@ function App() {
             }`}>
               🏠
             </div>
-            <span className={`text-[10px] font-black mt-0.5 ${activeTab === 'home' ? 'text-yellow-300 drop-shadow' : 'text-amber-200/70'}`}>الرئيسية</span>
+            <span className={`text-[10px] font-black mt-0.5 ${activeTab === 'home' ? 'text-yellow-300 drop-shadow' : 'text-amber-200/70'}`}>{t('home')}</span>
           </button>
 
           {/* Tab 4: Friends */}
           <button onClick={() => { soundFx.init(); soundFx.play('snap'); setActiveTab('friends'); }}
             className={`flex flex-col items-center py-1 px-2.5 rounded-xl transition ${activeTab === 'friends' ? 'ticket-tab-active font-black' : 'text-amber-200/70 hover:text-white'}`}>
             <span className="text-lg leading-none">👥</span>
-            <span className="text-[10px] mt-0.5">الأصدقاء</span>
+            <span className="text-[10px] mt-0.5">{t('friends')}</span>
           </button>
 
           {/* Tab 5: Leagues */}
           <button onClick={() => { soundFx.init(); soundFx.play('snap'); setActiveTab('leagues'); }}
             className={`flex flex-col items-center py-1 px-2.5 rounded-xl transition ${activeTab === 'leagues' ? 'ticket-tab-active font-black' : 'text-amber-200/70 hover:text-white'}`}>
             <span className="text-lg leading-none">🏆</span>
-            <span className="text-[10px] mt-0.5">المستويات</span>
+            <span className="text-[10px] mt-0.5">{t('leagues')}</span>
           </button>
         </nav>
 
@@ -2247,7 +2478,7 @@ function App() {
           <div className="fixed inset-0 z-[350] bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
             <div className="bg-gradient-to-b from-[#1b0a2a] to-[#0d0315] border-2 border-amber-400 rounded-3xl p-5 w-full max-w-sm shadow-2xl text-center space-y-3.5">
               <div className="flex items-center justify-between pb-2 border-b border-amber-500/30">
-                <h3 className="text-base font-black text-yellow-300">🎮 اختر طريقة اللعب</h3>
+                <h3 className="text-base font-black text-yellow-300">🎮 {lang === 'en' ? 'Choose Game Mode' : 'اختر طريقة اللعب'}</h3>
                 <button onClick={() => setShowPlayModal(false)} className="text-white/70 hover:text-white text-xl">✕</button>
               </div>
 
@@ -2257,7 +2488,7 @@ function App() {
                   handleCreateRoom();
                 }} className="btn-3d-green w-full py-3 rounded-2xl text-base font-black flex items-center justify-center gap-2">
                   <span>⚡</span>
-                  <span>طاولة سريعة (عامة)</span>
+                  <span>{t('quickTable')}</span>
                 </button>
 
                 <button onClick={() => {
@@ -2265,7 +2496,7 @@ function App() {
                   handleStartBotTraining();
                 }} className="btn-3d-orange w-full py-3 rounded-2xl text-base font-black flex items-center justify-center gap-2">
                   <span>🤖</span>
-                  <span>تدريب فوري مع البوتات (أوفلاين)</span>
+                  <span>{t('botTraining')}</span>
                 </button>
 
                 <button onClick={() => {
@@ -2273,7 +2504,7 @@ function App() {
                   setShowPrivateRoomModal(true);
                 }} className="btn-3d-purple w-full py-3 rounded-2xl text-base font-black flex items-center justify-center gap-2">
                   <span>🔒</span>
-                  <span>طاولة خاصة برمز سري</span>
+                  <span>{t('privateTableModalTitle')}</span>
                 </button>
               </div>
             </div>
@@ -2285,7 +2516,7 @@ function App() {
           <div className="fixed inset-0 z-[350] bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
             <div className="bg-gradient-to-b from-[#1b0a2a] to-[#0d0315] border-2 border-amber-400 rounded-3xl p-5 w-full max-w-sm shadow-2xl text-right space-y-3.5">
               <div className="flex items-center justify-between pb-2 border-b border-amber-500/30">
-                <h3 className="text-base font-black text-yellow-300">🔒 طاولة خاصة مع أصحابك</h3>
+                <h3 className="text-base font-black text-yellow-300">🔒 {lang === 'en' ? 'Private Table with Friends' : 'طاولة خاصة مع أصحابك'}</h3>
                 <button onClick={() => setShowPrivateRoomModal(false)} className="text-white/70 hover:text-white text-xl">✕</button>
               </div>
 
@@ -2294,23 +2525,23 @@ function App() {
                   setShowPrivateRoomModal(false);
                   handleCreateRoom();
                 }} className="btn-gold w-full py-3 rounded-2xl text-base font-black shadow-lg">
-                  🏠 إنشاء طاولة خاصة جديدة
+                  {t('createPrivateTable')}
                 </button>
 
                 <div className="flex items-center gap-3 my-1">
                   <div className="flex-1 h-px bg-amber-500/30"></div>
-                  <span className="text-amber-300/70 text-xs font-bold">أو ادخل برمز طاولة صاحبك</span>
+                  <span className="text-amber-300/70 text-xs font-bold">{t('orEnterCode')}</span>
                   <div className="flex-1 h-px bg-amber-500/30"></div>
                 </div>
 
                 <div className="flex gap-2">
                   <input className="flex-1 bg-black/70 border-2 border-amber-500/40 rounded-2xl px-3 py-2 text-white text-center text-lg font-black tracking-[0.2em] uppercase placeholder-amber-200/40 focus:border-emerald-400 focus:outline-none"
-                    placeholder="كود" maxLength={4} value={joinCode} onChange={e => setJoinCode(e.target.value.toUpperCase())} />
+                    placeholder="CODE" maxLength={4} value={joinCode} onChange={e => setJoinCode(e.target.value.toUpperCase())} />
                   <button onClick={() => {
                     setShowPrivateRoomModal(false);
                     handleJoinRoom();
                   }} className="btn-emerald px-5 rounded-2xl text-sm font-black shadow-lg">
-                    انضم ➜
+                    {t('join')}
                   </button>
                 </div>
               </div>
@@ -2323,64 +2554,97 @@ function App() {
           <div className="fixed inset-0 z-[350] bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
             <div className="bg-gradient-to-b from-[#1b0a2a] to-[#0d0315] border-2 border-amber-400 rounded-3xl p-5 w-full max-w-sm shadow-2xl text-right space-y-3.5">
               <div className="flex items-center justify-between pb-2 border-b border-amber-500/30">
-                <h3 className="text-base font-black text-yellow-300">⚙️ إعدادات اللعبة</h3>
+                <h3 className="text-base font-black text-yellow-300">⚙️ {t('settings')}</h3>
                 <button onClick={() => setShowSettingsModal(false)} className="text-white/70 hover:text-white text-xl">✕</button>
               </div>
 
               <div className="space-y-2.5 text-xs text-amber-100">
+                {/* Language Switcher */}
                 <div className="flex items-center justify-between bg-black/40 p-2.5 rounded-xl border border-white/10">
-                  <span className="font-bold">مؤثرات الصوت:</span>
+                  <span className="font-bold">{t('language')}</span>
+                  <div className="flex gap-1.5">
+                    <button onClick={() => {
+                      setLang('ar');
+                      localStorage.setItem('catch_lang', 'ar');
+                    }} className={`px-2.5 py-1 rounded-lg text-xs font-black border transition ${lang === 'ar' ? 'bg-amber-500 text-black border-amber-300 shadow' : 'bg-black/50 text-white/70 border-white/10'}`}>
+                      العربية 🇪🇬
+                    </button>
+                    <button onClick={() => {
+                      setLang('en');
+                      localStorage.setItem('catch_lang', 'en');
+                    }} className={`px-2.5 py-1 rounded-lg text-xs font-black border transition ${lang === 'en' ? 'bg-amber-500 text-black border-amber-300 shadow' : 'bg-black/50 text-white/70 border-white/10'}`}>
+                      English 🇬🇧
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between bg-black/40 p-2.5 rounded-xl border border-white/10">
+                  <span className="font-bold">{t('soundFx')}</span>
                   <button onClick={() => setMuted(!muted)} className={`px-3 py-1 rounded-lg font-black border ${muted ? 'bg-red-900/60 text-red-200 border-red-500/40' : 'bg-emerald-900/60 text-emerald-200 border-emerald-500/40'}`}>
-                    {muted ? '🔇 مكتوم' : '🔊 مفعل'}
+                    {muted ? '🔇' : '🔊'}
                   </button>
                 </div>
 
                 <div className="flex items-center justify-between bg-black/40 p-2.5 rounded-xl border border-white/10">
-                  <span className="font-bold">تعديل الاسم والشخصية:</span>
+                  <span className="font-bold">{t('editProfile')}</span>
                   <button onClick={() => { setShowSettingsModal(false); setIsEditingProfile(true); }} className="btn-gold px-3 py-1 rounded-lg text-xs font-black">
-                    تعديل ✏️
+                    {lang === 'en' ? 'Edit ✏️' : 'تعديل ✏️'}
                   </button>
                 </div>
 
                 <div className="flex items-center justify-between bg-black/40 p-2.5 rounded-xl border border-white/10">
-                  <span className="font-bold">قواعد اللعبة الرسمية:</span>
+                  <span className="font-bold">{t('rules')}</span>
                   <button onClick={() => { setShowSettingsModal(false); setShowRulesModal(true); }} className="btn-emerald px-3 py-1 rounded-lg text-xs font-black">
-                    قراءة القواعد 📖
+                    {t('readRules')}
                   </button>
                 </div>
 
-                {/* Server Endpoint Configuration (للهواتف والشبكة) */}
+                {/* Server Endpoint Configuration */}
                 <div className="bg-black/40 p-2.5 rounded-xl border border-white/10 space-y-1.5">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="font-bold text-amber-200">🌐 خادم اللعبة (Server IP):</span>
-                    <span className="text-[10px] text-gray-400">للهواتف والأونلاين</span>
+                    <span className="font-bold text-amber-200">🌐 {t('serverIp')}</span>
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${connectionStatus === 'connected' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-red-500/20 text-red-300 border-red-500/30'}`}>
+                      {connectionStatus === 'connected' ? `✓ ${t('connected')}` : `✕ ${t('disconnected')}`}
+                    </span>
                   </div>
                   <input 
                     type="text" 
                     value={serverUrlInput} 
                     onChange={e => setServerUrlInput(e.target.value)}
-                    placeholder="مثال: http://192.168.1.15:3000"
-                    className="w-full bg-black/60 border border-amber-500/30 rounded-lg px-2.5 py-1 text-xs text-white dir-ltr font-mono focus:border-yellow-400 focus:outline-none"
+                    placeholder="http://192.168.1.15:3000"
+                    className="w-full bg-black/60 border border-amber-500/30 rounded-lg px-2.5 py-1.5 text-xs text-white dir-ltr font-mono focus:border-yellow-400 focus:outline-none"
                   />
-                  <button 
-                    onClick={() => {
-                      const cleanUrl = serverUrlInput.trim();
-                      if (cleanUrl) {
-                        localStorage.setItem('catch_server_url', cleanUrl);
-                      } else {
-                        localStorage.removeItem('catch_server_url');
-                      }
-                      showVoiceNotice('⚡ تم حفظ عنوان السيرفر! جاري إعادة الاتصال...');
-                      setTimeout(() => location.reload(), 800);
-                    }}
-                    className="w-full btn-gold py-1 rounded-lg text-[11px] font-black">
-                    حفظ وإعادة الاتصال 🔄
-                  </button>
+                  <div className="flex gap-1.5">
+                    <button 
+                      onClick={() => {
+                        const cleanUrl = serverUrlInput.trim();
+                        if (cleanUrl) {
+                          localStorage.setItem('catch_server_url', cleanUrl);
+                        } else {
+                          localStorage.removeItem('catch_server_url');
+                        }
+                        showVoiceNotice(lang === 'en' ? '⚡ Server saved! Reconnecting...' : '⚡ تم حفظ عنوان السيرفر! جاري إعادة الاتصال...');
+                        setTimeout(() => location.reload(), 600);
+                      }}
+                      className="flex-1 btn-gold py-1.5 rounded-lg text-[11px] font-black">
+                      {t('saveAndReconnect')}
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setServerUrlInput('http://192.168.1.15:3000');
+                        localStorage.setItem('catch_server_url', 'http://192.168.1.15:3000');
+                        showVoiceNotice(lang === 'en' ? '⚡ Reset to default IP: 192.168.1.15' : '⚡ تم تعيين IP الافتراضي (192.168.1.15)!');
+                        setTimeout(() => location.reload(), 600);
+                      }}
+                      className="bg-white/10 hover:bg-white/20 text-amber-200 border border-white/20 px-2 py-1.5 rounded-lg text-[10px] font-bold" title="Default IP">
+                      Default
+                    </button>
+                  </div>
                 </div>
               </div>
 
               <button onClick={() => setShowSettingsModal(false)} className="btn-gold w-full py-2 rounded-xl text-xs font-black">
-                إغلاق الإعدادات ✓
+                {t('closeSettings')}
               </button>
             </div>
           </div>
@@ -2467,9 +2731,7 @@ function App() {
 
   // --- LOBBY SCREEN ---
   if (roomState.status === 'lobby') {
-    const shareUrl = `${location.origin}/?room=${roomState.code}`;
-    const whatsappText = `🃏 تعال العب معايا كاتش أونلاين على طاولة VIP رقم [${roomState.code}]!\nاضغط على الرابط للانضمام مباشرة:\n${shareUrl}`;
-    const whatsappHref = `https://api.whatsapp.com/send?text=${encodeURIComponent(whatsappText)}`;
+    const shareUrl = `${getServerBaseUrl()}/?room=${roomState.code}`;
 
     return (
       <div className="w-full h-[100dvh] max-w-[480px] mx-auto portrait-game-bg text-white font-cairo flex flex-col justify-between p-3 select-none overflow-y-auto shadow-2xl"
@@ -2478,35 +2740,37 @@ function App() {
         {/* Lobby Top Bar */}
         <div className="flex items-center justify-between pb-1 mb-1 border-b border-white/10">
           <button onClick={handleLeaveRoom} className="btn-ruby text-white px-2.5 py-1 rounded-xl text-xs font-black">
-            🚪 مغادرة
+            {t('leaveTable')}
           </button>
-          <span className="text-xs font-black text-amber-300">طاولة رقم [{roomState.code}]</span>
+          <span className="text-xs font-black text-amber-300">{t('tableNumber')} [{roomState.code}]</span>
           <button onClick={handleToggleVoiceChat}
                   className={`px-2.5 py-1 rounded-xl text-xs font-bold border transition ${
                     voiceChatActive ? 'bg-emerald-600 border-emerald-400 text-white animate-pulse' : 'bg-white/10 text-white border-white/20'
                   }`}>
-            {voiceChatActive ? '🎙️ مايك شغال' : '🎙️ مايك الطاولة'}
+            {voiceChatActive ? t('micOn') : t('liveMic')}
           </button>
         </div>
 
         <div className="text-center my-1">
-          <p className="text-amber-200 text-xs font-bold mb-1">كود الطاولة للمشاركة والدعوة</p>
+          <p className="text-amber-200 text-xs font-bold mb-1">{t('inviteCode')}</p>
           <div className="flex items-center justify-center gap-2 mb-2">
             <span className="text-3xl font-black text-yellow-400 tracking-[0.25em] bg-black/70 px-6 py-2 rounded-2xl border-2 border-yellow-400/50 shadow-2xl">{roomState.code}</span>
-            <button onClick={() => {
-              navigator.clipboard?.writeText(shareUrl);
-              setErrorMsg('تم نسخ الرابط! 📋');
-              setTimeout(() => setErrorMsg(''), 2000);
-            }} className="p-2.5 bg-white/10 hover:bg-white/20 rounded-2xl text-xl transition border border-white/20" title="نسخ الرابط">📋</button>
+            <button onClick={async () => {
+              try {
+                await navigator.clipboard?.writeText(shareUrl);
+                setErrorMsg(t('linkCopied'));
+                setTimeout(() => setErrorMsg(''), 2000);
+              } catch(e) {}
+            }} className="p-2.5 bg-white/10 hover:bg-white/20 rounded-2xl text-xl transition border border-white/20" title="Copy Link">📋</button>
           </div>
 
-          {/* WhatsApp Invite & Direct Share */}
+          {/* Multi-App Native Share (WhatsApp, WA Business, Telegram, etc.) */}
           <div className="flex justify-center mb-1">
-            <a href={whatsappHref} target="_blank" rel="noopener noreferrer"
+            <button onClick={() => handleShareInvite(roomState.code)}
                className="btn-emerald flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-black shadow hover:scale-105 active:scale-95 transition">
               <span className="text-sm">💬</span>
-              <span>دعوة أصحابك عبر واتساب</span>
-            </a>
+              <span>{t('shareViaApps')}</span>
+            </button>
           </div>
         </div>
 
@@ -2595,23 +2859,23 @@ function App() {
                 <button onClick={() => socketRef.current.emit('add_bot')} 
                   disabled={roomState.players.length >= roomState.maxPlayers}
                   className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2 rounded-xl font-bold text-xs border-b-2 border-blue-800 transition shadow disabled:opacity-50">
-                  🤖 إضافة بوت
+                  {lang === 'en' ? '🤖 Add Bot' : '🤖 إضافة بوت'}
                 </button>
                 <button onClick={() => socketRef.current.emit('remove_bot')} 
                   className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 rounded-xl font-bold text-xs border-b-2 border-gray-900 transition shadow">
-                  🗑️ إزالة بوت
+                  {lang === 'en' ? '🗑️ Remove Bot' : '🗑️ إزالة بوت'}
                 </button>
               </div>
 
               <button onClick={() => socketRef.current.emit('start_game')} 
                 disabled={roomState.players.length < roomState.minPlayers}
                 className={`btn-3d-green w-full py-3.5 rounded-2xl text-lg font-black transition ${roomState.players.length < roomState.minPlayers ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.02]'}`}>
-                🚀 ابدأ اللعبة الآن!
+                {lang === 'en' ? '🚀 Start Game Now!' : '🚀 ابدأ اللعبة الآن!'}
               </button>
             </>
           ) : (
             <div className="text-center text-amber-200 text-xs font-bold bg-black/50 py-3 rounded-2xl border border-amber-500/20 animate-pulse">
-              ⏳ في انتظار المضيف لبدء اللعبة...
+              {lang === 'en' ? '⏳ Waiting for host to start the game...' : '⏳ في انتظار المضيف لبدء اللعبة...'}
             </div>
           )}
         </div>

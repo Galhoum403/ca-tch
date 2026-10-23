@@ -276,7 +276,7 @@ function createRoom(hostSocketId, hostName, hostAvatar, userId = null, sessionTo
     code,
     hostId: hostSocketId,
     status: 'lobby', // 'lobby' | 'playing' | 'gameover'
-    minPlayers: 4,
+    minPlayers: 2,
     maxPlayers: 8,
     turnSpeed: 'normal', // 'fast' (15s) | 'normal' (30s) | 'relaxed' (45s)
     winTarget: 'full_deck', // 'full_deck' | 'first_to_3'
@@ -1950,6 +1950,80 @@ function registerSocketHandlers(socket) {
     socket.join(room.code);
     socket.emit('room_created', { code: room.code });
     broadcastRoomState(room);
+  });
+
+  // Create Bot Training Room (Instant 1-Click Game against 3 Bots)
+  socket.on('create_bot_room', ({ name, avatar, userId, sessionToken } = {}) => {
+    if (!checkRateLimit()) return;
+    const cleanName = sanitizeName(name, 'لاعب VIP');
+    const room = createRoom(socket.id, cleanName, avatar, userId, sessionToken);
+    currentRoomCode = room.code;
+    socket.join(room.code);
+
+    // Add 3 Bots
+    for (let i = 0; i < 3; i++) {
+      const bName = BOT_NAMES[i % BOT_NAMES.length];
+      const bAvatar = BOT_AVATARS[i % BOT_AVATARS.length];
+      room.players.push({
+        id: `bot_${Date.now()}_${i}_${Math.random()}`,
+        name: bName,
+        avatar: bAvatar,
+        isHost: false,
+        isBot: true,
+        connected: true,
+        hand: [],
+        sets: [],
+        immune: false,
+        skipNext: false,
+        extraTurns: 0,
+        botMemory: {}
+      });
+      room.logs.push(`🤖 تمت إضافة بوت: ${bName}`);
+    }
+
+    // Deal and start game immediately
+    room.deck = shuffle(buildDeck());
+    room.discardPile = [];
+    room.lastPlayedCard = null;
+    room.status = 'playing';
+    room.currentIdx = 0;
+    room.direction = 1;
+
+    for (const player of room.players) {
+      player.hand = room.deck.splice(0, 5);
+      player.sets = [];
+      player.immune = false;
+      player.skipNext = false;
+      player.extraTurns = 0;
+    }
+
+    room.logs.push(`🚀 بدأت جولة تدريب البوتات بـ 4 لاعبين!`);
+    room.logs.push(`🎴 تم توزيع 5 كروت لكل لاعب. الدور الأول لـ: ${room.players[0].name}`);
+    room.lastEvent = { type: 'game_started' };
+
+    applySetCheck(room);
+    broadcastRoomState(room);
+
+    const firstP = room.players[0];
+    const hasNumbers = firstP.hand.some(c => c.type === 'number');
+    if (!hasNumbers && room.deck.length > 0) {
+      const drawn = room.deck.shift();
+      firstP.hand.push(drawn);
+      room.logs.push(`📥 ${firstP.name} معندوش أي أرقام في إيده! سحب كارت تلقائياً وانتهى دوره.`);
+      broadcastActionAnnouncement(room, {
+        cardType: 'deck',
+        title: '📥 سـحـــــب كـــــارت!',
+        actorName: firstP.name,
+        actorAvatar: firstP.avatar,
+        desc: `${firstP.name} معندوش أي أرقام في إيده! سحب كارت تلقائياً وتمرر الدور.`,
+        sound: 'card',
+        duration: 2000
+      });
+      advanceTurn(room);
+    } else {
+      startTurnTimer(room);
+      if (room.players[0].isBot) scheduleBotTurn(room);
+    }
   });
 
   // Reconnect Room (Secure Token-Based Recovery, Seat-Hijacking Protected)
