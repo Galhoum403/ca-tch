@@ -276,7 +276,7 @@ function createRoom(hostSocketId, hostName, hostAvatar, userId = null, sessionTo
     code,
     hostId: hostSocketId,
     status: 'lobby', // 'lobby' | 'playing' | 'gameover'
-    minPlayers: 2,
+    minPlayers: 4,
     maxPlayers: 8,
     turnSpeed: 'normal', // 'fast' (15s) | 'normal' (30s) | 'relaxed' (45s)
     winTarget: 'full_deck', // 'full_deck' | 'first_to_3'
