@@ -451,6 +451,11 @@ function createRoom(hostSocketId, hostName, hostAvatar, userId = null, sessionTo
     direction: 1, // 1 for clockwise, -1 for counter-clockwise
     turnDeadline: 0,
     turnTimerInterval: null,
+    botTimer: null,
+    actionTimeout: null,
+    hatEntaTimer: null,
+    lastActionTime: 0,
+    isAdvancing: false,
     logs: ['🏠 تم إنشاء الغرفة بنجاح. في انتظار اللاعبين...'],
     lastEvent: null,
     pendingAction: null,
@@ -462,34 +467,71 @@ function createRoom(hostSocketId, hostName, hostAvatar, userId = null, sessionTo
   return room;
 }
 
+function clearRoomTimers(room) {
+  if (!room) return;
+  if (room.botTimer) { clearTimeout(room.botTimer); room.botTimer = null; }
+  if (room.turnTimerInterval) { clearInterval(room.turnTimerInterval); room.turnTimerInterval = null; }
+  if (room.hatEntaTimer) { clearTimeout(room.hatEntaTimer); room.hatEntaTimer = null; }
+  if (room.actionTimeout) { clearTimeout(room.actionTimeout); room.actionTimeout = null; }
+}
+
+function scheduleActionTimeout(room, fn, ms) {
+  if (room.actionTimeout) {
+    clearTimeout(room.actionTimeout);
+    room.actionTimeout = null;
+  }
+  room.actionTimeout = setTimeout(() => {
+    room.actionTimeout = null;
+    if (room.status === 'playing' || room.status === 'joker_showdown') {
+      fn();
+    }
+  }, ms);
+  return room.actionTimeout;
+}
+
 function nextTurnIndex(currentIdx, direction, total) {
   return ((currentIdx + direction) % total + total) % total;
 }
 
 function startTurnTimer(room) {
-  if (room.turnTimerInterval) clearInterval(room.turnTimerInterval);
+  if (room.turnTimerInterval) {
+    clearInterval(room.turnTimerInterval);
+    room.turnTimerInterval = null;
+  }
+  if (room.status !== 'playing') return;
+
   const seconds = room.turnSpeed === 'fast' ? 20 : room.turnSpeed === 'relaxed' ? 60 : 45;
   room.turnDeadline = Date.now() + (seconds * 1000);
 
   room.turnTimerInterval = setInterval(() => {
     if (room.status !== 'playing') {
       clearInterval(room.turnTimerInterval);
+      room.turnTimerInterval = null;
       return;
     }
+    // If an action animation, bot response or counter prompt is currently resolving, keep deadline fresh
+    if (room.actionTimeout || room.hatEntaTimer) {
+      room.turnDeadline = Date.now() + (seconds * 1000);
+      return;
+    }
+
     const remaining = Math.max(0, Math.ceil((room.turnDeadline - Date.now()) / 1000));
     emitToRoom(room.code, 'timer_tick', { remaining, total: seconds });
 
     if (remaining <= 0) {
       clearInterval(room.turnTimerInterval);
+      room.turnTimerInterval = null;
       handleTurnTimeout(room);
     }
   }, 1000);
 }
 
 function handleTurnTimeout(room) {
+  if (room.status !== 'playing' || room.actionTimeout || room.hatEntaTimer) return;
   const curP = room.players[room.currentIdx];
   if (!curP) return;
   room.logs.push(`⏰ انتهى وقت دور ${curP.name}! تم السحب وتمرير الدور.`);
+  if (room.logs.length > 50) room.logs = room.logs.slice(-30);
 
   // Auto-draw penalty
   if (room.deck.length > 0) {
@@ -500,116 +542,132 @@ function handleTurnTimeout(room) {
 }
 
 function advanceTurn(room) {
-  // Check if current player has extra turns (from el3ab_tani)
-  const curP = room.players[room.currentIdx];
-  if (curP && curP.extraTurns > 0) {
-    curP.extraTurns--;
-    room.logs.push(`🔄 دور إضافي لـ ${curP.name} بموجب كارت "العب تاني"!`);
-    room.pendingAction = null;
-    curP.successCount = 0;
-    if (room.kefayaTarget === room.currentIdx) {
-      room.kefayaTarget = null;
+  if (!room || room.status !== 'playing') return;
+  if (room.isAdvancing) return;
+  room.isAdvancing = true;
+
+  try {
+    // Clear bot and action timers to avoid overlapping turns
+    if (room.botTimer) { clearTimeout(room.botTimer); room.botTimer = null; }
+    if (room.turnTimerInterval) { clearInterval(room.turnTimerInterval); room.turnTimerInterval = null; }
+    if (room.actionTimeout) { clearTimeout(room.actionTimeout); room.actionTimeout = null; }
+
+    // Check if current player has extra turns (from el3ab_tani)
+    const curP = room.players[room.currentIdx];
+    if (curP && curP.extraTurns > 0) {
+      curP.extraTurns--;
+      room.logs.push(`🔄 دور إضافي لـ ${curP.name} بموجب كارت "العب تاني"!`);
+      room.pendingAction = null;
+      curP.successCount = 0;
+      if (room.kefayaTarget === room.currentIdx) {
+        room.kefayaTarget = null;
+      }
+      checkGameOver(room);
+      broadcastRoomState(room);
+      if (room.status === 'playing') startTurnTimer(room);
+      if (room.status === 'playing' && curP.isBot) scheduleBotTurn(room, 2200);
+      return;
     }
-    checkGameOver(room);
-    broadcastRoomState(room);
-    if (room.status === 'playing') startTurnTimer(room);
-    if (room.status === 'playing' && curP.isBot) scheduleBotTurn(room);
-    return;
-  }
 
-  const n = room.players.length;
-  let nextIdx = nextTurnIndex(room.currentIdx, room.direction, n);
+    const n = room.players.length;
+    let nextIdx = nextTurnIndex(room.currentIdx, room.direction, n);
 
-  // Check skipNext (from msh_shaifak)
-  if (room.players[nextIdx].skipNext) {
-    const skippedPlayer = room.players[nextIdx];
-    room.logs.push(`🙈 ${skippedPlayer.name} تخطى دوره (مش شايفك)!`);
-    skippedPlayer.skipNext = false;
-    broadcastActionAnnouncement(room, {
-      cardType: 'msh_shaifak',
-      title: '🙈 تـخـطـي الـدور!',
-      actorName: 'مش شايفك',
-      actorAvatar: '🙈',
-      targetName: skippedPlayer.name,
-      targetAvatar: skippedPlayer.avatar,
-      desc: `تم تخطي دور ${skippedPlayer.name} بموجب كارت مش شايفك! الدور بينتقل للي بعده.`,
-      sound: 'impact',
-      duration: 2200
-    });
-    nextIdx = nextTurnIndex(nextIdx, room.direction, n);
-  }
-
-  room.currentIdx = nextIdx;
-  const currentP = room.players[nextIdx];
-  currentP.immune = false;
-  room.pendingAction = null;
-  room.successCount = 0;
-
-  // Official rule: If player previously lied using Kdab, when their turn arrives the Kdab card is discarded!
-  if (currentP.mustDiscardKdab) {
-    const kIdx = currentP.hand.findIndex(c => c.type === 'kdab');
-    if (kIdx !== -1) {
-      const discardedKdab = currentP.hand.splice(kIdx, 1)[0];
-      room.discardPile.push(discardedKdab);
-      room.lastPlayedCard = discardedKdab;
-      currentP.mustDiscardKdab = false;
-      room.logs.push(`🤥 سقط كارت الكداب من يد ${currentP.name} على الأرض في الديسكارد!`);
+    // Check skipNext (from msh_shaifak)
+    if (room.players[nextIdx].skipNext) {
+      const skippedPlayer = room.players[nextIdx];
+      room.logs.push(`🙈 ${skippedPlayer.name} تخطى دوره (مش شايفك)!`);
+      skippedPlayer.skipNext = false;
       broadcastActionAnnouncement(room, {
-        cardType: 'kdab',
-        title: '🤥 سـقـــــوط كـــــارت الـكـــــدّاب!',
+        cardType: 'msh_shaifak',
+        title: '🙈 تـخـطـي الـدور!',
+        actorName: 'مش شايفك',
+        actorAvatar: '🙈',
+        targetName: skippedPlayer.name,
+        targetAvatar: skippedPlayer.avatar,
+        desc: `تم تخطي دور ${skippedPlayer.name} بموجب كارت مش شايفك! الدور بينتقل للي بعده.`,
+        sound: 'impact',
+        duration: 2500
+      });
+      nextIdx = nextTurnIndex(nextIdx, room.direction, n);
+    }
+
+    room.currentIdx = nextIdx;
+    const currentP = room.players[nextIdx];
+    currentP.immune = false;
+    room.pendingAction = null;
+    room.successCount = 0;
+
+    // Official rule: If player previously lied using Kdab, when their turn arrives the Kdab card is discarded!
+    if (currentP.mustDiscardKdab) {
+      const kIdx = currentP.hand.findIndex(c => c.type === 'kdab');
+      if (kIdx !== -1) {
+        const discardedKdab = currentP.hand.splice(kIdx, 1)[0];
+        room.discardPile.push(discardedKdab);
+        room.lastPlayedCard = discardedKdab;
+        currentP.mustDiscardKdab = false;
+        room.logs.push(`🤥 سقط كارت الكداب من يد ${currentP.name} على الأرض في الديسكارد!`);
+        broadcastActionAnnouncement(room, {
+          cardType: 'kdab',
+          title: '🤥 سـقـــــوط كـــــارت الـكـــــدّاب!',
+          actorName: currentP.name,
+          actorAvatar: currentP.avatar,
+          desc: `لما جه دور ${currentP.name}، نزل كارت الكداب على الأرض طبقاً لقوانين اللعبة!`,
+          sound: 'impact',
+          duration: 2500
+        });
+      }
+    }
+
+    room.logs.push(`👉 دور: ${currentP.name}`);
+    if (room.logs.length > 50) room.logs = room.logs.slice(-30);
+
+    if (checkGameOver(room)) {
+      broadcastRoomState(room);
+      return;
+    }
+
+    // Official Rule: If player has NO number cards AND no playable action cards in hand, they draw 1 card and their turn ends!
+    const hasNumbers = currentP.hand.some(c => c.type === 'number');
+    const hasPlayableActions = currentP.hand.some(c => c.type !== 'number' && c.type !== 'hat_enta');
+    if (!hasNumbers && !hasPlayableActions && room.deck.length > 0) {
+      const drawn = room.deck.shift();
+      currentP.hand.push(drawn);
+      room.logs.push(`📥 ${currentP.name} معندوش أي كروت لعب في إيده! سحب كارت تلقائياً وانتهى دوره.`);
+      broadcastActionAnnouncement(room, {
+        cardType: 'deck',
+        title: '📥 سـحـــــب كـــــارت!',
         actorName: currentP.name,
         actorAvatar: currentP.avatar,
-        desc: `لما جه دور ${currentP.name}، نزل كارت الكداب على الأرض طبقاً لقوانين اللعبة!`,
-        sound: 'impact',
-        duration: 2200
+        desc: `${currentP.name} معندوش أي كروت في إيده! سحب كارت تلقائياً وتمرر الدور.`,
+        sound: 'card',
+        duration: 2500
       });
+      applySetCheck(room, currentP);
+      broadcastRoomState(room);
+      scheduleActionTimeout(room, () => {
+        advanceTurn(room);
+      }, 2500);
+      return;
     }
-  }
 
-  room.logs.push(`👉 دور: ${currentP.name}`);
-  if (checkGameOver(room)) {
     broadcastRoomState(room);
-    return;
-  }
 
-  // Official Rule: If player has NO number cards AND no playable action cards in hand, they draw 1 card and their turn ends!
-  const hasNumbers = currentP.hand.some(c => c.type === 'number');
-  const hasPlayableActions = currentP.hand.some(c => c.type !== 'number' && c.type !== 'hat_enta');
-  if (!hasNumbers && !hasPlayableActions && room.deck.length > 0) {
-    const drawn = room.deck.shift();
-    currentP.hand.push(drawn);
-    room.logs.push(`📥 ${currentP.name} معندوش أي كروت لعب في إيده! سحب كارت تلقائياً وانتهى دوره.`);
-    broadcastActionAnnouncement(room, {
-      cardType: 'deck',
-      title: '📥 سـحـــــب كـــــارت!',
-      actorName: currentP.name,
-      actorAvatar: currentP.avatar,
-      desc: `${currentP.name} معندوش أي كروت في إيده! سحب كارت تلقائياً وتمرر الدور.`,
-      sound: 'card',
-      duration: 2000
-    });
-    applySetCheck(room, currentP);
-    broadcastRoomState(room);
-    setTimeout(() => {
-      advanceTurn(room);
-    }, 2000);
-    return;
-  }
+    // Restart timer
+    if (room.status === 'playing') {
+      startTurnTimer(room);
+    }
 
-  broadcastRoomState(room);
-
-  // Restart timer
-  if (room.status === 'playing') {
-    startTurnTimer(room);
-  }
-
-  // If next player is bot, trigger bot turn
-  if (room.status === 'playing' && currentP.isBot) {
-    scheduleBotTurn(room);
+    // If next player is bot, trigger bot turn
+    if (room.status === 'playing' && currentP.isBot) {
+      scheduleBotTurn(room);
+    }
+  } finally {
+    room.isAdvancing = false;
   }
 }
 
 function broadcastActionAnnouncement(room, announcement) {
+  room.lastActionTime = Date.now();
   emitToRoom(room.code, 'action_announcement', {
     cardType: announcement.cardType || 'action',
     cardValue: announcement.cardValue,
@@ -829,7 +887,7 @@ function resolveJokerChallenge(room, targetPlayerId) {
   room.activeJokerChallenge = null;
   broadcastRoomState(room);
 
-  setTimeout(() => {
+  scheduleActionTimeout(room, () => {
     if (room.pendingJokerChallenges && room.pendingJokerChallenges.length > 0) {
       startJokerShowdown(room, room.pendingJokerChallenges);
     } else {
@@ -839,7 +897,7 @@ function resolveJokerChallenge(room, targetPlayerId) {
 }
 
 function finalizeGameOver(room) {
-  if (room.turnTimerInterval) clearInterval(room.turnTimerInterval);
+  clearRoomTimers(room);
   room.status = 'gameover';
   const maxScore = Math.max(...room.players.map(p => getPlayerSetsScore(p)));
   const winners = room.players.filter(p => getPlayerSetsScore(p) === maxScore);
@@ -937,15 +995,32 @@ function broadcastRoomState(room) {
 }
 
 // ====== BOT AI LOGIC (SMART CARD-COUNTING & MEMORY) ======
-function scheduleBotTurn(room) {
+function scheduleBotTurn(room, delayOverride) {
+  if (room.botTimer) {
+    clearTimeout(room.botTimer);
+    room.botTimer = null;
+  }
   const botIdx = room.currentIdx;
   const bot = room.players[botIdx];
   if (!bot || !bot.isBot || room.status !== 'playing') return;
 
-  const delayMs = room.turnSpeed === 'fast' ? 1500 : room.turnSpeed === 'relaxed' ? 4000 : 2600;
+  const baseDelay = room.turnSpeed === 'fast' ? 2400 : room.turnSpeed === 'relaxed' ? 4500 : 3300;
+  const timeSinceLastAction = Date.now() - (room.lastActionTime || 0);
+  const minRequiredWait = 3200;
+  let delayMs = delayOverride || (baseDelay + Math.floor(Math.random() * 700));
+  if (timeSinceLastAction < minRequiredWait) {
+    delayMs = Math.max(delayMs, (minRequiredWait - timeSinceLastAction) + 400);
+  }
 
-  setTimeout(() => {
+  room.botTimer = setTimeout(() => {
+    room.botTimer = null;
     if (room.currentIdx !== botIdx || room.status !== 'playing') return;
+
+    // Do not proceed while an action animation, bot response, or counter prompt is resolving
+    if (room.actionTimeout || room.hatEntaTimer) {
+      scheduleBotTurn(room, 1600);
+      return;
+    }
 
     const actionCards = bot.hand.filter(c => c.type !== 'number');
     const numberCards = bot.hand.filter(c => c.type === 'number');
@@ -1075,10 +1150,12 @@ function handleAsk(room, askerIdx, targetIdx, requestedNumber) {
       targetAvatar: target.avatar,
       desc: `${target.name} محمي بالدرع! طلب ${asker.name} تم صده وفشل.`,
       sound: 'impact',
-      duration: 2200
+      duration: 3000
     });
     broadcastRoomState(room);
-    advanceTurn(room);
+    scheduleActionTimeout(room, () => {
+      advanceTurn(room);
+    }, 3000);
     return;
   }
 
@@ -1405,10 +1482,10 @@ function executeCatchDraw(room, askerIdx, targetIdx, requestedNumber) {
       });
       applySetCheck(room, asker);
       broadcastRoomState(room);
-      setTimeout(() => {
+      scheduleActionTimeout(room, () => {
         if (room.status === 'playing') {
           startTurnTimer(room);
-          if (asker.isBot) scheduleBotTurn(room);
+          if (asker.isBot) scheduleBotTurn(room, 2000);
         }
       }, 3500);
       return;
@@ -1428,10 +1505,10 @@ function executeCatchDraw(room, askerIdx, targetIdx, requestedNumber) {
         duration: 3500
       });
       broadcastRoomState(room);
-      setTimeout(() => {
+      scheduleActionTimeout(room, () => {
         if (room.status === 'playing') {
           startTurnTimer(room);
-          if (asker.isBot) scheduleBotTurn(room);
+          if (asker.isBot) scheduleBotTurn(room, 2000);
         }
       }, 3500);
       return;
@@ -1454,10 +1531,10 @@ function executeCatchDraw(room, askerIdx, targetIdx, requestedNumber) {
         duration: 3500
       });
       broadcastRoomState(room);
-      setTimeout(() => {
+      scheduleActionTimeout(room, () => {
         if (room.status === 'playing') {
           startTurnTimer(room);
-          if (asker.isBot) scheduleBotTurn(room);
+          if (asker.isBot) scheduleBotTurn(room, 2000);
         }
       }, 3500);
       return;
@@ -1469,7 +1546,7 @@ function executeCatchDraw(room, askerIdx, targetIdx, requestedNumber) {
 
   broadcastRoomState(room);
   // Give players ample time (3.5s) to view the dramatic CATCH animation before the next turn begins
-  setTimeout(() => {
+  scheduleActionTimeout(room, () => {
     if (room.status === 'playing') {
       advanceTurn(room);
     }
@@ -2361,6 +2438,7 @@ function registerSocketHandlers(socket) {
     const room = rooms.get(currentRoomCode);
     if (!room || room.status !== 'gameover' || room.players[0].id !== socket.id) return;
 
+    clearRoomTimers(room);
     room.deck = shuffle(buildDeck());
     room.discardPile = [];
     room.lastPlayedCard = null;
@@ -2370,6 +2448,9 @@ function registerSocketHandlers(socket) {
     room.winner = null;
     room.kefayaTarget = null;
     room.successCount = 0;
+    room.activeJokerChallenge = null;
+    room.pendingJokerChallenges = [];
+    room.jokerUsers = [];
 
     for (const player of room.players) {
       player.hand = room.deck.splice(0, 5);
@@ -2378,6 +2459,9 @@ function registerSocketHandlers(socket) {
       player.skipNext = false;
       player.extraTurns = 0;
       player.successCount = 0;
+      player.pendingLiarPrompt = null;
+      player.pendingHatEntaPrompt = null;
+      player.mustDiscardKdab = false;
       player.botMemory = { knownPlayerCards: {} };
     }
 
@@ -2400,7 +2484,7 @@ function registerSocketHandlers(socket) {
     applySetCheck(room);
     broadcastRoomState(room);
     startTurnTimer(room);
-    if (room.players[0].isBot) scheduleBotTurn(room);
+    if (room.players[0].isBot) scheduleBotTurn(room, 2500);
   });
 
   // Start Game
@@ -2413,6 +2497,8 @@ function registerSocketHandlers(socket) {
       socket.emit('error_message', `الحد الأدنى لبدء اللعبة 4 لاعبين! يمكنك إضافة بوتات لتكملة العدد.`);
       return;
     }
+
+    clearRoomTimers(room);
 
     // Build & Deal Deck
     room.deck = shuffle(buildDeck());
@@ -2429,6 +2515,10 @@ function registerSocketHandlers(socket) {
       player.immune = false;
       player.skipNext = false;
       player.extraTurns = 0;
+      player.pendingLiarPrompt = null;
+      player.pendingHatEntaPrompt = null;
+      player.mustDiscardKdab = false;
+      player.botMemory = { knownPlayerCards: {} };
     }
 
     room.logs.push(`🚀 بدأت اللعبة رسمياً بـ ${room.players.length} لاعبين!`);
@@ -2456,7 +2546,7 @@ function registerSocketHandlers(socket) {
       });
       applySetCheck(room, firstP);
       broadcastRoomState(room);
-      setTimeout(() => {
+      scheduleActionTimeout(room, () => {
         advanceTurn(room);
       }, 2000);
       return;
@@ -2466,7 +2556,7 @@ function registerSocketHandlers(socket) {
 
     // If first player is bot
     if (room.players[0].isBot) {
-      scheduleBotTurn(room);
+      scheduleBotTurn(room, 2500);
     }
   });
 
@@ -2883,7 +2973,7 @@ function registerSocketHandlers(socket) {
       if (room.status === 'lobby') {
         room.players = room.players.filter(pl => pl.id !== socket.id);
         if (room.players.length === 0) {
-          if (room.turnTimerInterval) clearInterval(room.turnTimerInterval);
+          clearRoomTimers(room);
           rooms.delete(currentRoomCode);
         } else if (p.isHost && room.players.length > 0) {
           room.players[0].isHost = true;
@@ -2892,8 +2982,7 @@ function registerSocketHandlers(socket) {
       } else if (room.status === 'playing') {
         const hasConnectedHumans = room.players.some(pl => !pl.isBot && pl.connected && pl.id !== socket.id);
         if (!hasConnectedHumans) {
-          if (room.turnTimerInterval) clearInterval(room.turnTimerInterval);
-          if (room.hatEntaTimer) clearTimeout(room.hatEntaTimer);
+          clearRoomTimers(room);
           rooms.delete(currentRoomCode);
           socket.leave(room.code);
           currentRoomCode = null;
@@ -2931,7 +3020,7 @@ function registerSocketHandlers(socket) {
           if (room.status === 'lobby') {
             room.players = room.players.filter(pl => pl.id !== p.id);
             if (room.players.length === 0) {
-              if (room.turnTimerInterval) clearInterval(room.turnTimerInterval);
+              clearRoomTimers(room);
               rooms.delete(room.code);
               return;
             } else if (p.isHost && room.players.length > 0) {
@@ -2941,8 +3030,7 @@ function registerSocketHandlers(socket) {
           } else if (room.status === 'playing') {
             const hasConnectedHumans = room.players.some(pl => !pl.isBot && pl.connected);
             if (!hasConnectedHumans) {
-              if (room.turnTimerInterval) clearInterval(room.turnTimerInterval);
-              if (room.hatEntaTimer) clearTimeout(room.hatEntaTimer);
+              clearRoomTimers(room);
               rooms.delete(room.code);
               return;
             }

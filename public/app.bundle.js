@@ -633,6 +633,7 @@ function triggerHaptic(type = 'light') {
 class SoundFxEngine {
   constructor() {
     this.ctx = null;
+    this.noiseBuffer = null;
     this.muted = false;
     this.musicActive = false;
     this.musicInterval = null;
@@ -641,6 +642,14 @@ class SoundFxEngine {
     if (!this.ctx) {
       try {
         this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      } catch (e) {}
+    }
+    if (this.ctx && !this.noiseBuffer) {
+      try {
+        const bufferSize = Math.floor(this.ctx.sampleRate * 0.25);
+        this.noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = this.noiseBuffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
       } catch (e) {}
     }
   }
@@ -662,12 +671,10 @@ class SoundFxEngine {
         osc.start(t);
         osc.stop(t + 0.08);
       } else if (name === 'whoosh' || name === 'card_slide') {
-        const bufferSize = Math.floor(this.ctx.sampleRate * 0.22);
-        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+        if (!this.noiseBuffer) this.init();
+        if (!this.noiseBuffer) return;
         const noise = this.ctx.createBufferSource();
-        noise.buffer = buffer;
+        noise.buffer = this.noiseBuffer;
         const filter = this.ctx.createBiquadFilter();
         filter.type = 'bandpass';
         filter.frequency.setValueAtTime(750, t);
@@ -1977,7 +1984,7 @@ function App() {
       setActionNotice(ann);
       setTimeout(() => {
         setActionNotice(prev => prev === ann ? null : prev);
-      }, Math.max(5000, ann.duration || 5000));
+      }, Math.max(3800, ann.duration || 3800));
     });
 
     // Flying Card Transfer Animation (Phase 1)
@@ -1991,7 +1998,7 @@ function App() {
       const fy = isFromMe ? 220 : -160;
       const tx = isToMe ? 0 : Math.random() * 160 - 80;
       const ty = isToMe ? 220 : -160;
-      setFlyingCards(prev => [...prev, {
+      setFlyingCards(prev => [...prev.slice(-3), {
         id,
         card: data.card,
         fx,
