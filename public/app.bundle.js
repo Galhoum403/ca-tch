@@ -3780,6 +3780,11 @@ function App() {
         setSelectedCard(draggingCard);
         handleOpponentSeatClick(oppIdx);
       }
+    } else {
+      const centerEl = el ? el.closest('[data-center-drop-zone]') : null;
+      if (centerEl) {
+        handleCardClick(draggingCard);
+      }
     }
     setDraggingCard(null);
   };
@@ -3984,13 +3989,17 @@ function App() {
   }, "🗣️")))), /*#__PURE__*/React.createElement("main", {
     className: "flex-1 relative w-full flex flex-col items-center justify-center px-2 py-0.5 overflow-hidden"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "relative w-full max-w-[420px] h-[98%] max-h-[390px] sm:max-h-[430px] rounded-[110px] sm:rounded-[140px] border-[6px] border-[#220508] shadow-[0_0_0_2px_rgba(212,175,55,0.45),0_15px_40px_rgba(0,0,0,0.95),inset_0_0_60px_rgba(0,0,0,0.85)] flex flex-col justify-between items-center p-2.5 overflow-hidden",
+    className: "relative w-full max-w-[420px] h-[98%] max-h-[390px] sm:max-h-[430px] rounded-[110px] sm:rounded-[140px] border-[7px] border-[#201209] shadow-[0_0_0_2px_rgba(250,204,21,0.55),0_18px_45px_rgba(0,0,0,0.95),inset_0_0_70px_rgba(0,0,0,0.9)] flex flex-col justify-between items-center p-2.5 overflow-hidden",
     style: {
-      background: 'radial-gradient(ellipse at 50% 50%, #761421 0%, #520b14 60%, #30040a 100%)'
+      background: 'radial-gradient(ellipse at 50% 45%, #0f5238 0%, #083524 55%, #041c13 100%)'
     }
   }, /*#__PURE__*/React.createElement("div", {
-    className: "absolute inset-2.5 rounded-[95px] sm:rounded-[125px] border border-dashed border-amber-400/20 pointer-events-none"
+    className: "absolute inset-2.5 rounded-[95px] sm:rounded-[125px] border border-dashed border-amber-300/25 pointer-events-none"
   }), /*#__PURE__*/React.createElement("div", {
+    className: "absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.06] select-none"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-8xl transform scale-125"
+  }, "🦎")), /*#__PURE__*/React.createElement("div", {
     className: "w-full flex items-center justify-center gap-4 z-20 shrink-0 pt-0.5"
   }, renderOpponentSeat(topOpp), extraOpps.map(op => renderOpponentSeat(op))), /*#__PURE__*/React.createElement("div", {
     className: "w-full flex-1 flex items-center justify-between px-1.5 z-20 my-auto"
@@ -4027,20 +4036,28 @@ function App() {
   }, roomState.direction === 1 ? '↻' : '↺'), /*#__PURE__*/React.createElement("span", {
     className: "text-[8px] text-amber-200/60 font-bold"
   }, roomState.direction === 1 ? 'مع الساعة' : 'عكس')), /*#__PURE__*/React.createElement("div", {
-    className: "flex flex-col items-center"
+    className: `flex flex-col items-center relative transition-transform duration-200 cursor-pointer ${draggingCard ? 'scale-110 drop-target-active rounded-2xl p-0.5' : ''}`,
+    "data-center-drop-zone": "true",
+    onClick: () => {
+      if (selectedCard && (isMyTurn || ANY_TIME_CARDS.includes(selectedCard.type) || selectedHasNaturalSet)) {
+        handleCardClick(selectedCard);
+      }
+    }
   }, roomState.lastPlayedCard ? /*#__PURE__*/React.createElement("div", {
-    className: "relative"
+    className: "relative group"
   }, /*#__PURE__*/React.createElement("img", {
     src: getCardImage(roomState.lastPlayedCard),
-    className: "w-13 h-19 sm:w-15 sm:h-22 rounded-xl border-2 border-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.6)] transform rotate-2",
+    className: "w-13 h-19 sm:w-15 sm:h-22 rounded-xl border-2 border-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.7)] transform rotate-2 animate-card-slap",
     alt: ""
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "card-sheen"
   })) : /*#__PURE__*/React.createElement("div", {
-    className: "w-13 h-19 sm:w-15 sm:h-22 rounded-xl border-2 border-dashed border-white/20 flex items-center justify-center bg-black/30"
+    className: "w-13 h-19 sm:w-15 sm:h-22 rounded-xl border-2 border-dashed border-amber-400/40 flex items-center justify-center bg-black/40 shadow-inner"
   }, /*#__PURE__*/React.createElement("span", {
-    className: "text-white/40 text-[9px] font-bold"
+    className: "text-amber-200/60 text-[9px] font-bold"
   }, "المكشوف")), /*#__PURE__*/React.createElement("span", {
     className: "text-[9px] font-bold text-amber-200/90 mt-0.5"
-  }, "المكشوف")))), /*#__PURE__*/React.createElement("div", {
+  }, draggingCard ? '🎯 ارمي هنا' : 'المكشوف')))), /*#__PURE__*/React.createElement("div", {
     className: "w-16 flex justify-center"
   }, renderOpponentSeat(rightOpp))), /*#__PURE__*/React.createElement("div", {
     className: "w-full max-w-sm z-30 px-1 mb-0.5 transition-all"
@@ -4239,17 +4256,18 @@ function App() {
   }, "مواجهة الجوكر الأخيرة قيد التخمين!"), /*#__PURE__*/React.createElement("p", {
     className: "text-xs text-amber-200/90 font-bold mt-1"
   }, roomState.jokerChallenge.challengerName, " معاه الكارت اليتيم رقم [", roomState.jokerChallenge.orphanValue === 11 ? 'كا' : roomState.jokerChallenge.orphanValue === 12 ? 'تش' : roomState.jokerChallenge.orphanValue, "] وبيخمن مين اللي قفل اللِمّة بالجوكر!"))), /*#__PURE__*/React.createElement("footer", {
-    className: "w-full shrink-0 z-40 flex flex-col relative",
+    className: "w-full shrink-0 z-40 flex flex-col relative rounded-t-3xl",
     style: {
-      background: 'rgba(5,8,16,0.96)',
-      borderTop: '1px solid rgba(0,212,255,0.15)',
-      backdropFilter: 'blur(12px)',
+      background: 'linear-gradient(180deg, rgba(14, 38, 28, 0.96) 0%, rgba(6, 18, 13, 0.98) 100%)',
+      borderTop: '2px solid rgba(212, 175, 55, 0.6)',
+      boxShadow: '0 -8px 30px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.15)',
+      backdropFilter: 'blur(16px)',
       paddingBottom: 'max(8px,env(safe-area-inset-bottom))'
     }
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center justify-between px-4 py-2 border-b",
     style: {
-      borderColor: 'rgba(255,255,255,0.06)'
+      borderColor: 'rgba(212,175,55,0.15)'
     }
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-3"
@@ -4384,21 +4402,23 @@ function App() {
     };
     return /*#__PURE__*/React.createElement("div", {
       key: card.id,
-      className: `hand-fan-card ${!canPlay ? 'disabled opacity-45' : ''}`,
+      className: `hand-fan-card ${!canPlay ? 'disabled opacity-45' : ''} ${isSelected ? 'selected-fan' : ''} ${isAnyTime && !isMyTurn ? 'anytime-fan' : ''}`,
       style: fanStyle,
       onClick: () => handleCardClick(card),
       onTouchStart: e => handleCardDragStart(e, card),
       onMouseDown: e => handleCardDragStart(e, card)
     }, /*#__PURE__*/React.createElement("div", {
-      className: "relative"
+      className: "card-wrapper relative"
     }, /*#__PURE__*/React.createElement("img", {
       src: getCardImage(card),
       className: "w-[74px] h-[106px] sm:w-[84px] sm:h-[120px] rounded-xl border-2 transition object-cover select-none",
       style: {
-        borderColor: isSelected ? '#ffd700' : hasNaturalSet ? '#facc15' : isAnyTime ? '#ef4444' : 'rgba(212,175,55,0.4)',
-        boxShadow: isSelected ? '0 0 25px rgba(255,215,0,0.9)' : hasNaturalSet ? '0 0 16px rgba(250,204,21,0.85)' : isAnyTime ? '0 0 12px rgba(239,68,68,0.6)' : '0 4px 10px rgba(0,0,0,0.8)'
+        borderColor: isSelected ? '#ffd700' : hasNaturalSet ? '#facc15' : isAnyTime ? '#ef4444' : 'rgba(212,175,55,0.45)',
+        boxShadow: isSelected ? '0 0 25px rgba(255,215,0,0.95)' : hasNaturalSet ? '0 0 16px rgba(250,204,21,0.85)' : isAnyTime ? '0 0 12px rgba(239,68,68,0.6)' : '0 4px 10px rgba(0,0,0,0.8)'
       },
       alt: ""
+    }), /*#__PURE__*/React.createElement("div", {
+      className: "card-sheen"
     }), hasNaturalSet && /*#__PURE__*/React.createElement("div", {
       className: "absolute top-1 left-1 pointer-events-none z-30"
     }, /*#__PURE__*/React.createElement("span", {
@@ -4406,7 +4426,7 @@ function App() {
     }, /*#__PURE__*/React.createElement("span", null, "⭐"), /*#__PURE__*/React.createElement("span", {
       className: "hidden xs:inline"
     }, "لِمّة"))), /*#__PURE__*/React.createElement("div", {
-      className: "absolute top-1 right-1 pointer-events-none"
+      className: "absolute top-1 right-1 pointer-events-none z-20"
     }, isNumber ? /*#__PURE__*/React.createElement("span", {
       className: "bg-black/90 text-yellow-300 font-black text-xs sm:text-sm px-1.5 py-0.2 rounded-md border border-yellow-400/80 shadow-md block leading-tight"
     }, card.value === 11 ? 'كا' : card.value === 12 ? 'تش' : card.value) : /*#__PURE__*/React.createElement("span", {

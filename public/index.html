@@ -53,30 +53,32 @@
     user-select: none;
   }
 
-  /* ===== BACKGROUNDS (Warm Burgundy & Wood Game Night) ===== */
+  /* ===== BACKGROUNDS (Luxury Casino & Deep Emerald Felt) ===== */
   .portrait-game-bg {
-    background-color: var(--bg-deep);
+    background-color: #06140e;
     background-image:
-      radial-gradient(ellipse at 50% 35%, rgba(122, 21, 35, 0.45) 0%, transparent 68%),
-      radial-gradient(circle at 50% 100%, rgba(70, 10, 18, 0.7) 0%, transparent 60%),
-      repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.015) 0px, rgba(255, 255, 255, 0.015) 1px, transparent 1px, transparent 40px),
-      repeating-linear-gradient(0deg,  rgba(255, 255, 255, 0.015) 0px, rgba(255, 255, 255, 0.015) 1px, transparent 1px, transparent 40px);
+      radial-gradient(ellipse at 50% 25%, rgba(16, 185, 129, 0.22) 0%, transparent 70%),
+      radial-gradient(circle at 50% 100%, rgba(0, 0, 0, 0.88) 0%, transparent 60%),
+      url('/table_felt_emerald.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
   }
   .home-screen-bg {
-    background: radial-gradient(ellipse at 50% 25%, #350810 0%, #1a0307 60%, #0d0103 100%);
+    background: radial-gradient(ellipse at 50% 25%, #0d2e20 0%, #061911 60%, #030d09 100%);
     background-image:
-      radial-gradient(ellipse at 50% 30%, rgba(180, 30, 45, 0.35) 0%, transparent 65%),
-      linear-gradient(rgba(212, 175, 55, 0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(212, 175, 55, 0.03) 1px, transparent 1px);
+      radial-gradient(ellipse at 50% 30%, rgba(16, 185, 129, 0.25) 0%, transparent 65%),
+      linear-gradient(rgba(212, 175, 55, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(212, 175, 55, 0.04) 1px, transparent 1px);
     background-size: 100% 100%, 36px 36px, 36px 36px;
   }
-  .poker-room-bg { background: var(--bg-deep); }
+  .poker-room-bg { background: #06140e; }
   .casino-table {
-    background: radial-gradient(ellipse at 50% 45%, #7a1523 0%, #580d16 55%, #35060c 100%);
-    border: 6px solid #23060a;
-    outline: 2px solid rgba(212, 175, 55, 0.5);
+    background: radial-gradient(ellipse at 50% 45%, #0e563b 0%, #083725 55%, #041c13 100%);
+    border: 7px solid #23160e;
+    outline: 2px solid rgba(212, 175, 55, 0.6);
     border-radius: 40px;
-    box-shadow: inset 0 0 60px rgba(0,0,0,0.85), 0 14px 40px rgba(0,0,0,0.9), 0 0 30px rgba(212,175,55,0.15);
+    box-shadow: inset 0 0 70px rgba(0,0,0,0.9), 0 16px 45px rgba(0,0,0,0.95), 0 0 35px rgba(212,175,55,0.25);
   }
 
   /* ===== CATCH 3D NEON LOGO ===== */
@@ -138,13 +140,13 @@
     z-index: 50 !important;
   }
 
-  /* ===== FAN HAND LAYOUT ===== */
+  /* ===== FAN HAND LAYOUT (Physical 3D Ergonomics) ===== */
   .hand-fan-container {
     position: relative;
     display: flex;
     align-items: flex-end;
     justify-content: center;
-    height: 148px;
+    height: 154px;
     width: 100%;
     max-width: 100vw;
     padding: 0 4px;
@@ -154,20 +156,72 @@
     position: absolute;
     bottom: 6px;
     transform-origin: bottom center;
-    transition: transform .22s cubic-bezier(.34,1.56,.64,1), filter .2s;
+    transition: transform .24s cubic-bezier(.34,1.56,.64,1), filter .2s;
     cursor: pointer;
     touch-action: manipulation;
   }
+  .hand-fan-card .card-wrapper {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .hand-fan-card .card-sheen {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.03) 48%, rgba(0,0,0,0.3) 100%);
+    mix-blend-mode: overlay;
+  }
   .hand-fan-card:hover:not(.disabled) {
     z-index: 85 !important;
-    filter: drop-shadow(0 -14px 25px rgba(250,204,21,0.9)) !important;
+    filter: drop-shadow(0 -16px 28px rgba(250,204,21,0.95)) !important;
   }
   .hand-fan-card.selected-fan {
     z-index: 100 !important;
-    filter: drop-shadow(0 -22px 35px #facc15) !important;
+    filter: drop-shadow(0 -24px 38px #facc15) !important;
   }
   .hand-fan-card.anytime-fan {
-    filter: drop-shadow(0 -6px 14px rgba(239,68,68,0.75));
+    filter: drop-shadow(0 -8px 16px rgba(239,68,68,0.85));
+  }
+
+  /* ===== CARD DROP & SLAP ANIMATION ===== */
+  @keyframes cardDropSlap {
+    0% {
+      transform: scale(1.4) rotate(-12deg) translateY(-25px);
+      opacity: 0;
+      filter: drop-shadow(0 20px 30px rgba(0,0,0,0.95));
+    }
+    60% {
+      transform: scale(0.96) rotate(4deg) translateY(2px);
+      opacity: 1;
+    }
+    80% {
+      transform: scale(1.02) rotate(1deg);
+    }
+    100% {
+      transform: scale(1) rotate(2deg) translateY(0);
+      opacity: 1;
+    }
+  }
+  .animate-card-slap {
+    animation: cardDropSlap 0.38s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  }
+
+  /* ===== DROP TARGET ZONE ===== */
+  @keyframes dropTargetPulse {
+    0%, 100% {
+      border-color: rgba(250, 204, 21, 0.4);
+      box-shadow: 0 0 15px rgba(250, 204, 21, 0.2);
+    }
+    50% {
+      border-color: rgba(250, 204, 21, 0.95);
+      box-shadow: 0 0 35px rgba(250, 204, 21, 0.7);
+    }
+  }
+  .drop-target-active {
+    animation: dropTargetPulse 1s infinite alternate;
   }
 
   /* ===== PLAYER SEATS ===== */
