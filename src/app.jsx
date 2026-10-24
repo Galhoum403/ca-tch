@@ -942,7 +942,7 @@ function App() {
   });
 
   const [lastRoomCode, setLastRoomCode] = useState(() => localStorage.getItem('catch_last_room') || '');
-  const [isEditingProfile, setIsEditingProfile] = useState(() => !localStorage.getItem('catch_name'));
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [showRulesModal, setShowRulesModal] = useState(false);
   const recordedGameRef = useRef(null);
 
@@ -1284,13 +1284,14 @@ function App() {
       if (data.user.card_back) setSelectedCardBack(data.user.card_back);
       setIsGuest(false);
       setShowAuthModal(false);
+      setIsEditingProfile(false);
       setAuthPassword('');
       if (socketRef.current?.connected) {
         socketRef.current.emit('set_user_session', { userId: data.user.id });
       }
       soundFx.init();
       soundFx.play('celebration');
-      showVoiceNotice(lang === 'en' ? `Welcome back, ${data.user.username}! 🌟` : `أهلاً بك يا ${data.user.username}! 🌟`);
+      showVoiceNotice(lang === 'en' ? `Welcome back, ${data.user.username}! 🌟` : `منور الطاولة يا ${data.user.username}! 🌟`);
     } catch(err) {
       setAuthError(lang === 'en' ? 'Cannot connect to server' : 'تعذر الاتصال بالسيرفر، تأكد من اتصال الشبكة');
     } finally {
@@ -1302,9 +1303,18 @@ function App() {
     localStorage.setItem('catch_is_guest', 'true');
     setIsGuest(true);
     setShowAuthModal(false);
+    setIsEditingProfile(false);
+
+    // Give guest player a catchy friendly default name if empty
+    if (!playerName || !playerName.trim()) {
+      const guestName = `صياد_${Math.floor(Math.random() * 899 + 100)}`;
+      setPlayerName(guestName);
+      localStorage.setItem('catch_name', guestName);
+    }
+
     soundFx.init();
     soundFx.play('snap');
-    showVoiceNotice(lang === 'en' ? 'Playing as Guest 🚀' : 'أنت تلعب الآن كزائر 🚀');
+    showVoiceNotice(lang === 'en' ? 'Playing as Guest 🚀' : 'دخلت كزائر سريع.. يلا نلعب! 🚀');
   };
 
   const handleLogout = () => {
@@ -2932,82 +2942,108 @@ function App() {
           </div>
         )}
 
-        {/* MODAL 6: AUTHENTICATION (LOGIN / REGISTER / QUICK GUEST) */}
+        {/* MODAL 6: AUTHENTICATION (AUTHENTIC EGYPTIAN CATCH CARD THEME) */}
         {showAuthModal && (
           <div className="fixed inset-0 z-[400] bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
-            <div className="bg-gradient-to-b from-[#1c0828] via-[#12031c] to-[#08020c] border-2 border-amber-400/80 rounded-3xl p-5 w-full max-w-sm shadow-[0_0_35px_rgba(251,191,36,0.3)] text-right space-y-3.5 relative">
+            <div className="bg-gradient-to-b from-[#241335] via-[#150a22] to-[#0a0412] border-2 border-amber-400/90 rounded-[28px] p-5 w-full max-w-sm shadow-[0_0_50px_rgba(251,191,36,0.35)] text-right space-y-3 relative pt-3">
               
-              {/* Top Close Button (allowed if already guest or logged in) */}
+              {/* Mascot Peeking Over Top Frame */}
+              <div className="relative -mt-20 flex justify-center pointer-events-none z-10">
+                <img 
+                  src="/chameleon_peeking.jpg" 
+                  alt="حرباية كاتش" 
+                  className="w-56 h-32 object-cover object-center rounded-2xl drop-shadow-[0_12px_24px_rgba(0,0,0,0.9)] border-2 border-amber-400/70"
+                />
+              </div>
+
+              {/* Close Button (if already guest or logged in) */}
               {(isGuest || currentUser) && (
                 <button onClick={() => setShowAuthModal(false)}
-                  className="absolute top-4 left-4 text-white/50 hover:text-white text-xl font-bold transition">
+                  className="absolute top-3 left-4 text-white/50 hover:text-white text-xl font-black transition z-20">
                   ✕
                 </button>
               )}
 
-              {/* Header with CATCH Crown */}
-              <div className="text-center pt-1">
-                <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-amber-500 via-yellow-400 to-amber-600 border-2 border-yellow-200 flex items-center justify-center text-3xl shadow-[0_0_20px_rgba(250,204,21,0.5)] mb-2">
-                  👑
-                </div>
-                <h3 className="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-400">
-                  كازينو كاتش VIP
+              {/* Game Title & Fun Egyptian Slogan */}
+              <div className="text-center pt-0.5">
+                <h3 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 drop-shadow-[0_2px_8px_rgba(250,204,21,0.5)]">
+                  لـعـبـة كـاتـش 🃏
                 </h3>
-                <p className="text-[11px] text-amber-200/70 mt-0.5 font-bold">
-                  سجل حسابك لحفظ رصيدك من العملات والجواهر الملكية
+                <p className="text-xs text-amber-200/90 font-bold mt-0.5">
+                  ورقك في إيدك.. وعينك على اللِمّة! 😉
                 </p>
               </div>
 
               {/* Tabs: Login vs Register */}
-              <div className="flex bg-black/60 p-1 rounded-2xl border border-white/10 text-xs font-black">
+              <div className="flex bg-black/60 p-1 rounded-2xl border border-amber-500/30 text-xs font-black shadow-inner">
                 <button
                   type="button"
                   onClick={() => { setAuthTab('login'); setAuthError(''); }}
                   className={`flex-1 py-2 rounded-xl transition ${
                     authTab === 'login'
-                      ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-black shadow-md'
-                      : 'text-amber-200/60 hover:text-white'
+                      ? 'bg-gradient-to-r from-amber-400 to-yellow-500 text-black shadow-md font-black'
+                      : 'text-amber-200/70 hover:text-white'
                   }`}>
-                  🔑 {lang === 'en' ? 'Sign In' : 'تسجيل الدخول'}
+                  🔑 {lang === 'en' ? 'My Account' : 'عندي حساب'}
                 </button>
                 <button
                   type="button"
                   onClick={() => { setAuthTab('register'); setAuthError(''); }}
                   className={`flex-1 py-2 rounded-xl transition ${
                     authTab === 'register'
-                      ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-black shadow-md'
-                      : 'text-amber-200/60 hover:text-white'
+                      ? 'bg-gradient-to-r from-amber-400 to-yellow-500 text-black shadow-md font-black'
+                      : 'text-amber-200/70 hover:text-white'
                   }`}>
-                  📝 {lang === 'en' ? 'New Account' : 'حساب جديد'}
+                  🌟 {lang === 'en' ? 'New Player' : 'لاعب جديد'}
                 </button>
               </div>
 
               {/* Form */}
-              <form onSubmit={handleAuthSubmit} className="space-y-3">
+              <form onSubmit={handleAuthSubmit} className="space-y-2.5">
                 {authError && (
-                  <div className="bg-red-500/20 border border-red-500/50 text-red-200 text-xs px-3 py-2 rounded-xl font-bold text-center">
+                  <div className="bg-red-500/20 border border-red-500/60 text-red-200 text-xs px-3 py-2 rounded-xl font-bold text-center">
                     {authError}
+                  </div>
+                )}
+
+                {/* Character Picker for New Registration */}
+                {authTab === 'register' && (
+                  <div>
+                    <label className="text-[11px] font-black text-amber-200 block mb-1">
+                      🎭 اختر شخصيتك في اللعبة
+                    </label>
+                    <div className="flex justify-between items-center bg-black/50 px-2 py-1.5 rounded-xl border border-white/10">
+                      {['😎', '🤠', '🥷', '🦁', '👑', '🃏', '🦊'].map(em => (
+                        <button
+                          key={em}
+                          type="button"
+                          onClick={() => { setAvatar(em); localStorage.setItem('catch_avatar', em); }}
+                          className={`text-2xl p-1 rounded-xl transition-all ${avatar === em ? 'bg-amber-400/30 scale-125 border border-amber-400 shadow-[0_0_10px_#facc15]' : 'opacity-60 hover:opacity-100'}`}>
+                          {em}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 )}
 
                 <div>
                   <label className="text-[11px] font-black text-amber-200 block mb-1">
-                    👤 {lang === 'en' ? 'Username' : 'اسم المستخدم'}
+                    👤 {authTab === 'register' ? (lang === 'en' ? 'Player Name' : 'اسم الشهرة (اللي هتلعب بيه)') : (lang === 'en' ? 'Username' : 'اسم المستخدم')}
                   </label>
                   <input
                     type="text"
                     required
-                    maxLength={20}
+                    maxLength={16}
                     value={authUsername}
                     onChange={e => setAuthUsername(e.target.value)}
-                    placeholder={lang === 'en' ? 'e.g. CatchMaster' : 'مثال: الملك_كاتش'}
-                    className="w-full bg-black/70 border border-amber-500/40 rounded-xl px-3 py-2 text-white text-sm font-bold focus:border-yellow-400 focus:outline-none transition placeholder-white/20"
+                    placeholder={lang === 'en' ? 'e.g. CatchKing' : 'اكتب اسمك هنا (مثلاً: حوت_الكروت)...'}
+                    className="w-full bg-black/70 border border-amber-500/40 rounded-xl px-3 py-2 text-white text-sm font-bold focus:border-yellow-400 focus:outline-none transition placeholder-white/30"
                   />
                 </div>
 
                 <div>
                   <label className="text-[11px] font-black text-amber-200 block mb-1">
-                    🔒 {lang === 'en' ? 'Password' : 'كلمة المرور'}
+                    🔒 {lang === 'en' ? 'Password' : 'كلمة السر'}
                   </label>
                   <input
                     type="password"
@@ -3015,28 +3051,28 @@ function App() {
                     value={authPassword}
                     onChange={e => setAuthPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full bg-black/70 border border-amber-500/40 rounded-xl px-3 py-2 text-white text-sm font-bold focus:border-yellow-400 focus:outline-none transition placeholder-white/20"
+                    className="w-full bg-black/70 border border-amber-500/40 rounded-xl px-3 py-2 text-white text-sm font-bold focus:border-yellow-400 focus:outline-none transition placeholder-white/30"
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={authLoading}
-                  className="btn-gold w-full py-2.5 rounded-xl text-sm font-black shadow-lg disabled:opacity-50 flex items-center justify-center gap-2">
+                  className="btn-gold w-full py-2.5 rounded-xl text-sm font-black shadow-lg disabled:opacity-50 flex items-center justify-center gap-2 mt-1">
                   {authLoading ? (
                     <span className="inline-block animate-spin">⏳</span>
                   ) : authTab === 'login' ? (
-                    <span>🔑 {lang === 'en' ? 'Sign In' : 'دخول الحساب'}</span>
+                    <span>ادخل والعب فوراً 🚀</span>
                   ) : (
-                    <span>💾 {lang === 'en' ? 'Create Account & Save Data' : 'إنشاء حساب وحفظ البيانات'}</span>
+                    <span>سجل وابدأ اللعب 🃏</span>
                   )}
                 </button>
               </form>
 
-              {/* Divider */}
+              {/* Friendly Divider */}
               <div className="flex items-center gap-3 my-1">
                 <div className="flex-1 h-px bg-amber-500/25"></div>
-                <span className="text-amber-300/50 text-xs font-bold">{lang === 'en' ? 'OR' : 'أو'}</span>
+                <span className="text-amber-300/70 text-[11px] font-bold">أو جرّب الأول 👇</span>
                 <div className="flex-1 h-px bg-amber-500/25"></div>
               </div>
 
@@ -3044,13 +3080,13 @@ function App() {
               <button
                 type="button"
                 onClick={handleGuestPlay}
-                className="w-full py-2.5 rounded-xl text-xs font-black bg-white/10 hover:bg-white/20 text-white border border-white/20 transition flex items-center justify-center gap-2">
-                <span>🚀</span>
-                <span>{lang === 'en' ? 'Play Instantly as Guest' : 'دخول فوري كزائر (بدون تسجيل)'}</span>
+                className="w-full py-2.5 rounded-2xl text-xs font-black bg-emerald-700/40 hover:bg-emerald-600/60 text-emerald-200 border border-emerald-400/50 transition flex items-center justify-center gap-2 shadow-md hover:scale-[1.01] active:scale-95">
+                <span>⚡</span>
+                <span>{lang === 'en' ? 'Quick Play as Guest' : 'دخول سريع كزائر (بدون كلمة سر)'}</span>
               </button>
 
-              <p className="text-[10px] text-amber-200/50 text-center font-semibold leading-tight">
-                💡 {lang === 'en' ? 'Guests can link their account anytime from Settings.' : 'يمكنك ربط حسابك أو تعديل بياناتك في أي وقت من الإعدادات ⚙️'}
+              <p className="text-[10px] text-amber-200/60 text-center font-bold leading-tight">
+                💡 التسجيل بيحفظ لِمّاتك ورتبتك وكوينزاتك دايماً!
               </p>
             </div>
           </div>

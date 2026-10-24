@@ -28,6 +28,7 @@ Thumbs.db
 png cards/
 *.webp
 *.jpg
+!public/chameleon_peeking.jpg
 
 # Local Database
 data/*.db*
