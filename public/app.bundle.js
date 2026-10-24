@@ -1423,10 +1423,29 @@ function App() {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showPrivateRoomModal, setShowPrivateRoomModal] = useState(false);
   const autoStartBotsRef = useRef(false);
+
+  // Helper to sync economy changes directly to SQLite database
+  const syncEconomyToServer = (nextCoins, nextGems) => {
+    const token = localStorage.getItem('catch_token');
+    if (!token) return;
+    const base = getServerBaseUrl();
+    fetch(`${base}/api/customization`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        coins: nextCoins,
+        gems: nextGems
+      })
+    }).catch(() => {});
+  };
   const addCoins = amount => {
     setCoins(prev => {
       const next = prev + amount;
       localStorage.setItem('catch_coins', next);
+      syncEconomyToServer(next, gems);
       return next;
     });
   };
@@ -1434,27 +1453,80 @@ function App() {
     setGems(prev => {
       const next = prev + amount;
       localStorage.setItem('catch_gems', next);
+      syncEconomyToServer(coins, next);
       return next;
     });
   };
-  const handleClaimQuest = questId => {
+  const handleClaimQuest = async questId => {
     const today = new Date().toISOString().slice(0, 10);
-    setQuests(prev => {
-      const next = prev.map(q => {
-        if (q.id === questId && !q.claimed && q.progress >= q.target) {
-          if (q.rewardType === 'gems') addGems(q.rewardAmount);else addCoins(q.rewardAmount);
-          soundFx.init();
-          soundFx.play('celebration');
-          if (q.id === 'q3') {
+    const token = localStorage.getItem('catch_token');
+    const target = quests.find(q => q.id === questId);
+    if (!target || target.claimed || target.progress < target.target) return;
+    if (token) {
+      try {
+        const base = getServerBaseUrl();
+        const res = await fetch(`${base}/api/claim-quest`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            questId,
+            rewardType: target.rewardType,
+            rewardAmount: target.rewardAmount
+          })
+        });
+        const data = await res.json();
+        if (data && data.success) {
+          setCoins(data.coins);
+          setGems(data.gems);
+          localStorage.setItem('catch_coins', data.coins);
+          localStorage.setItem('catch_gems', data.gems);
+          if (questId === 'q3') {
             localStorage.setItem('catch_last_daily_claim', today);
           }
-          return {
-            ...q,
-            claimed: true
-          };
+          setQuests(prev => {
+            const next = prev.map(q => q.id === questId ? {
+              ...q,
+              claimed: true
+            } : q);
+            localStorage.setItem('catch_quests', JSON.stringify(next));
+            return next;
+          });
+          soundFx.init();
+          soundFx.play('celebration');
+          showVoiceNotice('تم استلام الجائزة وحفظها بحسابك! 🎁');
+          return;
+        } else if (data && data.error) {
+          showVoiceNotice(data.error);
+          setQuests(prev => {
+            const next = prev.map(q => q.id === questId ? {
+              ...q,
+              claimed: true
+            } : q);
+            localStorage.setItem('catch_quests', JSON.stringify(next));
+            return next;
+          });
+          return;
         }
-        return q;
-      });
+      } catch (err) {
+        console.warn('Quest claim API error:', err);
+      }
+    }
+
+    // Guest fallback
+    if (target.rewardType === 'gems') addGems(target.rewardAmount);else addCoins(target.rewardAmount);
+    soundFx.init();
+    soundFx.play('celebration');
+    if (questId === 'q3') {
+      localStorage.setItem('catch_last_daily_claim', today);
+    }
+    setQuests(prev => {
+      const next = prev.map(q => q.id === questId ? {
+        ...q,
+        claimed: true
+      } : q);
       localStorage.setItem('catch_quests', JSON.stringify(next));
       return next;
     });
@@ -1531,18 +1603,16 @@ function App() {
     soundFx.init();
     if (!unlockedAvatars.includes(av.id)) {
       if (gems >= av.cost) {
-        setGems(prev => {
-          const next = prev - av.cost;
-          localStorage.setItem('catch_gems', next);
-          return next;
-        });
+        const nextGems = gems - av.cost;
+        setGems(nextGems);
+        localStorage.setItem('catch_gems', nextGems);
         const nextAvatars = [...unlockedAvatars, av.id];
         setUnlockedAvatars(nextAvatars);
         localStorage.setItem('catch_unlocked_avatars', JSON.stringify(nextAvatars));
         setAvatar(av.emoji);
         localStorage.setItem('catch_avatar', av.emoji);
         soundFx.play('celebration');
-        syncCustomization(av.emoji, selectedCardBack);
+        syncCustomization(av.emoji, selectedCardBack, nextAvatars, unlockedCardBacks, nextGems);
       } else {
         setErrorMsg('جواهر غير كافية! اجمع جواهر من المهام اليومية 💎');
         setTimeout(() => setErrorMsg(''), 2500);
@@ -1554,7 +1624,7 @@ function App() {
       syncCustomization(av.emoji, selectedCardBack);
     }
   };
-  const syncCustomization = (newAvatar, newCardBack) => {
+  const syncCustomization = (newAvatar, newCardBack, newAvs, newBacks, newGems) => {
     const token = localStorage.getItem('catch_token');
     if (!token) return;
     const base = getServerBaseUrl();
@@ -1566,7 +1636,11 @@ function App() {
       },
       body: JSON.stringify({
         avatar: newAvatar,
-        card_back: newCardBack
+        card_back: newCardBack,
+        unlockedAvatars: newAvs || unlockedAvatars,
+        unlockedBacks: newBacks || unlockedCardBacks,
+        gems: typeof newGems === 'number' ? newGems : gems,
+        coins
       })
     }).catch(() => {});
   };
@@ -1574,18 +1648,16 @@ function App() {
     soundFx.init();
     if (!unlockedCardBacks.includes(cb.id)) {
       if (gems >= cb.cost) {
-        setGems(prev => {
-          const next = prev - cb.cost;
-          localStorage.setItem('catch_gems', next);
-          return next;
-        });
+        const nextGems = gems - cb.cost;
+        setGems(nextGems);
+        localStorage.setItem('catch_gems', nextGems);
         const nextBacks = [...unlockedCardBacks, cb.id];
         setUnlockedCardBacks(nextBacks);
         localStorage.setItem('catch_unlocked_backs', JSON.stringify(nextBacks));
         setSelectedCardBack(cb.id);
         localStorage.setItem('catch_card_back', cb.id);
         soundFx.play('celebration');
-        syncCustomization(avatar, cb.id);
+        syncCustomization(avatar, cb.id, unlockedAvatars, nextBacks, nextGems);
       } else {
         setErrorMsg('جواهر غير كافية! اجمع جواهر من المهام اليومية 💎');
         setTimeout(() => setErrorMsg(''), 2500);
@@ -1644,6 +1716,35 @@ function App() {
       setGems(data.user.gems);
       if (data.user.avatar) setAvatar(data.user.avatar);
       if (data.user.card_back) setSelectedCardBack(data.user.card_back);
+      if (data.user.unlocked_avatars && Array.isArray(data.user.unlocked_avatars)) {
+        setUnlockedAvatars(data.user.unlocked_avatars);
+        localStorage.setItem('catch_unlocked_avatars', JSON.stringify(data.user.unlocked_avatars));
+      }
+      if (data.user.unlocked_backs && Array.isArray(data.user.unlocked_backs)) {
+        setUnlockedCardBacks(data.user.unlocked_backs);
+        localStorage.setItem('catch_unlocked_backs', JSON.stringify(data.user.unlocked_backs));
+      }
+      const todayAuth = new Date().toISOString().slice(0, 10);
+      if (data.user.last_daily_claim === todayAuth) {
+        localStorage.setItem('catch_last_daily_claim', todayAuth);
+        setQuests(prev => prev.map(q => q.id === 'q3' ? {
+          ...q,
+          claimed: true,
+          progress: 1
+        } : q));
+      }
+      if (data.user.quest_data && typeof data.user.quest_data === 'object') {
+        setQuests(prev => prev.map(q => {
+          if (data.user.quest_data[q.id] === todayAuth) {
+            return {
+              ...q,
+              claimed: true,
+              progress: q.target
+            };
+          }
+          return q;
+        }));
+      }
       setIsGuest(false);
       setShowAuthModal(false);
       setIsEditingProfile(false);
@@ -1708,6 +1809,35 @@ function App() {
           setGems(data.user.gems);
           if (data.user.avatar) setAvatar(data.user.avatar);
           if (data.user.card_back) setSelectedCardBack(data.user.card_back);
+          if (data.user.unlocked_avatars && Array.isArray(data.user.unlocked_avatars)) {
+            setUnlockedAvatars(data.user.unlocked_avatars);
+            localStorage.setItem('catch_unlocked_avatars', JSON.stringify(data.user.unlocked_avatars));
+          }
+          if (data.user.unlocked_backs && Array.isArray(data.user.unlocked_backs)) {
+            setUnlockedCardBacks(data.user.unlocked_backs);
+            localStorage.setItem('catch_unlocked_backs', JSON.stringify(data.user.unlocked_backs));
+          }
+          const todayMe = new Date().toISOString().slice(0, 10);
+          if (data.user.last_daily_claim === todayMe) {
+            localStorage.setItem('catch_last_daily_claim', todayMe);
+            setQuests(prev => prev.map(q => q.id === 'q3' ? {
+              ...q,
+              claimed: true,
+              progress: 1
+            } : q));
+          }
+          if (data.user.quest_data && typeof data.user.quest_data === 'object') {
+            setQuests(prev => prev.map(q => {
+              if (data.user.quest_data[q.id] === todayMe) {
+                return {
+                  ...q,
+                  claimed: true,
+                  progress: q.target
+                };
+              }
+              return q;
+            }));
+          }
           localStorage.setItem('catch_name', data.user.username);
           localStorage.setItem('catch_coins', data.user.coins);
           localStorage.setItem('catch_gems', data.user.gems);
@@ -3230,8 +3360,8 @@ function App() {
     }, avatar), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
       className: "text-xs font-black text-yellow-300"
     }, currentUser.username, " 👑"), /*#__PURE__*/React.createElement("p", {
-      className: "text-[10px] text-purple-200/60 font-mono"
-    }, "ID: ", currentUser.id.slice(0, 12)))), /*#__PURE__*/React.createElement("span", {
+      className: "text-[10px] text-amber-200/70 font-mono font-bold"
+    }, "كود اللاعب: #", currentUser.id))), /*#__PURE__*/React.createElement("span", {
       className: "text-[10px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full"
     }, lang === 'en' ? 'Saved Account ✓' : 'حساب مسجل ✓')), /*#__PURE__*/React.createElement("div", {
       className: "flex items-center justify-between text-[11px] bg-black/40 px-2 py-1 rounded-xl border border-white/5 font-bold"
@@ -5252,4 +5382,45 @@ function App() {
     className: "fixed bottom-24 left-1/2 -translate-x-1/2 bg-red-600 text-white px-6 py-2.5 rounded-2xl font-bold shadow-2xl z-50 text-sm"
   }, errorMsg));
 }
-ReactDOM.createRoot(document.getElementById('root')).render(/*#__PURE__*/React.createElement(App, null));
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      hasError: false,
+      error: null
+    };
+  }
+  static getDerivedStateFromError(error) {
+    return {
+      hasError: true,
+      error
+    };
+  }
+  componentDidCatch(error, errorInfo) {
+    console.error('Catch App ErrorBoundary caught an error:', error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return /*#__PURE__*/React.createElement("div", {
+        className: "fixed inset-0 bg-[#061412] text-white flex flex-col items-center justify-center p-6 text-center select-none z-[9999]"
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "w-20 h-20 bg-emerald-500/10 border-2 border-emerald-400/30 rounded-3xl flex items-center justify-center text-4xl mb-4 shadow-xl"
+      }, "🦎"), /*#__PURE__*/React.createElement("h1", {
+        className: "text-xl font-black text-amber-300 mb-2 font-display"
+      }, "حصل دروب مفاجئ!"), /*#__PURE__*/React.createElement("p", {
+        className: "text-xs text-white/70 max-w-xs mb-6 leading-relaxed"
+      }, "ولا يهمك، كل بياناتك ورصيدك محفوظين في السيرفر. اضغط على الزر تحت عشان ترجع للطاولة فوراً."), /*#__PURE__*/React.createElement("button", {
+        onClick: () => {
+          this.setState({
+            hasError: false,
+            error: null
+          });
+          window.location.reload();
+        },
+        className: "px-6 py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-black text-sm shadow-lg shadow-emerald-500/25 active:scale-95 transition"
+      }, "🔄 إعادة التحميل والعودة للعبة"));
+    }
+    return this.props.children;
+  }
+}
+ReactDOM.createRoot(document.getElementById('root')).render(/*#__PURE__*/React.createElement(ErrorBoundary, null, /*#__PURE__*/React.createElement(App, null)));

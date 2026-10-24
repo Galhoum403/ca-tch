@@ -61,6 +61,10 @@ db.exec(`
   );
 `);
 
+// Migrations for existing databases
+try { db.exec("ALTER TABLE users ADD COLUMN last_daily_claim TEXT;"); } catch(e) {}
+try { db.exec("ALTER TABLE users ADD COLUMN quest_data TEXT DEFAULT '{}';"); } catch(e) {}
+
 console.log('📦 SQLite Database initialized successfully at:', dbPath);
 
 // --- AUTHENTICATION HELPERS ---
@@ -180,6 +184,11 @@ function sanitizeUser(user) {
   } catch(e) {
     safe.unlocked_backs = ['classic'];
   }
+  try {
+    safe.quest_data = JSON.parse(safe.quest_data || '{}');
+  } catch(e) {
+    safe.quest_data = {};
+  }
   return safe;
 }
 
@@ -253,7 +262,7 @@ function recordGameStats(userId, isWinner, setsWon = 0) {
 /**
  * Save player avatar and skins customizations
  */
-function updateCustomization(userId, { avatar, unlockedAvatars, unlockedBacks }) {
+function updateCustomization(userId, { avatar, unlockedAvatars, unlockedBacks, coins, gems }) {
   const updates = [];
   const params = [];
 
@@ -269,6 +278,14 @@ function updateCustomization(userId, { avatar, unlockedAvatars, unlockedBacks })
     updates.push('unlocked_backs = ?');
     params.push(JSON.stringify(unlockedBacks));
   }
+  if (typeof coins === 'number') {
+    updates.push('coins = ?');
+    params.push(Math.max(0, parseInt(coins, 10)));
+  }
+  if (typeof gems === 'number') {
+    updates.push('gems = ?');
+    params.push(Math.max(0, parseInt(gems, 10)));
+  }
 
   if (updates.length > 0) {
     params.push(userId);
@@ -276,6 +293,48 @@ function updateCustomization(userId, { avatar, unlockedAvatars, unlockedBacks })
   }
 
   return getUserById(userId);
+}
+
+/**
+ * Permanently claim quest / daily gift and update balance in database
+ */
+function claimQuest(userId, questId, rewardType, rewardAmount) {
+  const user = db.prepare('SELECT coins, gems, last_daily_claim, quest_data FROM users WHERE id = ?').get(userId);
+  if (!user) throw new Error('اللاعب غير موجود');
+  const today = new Date().toISOString().slice(0, 10);
+  let questData = {};
+  try { questData = JSON.parse(user.quest_data || '{}'); } catch(e) {}
+
+  if (questId === 'q3') {
+    if (user.last_daily_claim === today) {
+      throw new Error('لقد استلمت هديتك اليومية بالفعل اليوم! عد غداً للمزيد.');
+    }
+  } else {
+    if (questData[questId] === today) {
+      throw new Error('لقد استلمت جائزة هذه المهمة اليوم بالفعل!');
+    }
+  }
+
+  const addCoins = rewardType === 'coins' ? parseInt(rewardAmount, 10) : 0;
+  const addGems = rewardType === 'gems' ? parseInt(rewardAmount, 10) : 0;
+  const newCoins = user.coins + addCoins;
+  const newGems = user.gems + addGems;
+
+  if (questId === 'q3') {
+    db.prepare('UPDATE users SET coins = ?, gems = ?, last_daily_claim = ? WHERE id = ?')
+      .run(newCoins, newGems, today, userId);
+  } else {
+    questData[questId] = today;
+    db.prepare('UPDATE users SET coins = ?, gems = ?, quest_data = ? WHERE id = ?')
+      .run(newCoins, newGems, JSON.stringify(questData), userId);
+  }
+
+  return {
+    success: true,
+    coins: newCoins,
+    gems: newGems,
+    last_daily_claim: today
+  };
 }
 
 // --- ADMIN DASHBOARD OPERATIONS ---
@@ -347,6 +406,7 @@ module.exports = {
   adjustUserBalance,
   recordGameStats,
   updateCustomization,
+  claimQuest,
   getAllPlayersForAdmin,
   setPlayerBan,
   adminResetPassword,

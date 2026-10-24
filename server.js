@@ -90,6 +90,19 @@ app.post('/api/customization', (req, res) => {
   res.json({ success: true, user: updated });
 });
 
+app.post('/api/claim-quest', (req, res) => {
+  const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+  const user = db.getUserByToken(token);
+  if (!user) return res.status(401).json({ success: false, error: 'غير مصرح أو الجلسة منتهية' });
+  const { questId, rewardType, rewardAmount } = req.body;
+  try {
+    const result = db.claimQuest(user.id, questId, rewardType, rewardAmount);
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
 // --- ADMIN DASHBOARD REST API ---
 
 function checkAdminAuth(req, res, next) {
