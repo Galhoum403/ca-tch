@@ -30,6 +30,17 @@ const MEME_STICKERS = [{
   emoji: '🥺',
   text: 'رحمة'
 }];
+
+// Famous Egyptian Comic Meme Reaction Stickers
+const COMIC_MEME_STICKERS = [{
+  id: 'alaa_nazer',
+  actor: 'علاء ولي الدين',
+  movie: 'الناظر',
+  character: 'صلاح الدين',
+  quote: 'اعمل نفسك ميت! 💀',
+  image: './stickers/meme_alaa_nazer.jpg',
+  sound: 'impact'
+}];
 const RADIAL_REACTIONS = [{
   emoji: '👍',
   text: 'لايك!'
@@ -1355,6 +1366,7 @@ function App() {
   const [showLog, setShowLog] = useState(false);
   const [showMemes, setShowMemes] = useState(false);
   const [showEmojiWheel, setShowEmojiWheel] = useState(false);
+  const [reactionTab, setReactionTab] = useState('memes');
   const [customValue, setCustomValue] = useState(null); // for Special / Kdab
   const [speechBubbles, setSpeechBubbles] = useState({});
   const [liarPrompt, setLiarPrompt] = useState(null); // { askerName, requestedNumber, count }
@@ -3829,9 +3841,20 @@ function App() {
       "data-opponent-idx": pRealIdx,
       onClick: () => isTargetable && handleOpponentSeatClick(pRealIdx),
       className: `seat-node flex flex-col items-center relative select-none cursor-pointer transition ${isTargetable ? 'target-active scale-105' : ''}`
-    }, bubble && /*#__PURE__*/React.createElement("div", {
-      className: "comic-meme-bubble absolute -top-10 bg-white text-black px-2.5 py-1 rounded-2xl text-xs font-black whitespace-nowrap z-40 border-2 border-indigo-950 shadow-2xl animate-bounce"
-    }, bubble.emoji ? `${bubble.emoji} ` : '', bubble.text), /*#__PURE__*/React.createElement("div", {
+    }, bubble && (() => {
+      const isImg = bubble.emoji && (bubble.emoji.startsWith('./') || bubble.emoji.startsWith('/') || bubble.emoji.includes('.jpg') || bubble.emoji.includes('.png'));
+      return /*#__PURE__*/React.createElement("div", {
+        className: "comic-meme-bubble absolute -top-20 left-1/2 -translate-x-1/2 bg-white text-black p-1.5 rounded-2xl text-xs font-black whitespace-nowrap z-50 border-2 border-slate-900 shadow-2xl animate-bounce flex flex-col items-center"
+      }, isImg ? /*#__PURE__*/React.createElement("img", {
+        src: bubble.emoji,
+        className: "w-14 h-14 rounded-xl object-contain drop-shadow mb-1",
+        alt: ""
+      }) : bubble.emoji ? /*#__PURE__*/React.createElement("span", {
+        className: "text-xl mb-0.5"
+      }, bubble.emoji) : null, /*#__PURE__*/React.createElement("span", {
+        className: "text-[11px] font-black text-slate-900 px-1"
+      }, bubble.text));
+    })(), /*#__PURE__*/React.createElement("div", {
       className: "relative w-13 h-13 sm:w-15 sm:h-15 flex items-center justify-center"
     }, /*#__PURE__*/React.createElement("svg", {
       className: "absolute inset-0 w-full h-full transform -rotate-90 pointer-events-none",
@@ -4288,9 +4311,21 @@ function App() {
     className: "flex items-center gap-3"
   }, /*#__PURE__*/React.createElement("div", {
     className: "relative"
-  }, speechBubbles[socketRef.current?.id] && /*#__PURE__*/React.createElement("div", {
-    className: "comic-meme-bubble absolute -top-10 -right-2 bg-white text-black px-2.5 py-1 rounded-2xl text-xs font-black whitespace-nowrap z-50 border-2 border-emerald-950 shadow-2xl animate-bounce"
-  }, speechBubbles[socketRef.current?.id].emoji ? `${speechBubbles[socketRef.current?.id].emoji} ` : '', speechBubbles[socketRef.current?.id].text), /*#__PURE__*/React.createElement("span", {
+  }, speechBubbles[socketRef.current?.id] && (() => {
+    const myBubble = speechBubbles[socketRef.current?.id];
+    const isImg = myBubble.emoji && (myBubble.emoji.startsWith('./') || myBubble.emoji.startsWith('/') || myBubble.emoji.includes('.jpg') || myBubble.emoji.includes('.png'));
+    return /*#__PURE__*/React.createElement("div", {
+      className: "comic-meme-bubble absolute -top-24 right-0 z-50 bg-white text-black p-1.5 rounded-2xl text-xs font-black whitespace-nowrap border-2 border-slate-900 shadow-2xl animate-bounce flex flex-col items-center"
+    }, isImg ? /*#__PURE__*/React.createElement("img", {
+      src: myBubble.emoji,
+      className: "w-14 h-14 rounded-xl object-contain drop-shadow mb-1",
+      alt: ""
+    }) : myBubble.emoji ? /*#__PURE__*/React.createElement("span", {
+      className: "text-xl mb-0.5"
+    }, myBubble.emoji) : null, /*#__PURE__*/React.createElement("span", {
+      className: "text-[11px] font-black text-slate-900 px-1"
+    }, myBubble.text));
+  })(), /*#__PURE__*/React.createElement("span", {
     className: `text-3xl block leading-none p-1 rounded-xl border border-sky-400/30 bg-slate-800/80 shadow-sm ${speakingPlayers[socketRef.current?.id] ? 'speaking-pulse ring-2 ring-emerald-400' : ''}`
   }, me.avatar), speakingPlayers[socketRef.current?.id] && /*#__PURE__*/React.createElement("span", {
     className: "absolute -top-2 -right-1 text-[8px] font-black px-1 rounded-full bg-emerald-500 text-white shadow-sm"
@@ -5357,39 +5392,75 @@ function App() {
   }, "إلغاء الأمر الصوتي ✕")), voiceNotice && /*#__PURE__*/React.createElement("div", {
     className: "fixed top-20 left-1/2 -translate-x-1/2 z-[260] bg-emerald-950/95 border-2 border-emerald-400 text-emerald-200 px-5 py-2.5 rounded-2xl font-black text-sm shadow-[0_0_30px_rgba(16,185,129,0.7)] backdrop-blur-md flex items-center gap-2 animate-pulse"
   }, /*#__PURE__*/React.createElement("span", null, "🎙️"), /*#__PURE__*/React.createElement("span", null, voiceNotice)), showEmojiWheel && /*#__PURE__*/React.createElement("div", {
-    className: "fixed inset-0 z-[300] flex items-center justify-center bg-black/65 backdrop-blur-sm animate-fade-in",
+    className: "fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in",
     onClick: () => setShowEmojiWheel(false)
   }, /*#__PURE__*/React.createElement("div", {
-    className: "relative w-72 h-72 sm:w-84 sm:h-84 rounded-full flex items-center justify-center",
+    className: "w-full max-w-sm bg-slate-900 border-2 border-slate-700 rounded-3xl p-4 shadow-2xl flex flex-col text-right font-cairo select-none",
     onClick: e => e.stopPropagation()
   }, /*#__PURE__*/React.createElement("div", {
-    className: "absolute inset-0 rounded-full border-4 border-emerald-400/70 shadow-[0_0_40px_rgba(52,211,153,0.5),inset_0_0_35px_rgba(52,211,153,0.25)] bg-gradient-to-b from-[#0b3820]/95 to-[#041a0e]/95 pointer-events-none"
-  }), /*#__PURE__*/React.createElement("button", {
+    className: "flex items-center justify-between pb-2.5 mb-3 border-b border-slate-800"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-1.5"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setReactionTab('memes'),
+    className: `px-3 py-1.5 rounded-xl text-xs font-black transition ${reactionTab === 'memes' ? 'bg-amber-500 text-slate-950 shadow-md' : 'bg-slate-800 text-slate-300 hover:text-white'}`
+  }, "🎭 ميمز المشاهير"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setReactionTab('emojis'),
+    className: `px-3 py-1.5 rounded-xl text-xs font-black transition ${reactionTab === 'emojis' ? 'bg-emerald-500 text-slate-950 shadow-md' : 'bg-slate-800 text-slate-300 hover:text-white'}`
+  }, "😊 إيموجي سريع")), /*#__PURE__*/React.createElement("button", {
     onClick: () => setShowEmojiWheel(false),
-    className: "w-14 h-14 rounded-full bg-emerald-950 border-2 border-emerald-400 text-emerald-200 text-xl font-black shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition z-20"
-  }, "✕"), RADIAL_REACTIONS.map((item, idx) => {
-    const total = RADIAL_REACTIONS.length;
-    const angle = (idx * (360 / total) - 90) * (Math.PI / 180);
-    const radius = 108; // px
-    const x = Math.round(radius * Math.cos(angle));
-    const y = Math.round(radius * Math.sin(angle));
-    return /*#__PURE__*/React.createElement("button", {
-      key: idx,
-      onClick: () => {
-        socketRef.current?.emit('send_meme_sticker', {
-          stickerUrl: item.emoji,
-          stickerText: item.text
-        });
-        triggerHaptic('light');
-        setShowEmojiWheel(false);
-      },
-      style: {
-        transform: `translate(${x}px, ${y}px)`,
-        boxShadow: '0 4px 15px rgba(0,0,0,0.7)'
-      },
-      className: "absolute w-12 h-12 rounded-full bg-white/10 hover:bg-emerald-500/40 border-2 border-emerald-300 text-2xl flex items-center justify-center hover:scale-125 active:scale-90 transition z-10"
-    }, /*#__PURE__*/React.createElement("span", null, item.emoji));
-  }))), /*#__PURE__*/React.createElement(ExitConfirmModal, {
+    className: "w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-sm font-bold transition"
+  }, "✕")), reactionTab === 'memes' && /*#__PURE__*/React.createElement("div", {
+    className: "space-y-2"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-[11px] font-bold text-slate-400"
+  }, "اختر الميم لإرسال الكوميك مباشرة فوق صورتك على الطاولة:"), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-1 gap-2.5 max-h-72 overflow-y-auto p-1"
+  }, COMIC_MEME_STICKERS.map(meme => /*#__PURE__*/React.createElement("div", {
+    key: meme.id,
+    onClick: () => {
+      socketRef.current?.emit('send_meme_sticker', {
+        stickerUrl: meme.image,
+        stickerText: meme.quote
+      });
+      soundFx.init();
+      soundFx.play(meme.sound || 'impact');
+      triggerHaptic('light');
+      setShowEmojiWheel(false);
+    },
+    className: "flex items-center gap-3 p-2.5 rounded-2xl bg-slate-800/90 hover:bg-slate-700/90 border-2 border-slate-700 hover:border-amber-400 cursor-pointer transition active:scale-95 shadow-md"
+  }, /*#__PURE__*/React.createElement("img", {
+    src: meme.image,
+    alt: meme.actor,
+    className: "w-16 h-16 rounded-xl object-contain bg-slate-950/60 border border-slate-600 shrink-0 shadow"
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "flex-1 min-w-0 text-right"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-sm font-black text-yellow-300 leading-snug truncate"
+  }, "« ", meme.quote, " »"), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs font-bold text-slate-300 mt-1"
+  }, meme.actor, " ", /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] text-slate-400"
+  }, "• فيلم ", meme.movie))), /*#__PURE__*/React.createElement("span", {
+    className: "text-xl shrink-0 opacity-80"
+  }, "📢"))))), reactionTab === 'emojis' && /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-5 gap-2.5 p-2 max-h-72 overflow-y-auto"
+  }, RADIAL_REACTIONS.map((item, idx) => /*#__PURE__*/React.createElement("button", {
+    key: idx,
+    onClick: () => {
+      socketRef.current?.emit('send_meme_sticker', {
+        stickerUrl: item.emoji,
+        stickerText: item.text
+      });
+      triggerHaptic('light');
+      setShowEmojiWheel(false);
+    },
+    className: "flex flex-col items-center justify-center p-2 rounded-2xl bg-slate-800 hover:bg-emerald-500/20 border border-slate-700 hover:border-emerald-400 transition active:scale-90 shadow"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-2xl mb-1"
+  }, item.emoji), /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] font-bold text-slate-300 truncate max-w-full"
+  }, item.text)))))), /*#__PURE__*/React.createElement(ExitConfirmModal, {
     isOpen: showExitConfirmModal,
     onClose: () => setShowExitConfirmModal(false),
     onConfirm: handleLeaveRoom,
