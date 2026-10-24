@@ -215,16 +215,16 @@ function getCardDetailedInfo(card) {
 
 // Cartoon Avatars inspired by Plan Image 4
 const CARTOON_AVATARS = [
-  { id: 'saeedi', name: 'الحاج فزاع', emoji: '👳‍♂️', desc: 'صعيدي أصيل مبيتهددش', cost: 0 },
-  { id: 'batman', name: 'باتمان الشعبي', emoji: '🦇', desc: 'حامي الحارة بالليل', cost: 20 },
-  { id: 'muallem', name: 'المعلم شنب', emoji: '👨🏻', desc: 'معلم الطاولة بالفانلة', cost: 20 },
-  { id: 'captain', name: 'كابتن الطاولة', emoji: '🧢', desc: 'حريف كروت ورهانات', cost: 20 },
-  { id: 'grandma', name: 'الحجة بركة', emoji: '👵', desc: 'طيبة بس بتكسب الكل', cost: 20 },
-  { id: 'goth', name: 'بنت الجوث', emoji: '🖤', desc: 'غموض ونظرات مرعبة', cost: 20 },
-  { id: 'cute_girl', name: 'بنت الكيوت', emoji: '🎧', desc: 'سماعات قطة ومزاجه رايق', cost: 20 },
-  { id: 'chubby', name: 'الفتوة كوكو', emoji: '🥊', desc: 'صاحب الضربات القاضية', cost: 20 },
-  { id: 'pharaoh', name: 'الملك رمسيس', emoji: '👑', desc: 'فرعون الكازينو الذهبي', cost: 50 },
-  { id: 'wizard', name: 'الساحر عنتر', emoji: '🧙‍♂️', desc: 'بيخفي الورق في ثانية', cost: 50 },
+  { id: 'saeedi', name: 'الحاج فزاع', emoji: '👳‍♂️', desc: 'خبير استراتيجي ذو حضور قوي', cost: 0 },
+  { id: 'batman', name: 'فارس الظلام', emoji: '🦇', desc: 'خبير التخفي والمباغتة السريعة', cost: 20 },
+  { id: 'muallem', name: 'القائد المحنك', emoji: '👨🏻', desc: 'أسطورة قراءة طاولة اللعب', cost: 20 },
+  { id: 'captain', name: 'الكابتن', emoji: '🧢', desc: 'محترف قراءة أوراق الخصوم', cost: 20 },
+  { id: 'grandma', name: 'الحكيمة', emoji: '👵', desc: 'هدوء وتركيز يحسم أصعب الجولات', cost: 20 },
+  { id: 'goth', name: 'الشخصية الغامضة', emoji: '🖤', desc: 'غموض وذكاء غير متوقع', cost: 20 },
+  { id: 'cute_girl', name: 'النجمة الصاعدة', emoji: '🎧', desc: 'حماس متقد وروح مرحة', cost: 20 },
+  { id: 'chubby', name: 'المنافس القوي', emoji: '🥊', desc: 'جرأة وتحديات حاسمة', cost: 20 },
+  { id: 'pharaoh', name: 'الملك رمسيس', emoji: '👑', desc: 'أسطورة الفراعنة القدماء', cost: 50 },
+  { id: 'wizard', name: 'الساحر', emoji: '🧙‍♂️', desc: 'خفة يد ودقة فائقة', cost: 50 },
 ];
 
 // Card Back Skins inspired by Plan Image 5
@@ -232,22 +232,22 @@ const CARD_BACK_SKINS = [
   { id: 'classic', name: 'كاتش كلاسيك', bg: 'from-amber-400 to-amber-600', border: 'border-yellow-300', cost: 0 },
   { id: 'purple_radial', name: 'الموف الملكي', bg: 'from-purple-600 to-indigo-800', border: 'border-purple-300', cost: 20 },
   { id: 'gold_pharaoh', name: 'الذهب الفرعوني', bg: 'from-yellow-400 via-amber-300 to-yellow-600', border: 'border-yellow-100', cost: 20 },
-  { id: 'cyan_neon', name: 'سايبر نيون', bg: 'from-cyan-500 to-blue-700', border: 'border-cyan-300', cost: 20 },
+  { id: 'crystal_blue', name: 'الأزرق الكريستالي', bg: 'from-sky-500 to-blue-700', border: 'border-sky-300', cost: 20 },
   { id: 'ruby_velvet', name: 'المخمل الأحمر', bg: 'from-red-600 to-rose-900', border: 'border-rose-300', cost: 20 },
 ];
 
-// Authentic Egyptian Card-Table Meme Reaction Stickers
+// Table Reaction Stickers
 const MEME_REACTION_STICKERS = [
-  { id: 'm1', text: 'ههههه شرير 😈', emoji: '😈', label: 'ضحكة الشر' },
-  { id: 'm2', text: 'يا خبر أبيض! 😱', emoji: '😱', label: 'صدمة' },
-  { id: 'm3', text: 'شاي خمسينة في المخ ☕', emoji: '☕', label: 'شاي رايق' },
-  { id: 'm4', text: 'عاش يا وحش! 👏', emoji: '👏', label: 'عاش يا بطل' },
-  { id: 'm5', text: 'اللعب ولّع نار! 🔥', emoji: '🔥', label: 'حريقة' },
-  { id: 'm6', text: 'ههههههه مش قادر 😂', emoji: '😂', label: 'ميت ضحك' },
-  { id: 'm7', text: 'ولا بيهمني ولا بتهدد 😤', emoji: '😤', label: 'مبتهددش' },
-  { id: 'm8', text: 'يا عيني عالورق! 😭', emoji: '😭', label: 'حرااام' },
-  { id: 'm9', text: 'في الجبهة في الجون 🎯', emoji: '🎯', label: 'في الجبهة' },
-  { id: 'm10', text: 'خلاص شطبت وودعت 💀', emoji: '💀', label: 'خلاص شطبت' },
+  { id: 'm1', text: 'حركة غير متوقعة! 😈', emoji: '😈', label: 'دهاء' },
+  { id: 'm2', text: 'مفاجأة غير متوقعة! 😱', emoji: '😱', label: 'مفاجأة' },
+  { id: 'm3', text: 'تفكير استراتيجي عميق ☕', emoji: '☕', label: 'تركيز' },
+  { id: 'm4', text: 'أحسنت اللعب! 👏', emoji: '👏', label: 'إشادة' },
+  { id: 'm5', text: 'المنافسة مشتعلة! 🔥', emoji: '🔥', label: 'حماس' },
+  { id: 'm6', text: 'موقف طريف جداً 😂', emoji: '😂', label: 'ضحك' },
+  { id: 'm7', text: 'أنا جاهز لأي تحدي! 😤', emoji: '😤', label: 'تحدي' },
+  { id: 'm8', text: 'حظ غير متوقع! 😭', emoji: '😭', label: 'صدمة' },
+  { id: 'm9', text: 'إصابة دقيقة في الهدف! 🎯', emoji: '🎯', label: 'دقة' },
+  { id: 'm10', text: 'لحظات الحسم الأخيرة 💀', emoji: '💀', label: 'حسم' },
 ];
 
 // Daily Quests with 0 initial progress
@@ -569,14 +569,14 @@ class SoundFxEngine {
 const soundFx = new SoundFxEngine();
 
 const EGYPTIAN_BANTERS = [
-  { text: 'يا حلاوة اللِمّة! 🔥', emoji: '🔥', sound: 'banter' },
-  { text: 'كاتش في السلك يا معلم! 🚫', emoji: '🚫', sound: 'catch' },
-  { text: 'درعك مش نافعك! 🛡️', emoji: '🛡️', sound: 'impact' },
-  { text: 'هات يا باشا من سكات! ✋', emoji: '✋', sound: 'whoosh' },
-  { text: 'كداب في أصل وشك! 🤥', emoji: '🤥', sound: 'snap' },
-  { text: 'روّق على حالك واشرب شاي! ☕', emoji: '☕', sound: 'banter' },
-  { text: 'اللعبة لفت عليك يا غالي! 🔙', emoji: '🔙', sound: 'whoosh' },
-  { text: 'كفاية عليك كده النهاردة! 🖐️', emoji: '🖐️', sound: 'impact' },
+  { text: 'ضربة معلم وحسم سريع! 🔥', emoji: '🔥', sound: 'banter' },
+  { text: 'كاتش حاسم في التوقيت المناسب! 🚫', emoji: '🚫', sound: 'catch' },
+  { text: 'تصدّي دفاعي أسطوري! 🛡️', emoji: '🛡️', sound: 'impact' },
+  { text: 'ورقة محسوبة ومدروسة بالملّي! 🎯', emoji: '🎯', sound: 'whoosh' },
+  { text: 'خداع تكتيكي مكشوف بالكامل! 🤥', emoji: '🤥', sound: 'snap' },
+  { text: 'الهدوء والتركيز قبل العاصفة! ☕', emoji: '☕', sound: 'banter' },
+  { text: 'انعكاس كامل لمجرى اللعبة! 🔙', emoji: '🔙', sound: 'whoosh' },
+  { text: 'استعد، الجولة القادمة حاسمة! ⚡', emoji: '⚡', sound: 'impact' },
 ];
 
 // --- Egyptian Arabic Number Mapping ---
@@ -902,81 +902,72 @@ class VoiceChatManager {
   }
 }
 
-// --- DRAMATIC CHAMELEON EXIT CONFIRMATION MODAL ---
+// --- PROFESSIONAL EXIT CONFIRMATION MODAL ---
 function ExitConfirmModal({ isOpen, onClose, onConfirm, isPlaying, lang }) {
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 z-[600] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="w-full max-w-sm bg-gradient-to-b from-[#240812] via-[#16040b] to-[#0a0105] border-2 border-red-500/80 rounded-3xl p-5 shadow-[0_0_50px_rgba(239,68,68,0.45)] text-center text-white relative overflow-hidden font-cairo">
-        {/* Glow ambient background effect */}
-        <div className="absolute -top-10 -left-10 w-28 h-28 bg-red-600/25 rounded-full blur-2xl pointer-events-none" />
-        <div className="absolute -bottom-10 -right-10 w-28 h-28 bg-amber-500/20 rounded-full blur-2xl pointer-events-none" />
-
-        {/* Mascot / Icon Badge */}
-        <div className="relative mb-3 inline-flex items-center justify-center">
-          <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-red-600 to-amber-500 p-1 shadow-lg shadow-red-500/40">
-            <div className="w-full h-full bg-[#180308] rounded-full flex items-center justify-center text-4xl">
-              {isPlaying ? '🦎' : '🚪'}
-            </div>
+    <div className="fixed inset-0 z-[600] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="w-full max-w-sm bg-slate-900 border border-slate-700/80 rounded-2xl p-5 shadow-2xl text-center text-white relative font-cairo">
+        {/* Clean Icon Badge */}
+        <div className="mb-3 inline-flex items-center justify-center">
+          <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-400/30 flex items-center justify-center text-2xl shadow-inner">
+            {isPlaying ? '⚠️' : '🚪'}
           </div>
-          <span className="absolute -bottom-1 -right-1 text-2xl animate-bounce">
-            {isPlaying ? '🛑' : '👋'}
-          </span>
         </div>
 
         {/* Title */}
-        <h3 className="text-xl font-black text-amber-300 mb-1.5 drop-shadow-md">
+        <h3 className="text-lg font-bold text-slate-100 mb-2">
           {isPlaying
-            ? (lang === 'en' ? 'Leaving So Soon, Champ?! 😱' : 'على فين يا بطل؟! رايح تخلع؟ 😱')
-            : (lang === 'en' ? 'Leave Table?' : 'عايز تغادر الطاولة؟ 🚪')}
+            ? (lang === 'en' ? 'Confirm Leaving Match' : 'تأكيد مغادرة الجولة')
+            : (lang === 'en' ? 'Leave Table' : 'مغادرة الطاولة')}
         </h3>
 
-        {/* Subtitle / Banter */}
-        <p className="text-xs text-amber-100/90 font-bold leading-relaxed mb-3 px-1">
+        {/* Description in Clean Professional Arabic */}
+        <p className="text-xs text-slate-300 font-medium leading-relaxed mb-4 px-2">
           {isPlaying
             ? (lang === 'en'
-                ? "You're in the heat of the match! Leaving now will count as a surrender, and your friends on the table will tease you! 😈"
-                : "أنت في عز الجولة يا كابتن! لو خرجت دلوقتي أصحابك على الطاولة هيشمتوا فيك واللِمّات هتروح عليك! 😈")
+                ? 'Are you sure you want to exit? Leaving now will count as a surrender. A smart bot will automatically take over your hand to ensure the game continues seamlessly for remaining players.'
+                : 'هل أنت متأكد من رغبتك في الخروج؟ مغادرتك الآن ستُعتبر انسحاباً، وسيتولى البوت الذكي إكمال اللعب بدلاً منك للحفاظ على سير المباراة لأصدقائك.')
             : (lang === 'en'
-                ? 'Are you sure you want to leave this table and return to the main lobby?'
-                : 'متأكد إنك عايز تسيب الطاولة دي وترجع للشاشة الرئيسية؟')}
+                ? 'Are you sure you want to leave this table and return to the main menu?'
+                : 'هل تريد مغادرة هذه الطاولة والعودة إلى القائمة الرئيسية؟')}
         </p>
 
         {isPlaying && (
-          <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-2.5 mb-4 text-[11px] font-bold text-amber-200/90 flex items-center gap-2 text-right">
-            <span className="text-xl shrink-0">🤖</span>
-            <span>
+          <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-2.5 mb-4 text-[11px] text-slate-300 flex items-center gap-2 text-right">
+            <span className="text-base shrink-0">💡</span>
+            <span className="leading-tight">
               {lang === 'en'
-                ? 'Smart Chameleon Bot will take over your seat so the game continues smoothly for your friends!'
-                : 'متقلقش.. لو مضطر تخرج، ذكاء الحرباية (البوت) هيمسك مكانك فوراً عشان متوقفش اللعب على أصحابك!'}
+                ? 'Note: You can reconnect to this match anytime while it is still in progress.'
+                : 'ملاحظة: يمكنك العودة لمتابعة اللعب طالما أن الجولة الحالية لا تزال جارية.'}
             </span>
           </div>
         )}
 
         {/* Buttons */}
-        <div className="flex flex-col gap-2.5">
+        <div className="flex flex-col gap-2">
           {/* Stay Button (Primary) */}
           <button
             onClick={onClose}
-            className="w-full py-3 bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-sm rounded-2xl shadow-lg shadow-emerald-900/50 border border-emerald-400/40 active:scale-95 transition-all flex items-center justify-center gap-2"
+            className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 active:scale-[0.99] text-white font-bold text-xs rounded-xl shadow transition flex items-center justify-center gap-1.5"
           >
-            <span>💪</span>
+            <span>✓</span>
             <span>
               {isPlaying
-                ? (lang === 'en' ? "I'm Staying to Win! (Back)" : "مكمّل ومش هسيب حقي! (رجوع للعب)")
-                : (lang === 'en' ? "Stay at Table" : "خليك في الطاولة")}
+                ? (lang === 'en' ? 'Continue Playing' : 'الاستمرار في اللعب')
+                : (lang === 'en' ? 'Stay at Table' : 'البقاء في الطاولة')}
             </span>
           </button>
 
           {/* Confirm Exit Button (Secondary) */}
           <button
             onClick={onConfirm}
-            className="w-full py-2.5 bg-red-950/60 hover:bg-red-900/80 text-red-200 hover:text-white font-black text-xs rounded-2xl border border-red-500/40 hover:border-red-400 active:scale-95 transition-all flex items-center justify-center gap-1.5"
+            className="w-full py-2 bg-slate-800 hover:bg-slate-700/80 active:scale-[0.99] text-slate-300 hover:text-white font-medium text-xs rounded-xl border border-slate-700 transition flex items-center justify-center gap-1.5"
           >
-            <span>🏃‍♂️</span>
+            <span>✕</span>
             <span>
               {isPlaying
-                ? (lang === 'en' ? 'Surrender & Exit' : 'هخلع خلاص.. خروج من الجولة')
+                ? (lang === 'en' ? 'Confirm & Exit' : 'تأكيد الانسحاب والخروج')
                 : (lang === 'en' ? 'Leave Table' : 'مغادرة الطاولة')}
             </span>
           </button>
@@ -2391,24 +2382,22 @@ function App() {
     return (
       <div className="w-full h-[100dvh] max-w-[480px] mx-auto flex flex-col justify-between relative overflow-hidden home-screen-bg text-white font-cairo select-none shadow-2xl">
         
-        {/* TOP RESOURCE HEADER — NEON STYLE */}
-        <header className="w-full shrink-0 px-3 pt-3 pb-2 flex items-center justify-between z-30 border-b"
-                style={{ paddingTop: 'max(10px, env(safe-area-inset-top))', borderColor:'rgba(0,212,255,0.15)', background:'rgba(5,8,16,0.9)', backdropFilter:'blur(12px)' }}>
+        {/* TOP RESOURCE HEADER — CLEAN MOBILE CARD HUB */}
+        <header className="w-full shrink-0 px-3 pt-3 pb-2 flex items-center justify-between z-30 border-b border-slate-700/60 bg-slate-900/95 backdrop-blur-md"
+                style={{ paddingTop: 'max(10px, env(safe-area-inset-top))' }}>
           
           {/* Left: Gems & Coins (Click opens Shop) */}
           <div className="flex items-center gap-2">
             <div onClick={() => { setActiveTab('shop'); setShopSubtab('currency'); }}
-                 className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-xs font-black cursor-pointer transition hover:scale-105 active:scale-95"
-                 title="المتجر وبنك الجواهر"
-                 style={{borderColor:'rgba(0,212,255,0.4)', background:'rgba(0,212,255,0.07)', color:'var(--neon-blue)', textShadow:'0 0 8px var(--neon-blue)'}}>
+                 className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl border border-sky-400/30 bg-slate-800/90 text-sky-300 text-xs font-black cursor-pointer transition hover:bg-slate-700/90 active:scale-95 shadow-sm"
+                 title="المتجر وبنك الجواهر">
               <span>💎</span>
               <span>{gems}</span>
               <span className="text-[10px] opacity-70 font-bold">+</span>
             </div>
             <div onClick={() => { setActiveTab('shop'); setShopSubtab('currency'); }}
-                 className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-xs font-black cursor-pointer transition hover:scale-105 active:scale-95"
-                 title="المتجر وبنك العملات"
-                 style={{borderColor:'rgba(255,215,0,0.4)', background:'rgba(255,215,0,0.07)', color:'var(--neon-gold)', textShadow:'0 0 8px var(--neon-gold)'}}>
+                 className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl border border-amber-400/30 bg-slate-800/90 text-amber-300 text-xs font-black cursor-pointer transition hover:bg-slate-700/90 active:scale-95 shadow-sm"
+                 title="المتجر وبنك العملات">
               <span>⭐</span>
               <span>{coins}</span>
               <span className="text-[10px] opacity-70 font-bold">+</span>
@@ -2432,19 +2421,16 @@ function App() {
             </div>
 
             <div onClick={() => setIsEditingProfile(true)}
-                 className="flex items-center gap-1.5 px-2 py-1 rounded-xl border cursor-pointer transition"
-                 style={{borderColor:'rgba(180,77,255,0.4)', background:'rgba(180,77,255,0.08)'}}>
-              <div className="w-6 h-6 rounded-full flex items-center justify-center text-sm"
-                   style={{border:'2px solid var(--neon-purple)', boxShadow:'0 0 8px rgba(180,77,255,0.5)'}}>
+                 className="flex items-center gap-1.5 px-2 py-1 rounded-xl border border-purple-400/30 bg-slate-800/90 cursor-pointer transition hover:bg-slate-700/90 shadow-sm">
+              <div className="w-6 h-6 rounded-full flex items-center justify-center text-sm border-2 border-purple-400 bg-purple-950/60">
                 {avatar}
               </div>
-              <span className="text-[11px] font-black max-w-[55px] truncate" style={{color:'var(--neon-purple)'}}>
+              <span className="text-[11px] font-black max-w-[55px] truncate text-purple-200">
                 {playerName || (lang === 'en' ? 'Player' : 'لاعب')}
               </span>
             </div>
             <button onClick={() => setShowSettingsModal(true)}
-                    className="w-8 h-8 rounded-xl flex items-center justify-center text-sm transition border"
-                    style={{borderColor:'rgba(255,255,255,0.1)', background:'rgba(255,255,255,0.05)', color:'rgba(255,255,255,0.6)'}}>
+                    className="w-8 h-8 rounded-xl flex items-center justify-center text-sm transition border border-slate-700 bg-slate-800/80 text-slate-300 hover:text-white hover:bg-slate-700/80">
               ⚙️
             </button>
           </div>
@@ -2515,23 +2501,22 @@ function App() {
                 </div>
               )}
 
-              {/* NEON BRANDING LOGO */}
+              {/* BRANDING LOGO */}
               <div className="text-center my-auto py-2 flex flex-col items-center">
-                <div className="relative mb-4">
+                <div className="relative mb-3">
                   <div className="catch-3d-logo text-[72px] sm:text-[88px] leading-none select-none" style={{letterSpacing: '6px'}}>
                     CATCH
                   </div>
-                  <div className="text-[11px] font-black tracking-[4px] text-center mt-1"
-                       style={{color:'var(--neon-blue)', textShadow:'0 0 10px var(--neon-blue)'}}>
-                    ● {lang === 'en' ? 'THE CARD GAME' : 'لعبة الكروت'} ●
+                  <div className="text-[11px] font-black tracking-[3px] text-center mt-2 text-slate-300">
+                    ● {lang === 'en' ? 'OFFICIAL STRATEGY CARD GAME' : 'لعبة البطاقات الاستراتيجية الرسمية'} ●
                   </div>
                 </div>
 
-                {/* Animated neon line separator */}
-                <div className="w-40 h-px mb-5" style={{background:'linear-gradient(90deg, transparent, var(--neon-blue), transparent)'}}/>
+                {/* Subtle divider */}
+                <div className="w-28 h-0.5 mb-5 bg-gradient-to-r from-transparent via-slate-600 to-transparent rounded-full" />
               </div>
 
-              {/* Main CTA Buttons — neon style */}
+              {/* Main CTA Buttons */}
               <div className="w-full space-y-3 pb-2">
                 <button onClick={() => setShowPlayModal(true)}
                   className="btn-neon-green w-full py-4 rounded-2xl text-xl font-black flex items-center justify-center gap-3 transition active:scale-95">
@@ -2557,7 +2542,7 @@ function App() {
           {/* TAB 2: SHOP (المتجر - Plan Image 6) */}
           {activeTab === 'shop' && (
             <div className="flex-1 flex flex-col bg-black/60 rounded-3xl p-3 border border-amber-400/30 overflow-hidden">
-              <h3 className="text-base font-black text-yellow-300 text-center pb-2 border-b border-amber-500/20">🛒 متجر الكازينو الملكي</h3>
+              <h3 className="text-base font-black text-yellow-300 text-center pb-2 border-b border-amber-500/20">🛒 متجر كاتش الرسمي</h3>
               
               {/* Subtabs */}
               <div className="flex gap-1 my-2 bg-black/40 p-1 rounded-2xl border border-white/10">
@@ -2629,7 +2614,7 @@ function App() {
                     {[
                       { title: lang === 'en' ? 'Beginner Coins Pouch' : 'صرة عملات المبتدئين', amount: '+1,000 ⭐', price: '$0.99' },
                       { title: lang === 'en' ? 'Golden Coin Bag' : 'كيس عملات ذهبية', amount: '+5,000 ⭐', price: '$2.99' },
-                      { title: lang === 'en' ? 'Royal Casino Vault' : 'خزانة الكازينو الملكية', amount: '+25,000 ⭐', price: '$9.99' },
+                      { title: lang === 'en' ? 'Royal Gold Vault' : 'خزانة الذهب الكبرى', amount: '+25,000 ⭐', price: '$9.99' },
                       { title: lang === 'en' ? 'Royal Gem Pouch' : 'حزمة الجواهر الملكية', amount: '+100 💎', price: '$4.99' },
                       { title: lang === 'en' ? 'Pharaoh Legend Chest' : 'صندوق أساطير الفراعنة', amount: '+500 💎', price: '$19.99' },
                     ].map((pack, i) => (
@@ -2753,7 +2738,7 @@ function App() {
                   { tier: '🥈 صائد فضي', req: '3 انتصارات', prize: 'فوز +500 عملة', perk: 'أولوية التحديات والريماتش', active: vipRank.badge.includes('فضي') },
                   { tier: '🥇 كابتن ذهبي', req: '6 انتصارات', prize: 'فوز +1500 عملة + 10 💎', perk: 'مضاعفة نقاط الكروت الخاصة', active: vipRank.badge.includes('ذهبي') },
                   { tier: '💎 دايموند VIP', req: '12 انتصاراً', prize: 'فوز +3000 عملة + 25 💎', perk: 'خلفية ذهبية حصرية للطاولة', active: vipRank.badge.includes('دايموند') },
-                  { tier: '👑 أسطورة كازينو كاتش', req: '25 انتصاراً', prize: 'فوز +10,000 عملة + 100 💎', perk: 'لقب أسطورة دائم وتاج مذهب', active: vipRank.badge.includes('أسطورة') },
+                  { tier: '👑 أسطورة كاتش الكبرى', req: '25 انتصاراً', prize: 'فوز +10,000 عملة + 100 💎', perk: 'لقب أسطورة دائم وتاج مذهب', active: vipRank.badge.includes('أسطورة') },
                 ].map((l, i) => (
                   <div key={i} className={`p-3 rounded-2xl border transition ${l.active ? 'bg-gradient-to-r from-yellow-500/30 to-amber-600/30 border-yellow-400 shadow-md' : 'bg-black/50 border-white/10'}`}>
                     <div className="flex items-center justify-between mb-1">
@@ -3149,7 +3134,7 @@ function App() {
                 </div>
               </div>
               <button onClick={() => setShowRulesModal(false)} className="btn-gold w-full py-2.5 rounded-xl text-xs font-black mt-2">
-                فهمت القواعد.. يلا نلعب! 🚀
+                فهمت القواعد.. لنبدأ اللعب! 🚀
               </button>
             </div>
           </div>
@@ -3557,16 +3542,14 @@ function App() {
             )}
           </svg>
 
-      {/* Avatar Inner Core — NEON */}
+      {/* Avatar Inner Core */}
           <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-xl sm:text-2xl neon-avatar-ring transition ${isTurn ? 'is-turn' : ''} ${speakingPlayers[p.id] ? 'speaking-pulse ring-4 ring-emerald-400' : ''}`}>
             {p.avatar}
             {speakingPlayers[p.id] && (
-              <span className="absolute -top-1.5 text-[8px] font-black px-1 rounded-full border border-white z-30"
-                    style={{background:'var(--neon-green)', color:'#000'}}>🎙️</span>
+              <span className="absolute -top-1.5 text-[8px] font-black px-1 rounded-full bg-emerald-500 text-white shadow-sm z-30">🎙️</span>
             )}
             {!p.connected && (
-              <span className="absolute -bottom-1 text-[8px] font-black px-1 rounded-full border z-30"
-                    style={{background:'var(--neon-gold)', color:'#000', borderColor:'var(--neon-gold)'}}>انقطع</span>
+              <span className="absolute -bottom-1 text-[8px] font-black px-1 rounded-full bg-amber-600 text-white shadow-sm z-30">انقطع</span>
             )}
             {p.immune && <span className="absolute -top-1 -right-1 text-xs drop-shadow">🛡️</span>}
             {p.skipNext && <span className="absolute -top-1 -left-1 text-xs drop-shadow">🙈</span>}
@@ -3887,23 +3870,23 @@ function App() {
           <div className="fixed inset-x-4 top-20 sm:top-24 sm:max-w-md sm:mx-auto z-[200] bg-gradient-to-r from-red-950 via-purple-950 to-red-950 border-3 border-yellow-400 shadow-[0_10px_40px_rgba(0,0,0,0.9)] rounded-3xl p-4 text-center backdrop-blur-md animate-bounce">
             <span className="text-4xl block mb-1">🤥</span>
             <p className="text-base font-black text-yellow-300">
-              {liarPrompt.askerName} بيطلب منك [{liarPrompt.requestedNumber === 11 ? 'كا' : liarPrompt.requestedNumber === 12 ? 'تش' : liarPrompt.requestedNumber}] ومعاك منه!
+              {liarPrompt.askerName} يطلب منك رقم [{liarPrompt.requestedNumber === 11 ? 'كا' : liarPrompt.requestedNumber === 12 ? 'تش' : liarPrompt.requestedNumber}] وهو متوفر في يدك!
             </p>
             <p className="text-xs text-amber-200/90 font-bold mb-3 mt-1">
-              معاك كارت « كداب »! تقدر تكذب وتقول معيش وتلبّسه CATCH، أو تديله كارت واحد!
+              لديك كارت « كداب »! يمكنك الإنكار لتوقعه في CATCH، أو تسليمه كارت واحد بأمان.
             </p>
             <div className="flex gap-2 justify-center">
               <button onClick={() => {
                 socketRef.current.emit('liar_decision', { lie: true });
                 setLiarPrompt(null);
               }} className="btn-ruby px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-black flex-1 shadow-lg">
-                🤥 اكذب وقول معيش!
+                🤥 الإنكار واستخدام كداب
               </button>
               <button onClick={() => {
                 socketRef.current.emit('liar_decision', { lie: false });
                 setLiarPrompt(null);
               }} className="btn-emerald px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-black flex-1 shadow-lg">
-                🤝 اديله كارت واحد بصدق
+                🤝 تسليم كارت واحد بأمان
               </button>
             </div>
           </div>
@@ -3914,10 +3897,10 @@ function App() {
           <div className="fixed inset-x-4 top-20 sm:top-24 sm:max-w-md sm:mx-auto z-[200] bg-gradient-to-r from-red-950 via-purple-950 to-amber-950 border-3 border-red-500 shadow-[0_10px_40px_rgba(255,0,0,0.8)] rounded-3xl p-4 text-center backdrop-blur-md animate-bounce font-cairo">
             <span className="text-4xl block mb-1">🛑</span>
             <p className="text-base font-black text-yellow-300">
-              {hatEntaPrompt.askerName} بيطلب منك [{hatEntaPrompt.requestedNumber === 11 ? 'كا' : hatEntaPrompt.requestedNumber === 12 ? 'تش' : hatEntaPrompt.requestedNumber}]!
+              {hatEntaPrompt.askerName} يطلب منك رقم [{hatEntaPrompt.requestedNumber === 11 ? 'كا' : hatEntaPrompt.requestedNumber === 12 ? 'تش' : hatEntaPrompt.requestedNumber}]!
             </p>
             <p className="text-xs text-amber-200/90 font-bold mb-3 mt-1">
-              معاك كارت « هات انت »! تقدر تقلب الطاولة وتاخد ورقه وتستلم الدور!
+              لديك كارت « هات انت »! يمكنك عكس الطلب والحصول على أوراقه ونقل الدور إليك!
             </p>
             <div className="flex gap-2 justify-center">
               <button onClick={() => {
@@ -3944,7 +3927,7 @@ function App() {
             <div className="bg-black/85 px-8 py-6 rounded-3xl border-3 border-yellow-400 text-center shadow-[0_0_50px_rgba(250,204,21,0.5)] animate-pulse">
               <span className="text-5xl block animate-spin mb-2" style={{ animationDuration: '1.2s' }}>🔄</span>
               <p className="text-xl font-black text-yellow-400">
-                بدل أيادي! 🤝
+                تبديل الأيدي! 🤝
               </p>
               <p className="text-sm font-bold text-white mt-1">
                 تم تبديل أوراق {swapAnim.p1Name} مع {swapAnim.p2Name}!
@@ -3967,46 +3950,46 @@ function App() {
               <p className={`text-xl font-black ${
                 jokerShowdownAnim.success ? 'text-emerald-300' : jokerShowdownAnim.skipped ? 'text-amber-200' : 'text-red-400'
               }`}>
-                {jokerShowdownAnim.success ? 'اتقفش متلبس! قَفْشَة الجوكر!' : jokerShowdownAnim.skipped ? 'تم تخطي التخمين' : 'تخمين غير صحيح! عقوبة!'}
+                {jokerShowdownAnim.success ? 'كشف الجوكر بنجاح!' : jokerShowdownAnim.skipped ? 'تم تخطي التخمين' : 'تخمين غير صحيح! عقوبة!'}
               </p>
               <p className="text-xs text-white/90 font-bold mt-2 leading-relaxed">
                 {jokerShowdownAnim.success
-                  ? `${jokerShowdownAnim.challengerName} قفش ${jokerShowdownAnim.accusedName}! لِمّة الجوكر رقم [${jokerShowdownAnim.valLabel}] اتسحبت وراحت للمخمن! 🔥`
+                  ? `${jokerShowdownAnim.challengerName} كشف بطاقة ${jokerShowdownAnim.accusedName}! لِمّة الجوكر رقم [${jokerShowdownAnim.valLabel}] نُقلت للمخمن! 🔥`
                   : jokerShowdownAnim.skipped
                   ? `${jokerShowdownAnim.challengerName} فضّل عدم المخاطرة بلِمّة.`
-                  : `${jokerShowdownAnim.challengerName} اتهم ${jokerShowdownAnim.accusedName} بالباطل! صاحب الجوكر الحقيقي هو ${jokerShowdownAnim.actualName || 'صاحب الجوكر'}! ${jokerShowdownAnim.penaltyGiven ? `خسر لِمّة كعقوبة وراحت لصاحب الجوكر ${jokerShowdownAnim.actualName || ''} مكافأة له على نجاح خدعته!` : ''}`}
+                  : `${jokerShowdownAnim.challengerName} اتهم ${jokerShowdownAnim.accusedName} بالخطأ! صاحب الجوكر الحقيقي هو ${jokerShowdownAnim.actualName || 'صاحب الجوكر'}! ${jokerShowdownAnim.penaltyGiven ? `خسر لِمّة كعقوبة ونُقلت لصاحب الجوكر ${jokerShowdownAnim.actualName || ''} مكافأة له على نجاح خدعته!` : ''}`}
               </p>
             </div>
           </div>
         )}
 
-        {/* Endgame Joker Showdown Modal (قَفْشَة الجوكر الأخيرة) */}
+        {/* Endgame Joker Showdown Modal (تحدي كشف الجوكر الأخير) */}
         {roomState.jokerChallenge && (
           roomState.jokerChallenge.isChallengerMe ? (
             <div className="fixed inset-0 z-[250] bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
               <div className="bg-gradient-to-b from-[#250836] via-[#140320] to-[#08010c] border-3 border-yellow-400 rounded-3xl p-5 w-full max-w-md shadow-[0_0_60px_rgba(250,204,21,0.7)] text-center font-cairo">
                 <span className="text-4xl block mb-1">🕵️ 🃏</span>
                 <h3 className="text-lg font-black text-yellow-300">
-                  قَفْشَة الجوكر الأخيرة! (Joker Showdown)
+                  تحدي كشف الجوكر الأخير! (Joker Showdown)
                 </h3>
                 <p className="text-xs text-amber-200/90 font-bold mt-1">
-                  معاك الكارت اليتيم رقم <span className="bg-yellow-400 text-black px-2 py-0.5 rounded-md font-black">[{roomState.jokerChallenge.orphanValue === 11 ? 'كا' : roomState.jokerChallenge.orphanValue === 12 ? 'تش' : roomState.jokerChallenge.orphanValue}]</span>! اللِمّة بتاعته اتقفلت في السر بالجوكر (3 كروت + جوكر)!
+                  لديك البطاقة المتبقية رقم <span className="bg-yellow-400 text-black px-2 py-0.5 rounded-md font-black">[{roomState.jokerChallenge.orphanValue === 11 ? 'كا' : roomState.jokerChallenge.orphanValue === 12 ? 'تش' : roomState.jokerChallenge.orphanValue}]</span>! تم إكمال اللِمّة سراً باستخدام الجوكر (3 كروت + جوكر)!
                 </p>
 
                 {/* Stakes Rule Warning */}
                 <div className="bg-black/50 border border-yellow-500/30 rounded-2xl p-2.5 my-3 text-right text-xs space-y-1">
                   <p className="text-emerald-300 font-bold flex items-center gap-1">
                     <span>🎯</span>
-                    <span>لو خمنت صح: هتقفشه وتاخد لِمّة الجوكر دي فوراً لحسابك!</span>
+                    <span>إذا كان تخمينك صحيحاً: ستكشف الجوكر وتحصل على لِمّة الجوكر فوراً لحسابك!</span>
                   </p>
                   <p className="text-red-300 font-bold flex items-center gap-1">
                     <span>⚠️</span>
-                    <span>لو خمنت غلط: هتخسر لِمّة من لِمّاتك كعقوبة وتروح لصاحب الجوكر الحقيقي مكافأة له على نجاح خدعته!</span>
+                    <span>إذا كان تخمينك خاطئاً: ستخسر لِمّة من رصيدك كعقوبة وتنتقل لصاحب الجوكر الحقيقي مكافأة له على نجاح خدعته!</span>
                   </p>
                 </div>
 
                 <p className="text-xs font-black text-amber-200 mb-2 text-right">
-                  👇 اختر اللاعب اللي شاكك إنه قفل اللِمّة بالجوكر:
+                  👇 اختر اللاعب الذي تشك في استخدامه الجوكر:
                 </p>
 
                 {/* Opponents Selection Grid */}
@@ -4047,7 +4030,7 @@ function App() {
                         : 'bg-white/10 text-white/40 cursor-not-allowed'
                     }`}>
                     <span>🕵️</span>
-                    <span>اتّهم اللاعب ده واقفش لِمّة الجوكر!</span>
+                    <span>تأكيد التخمين وكشف لِمّة الجوكر!</span>
                   </button>
                   <button 
                     onClick={() => {
@@ -4055,7 +4038,7 @@ function App() {
                       setSelectedJokerTarget(null);
                     }}
                     className="w-full py-2 rounded-2xl text-xs font-bold bg-white/10 hover:bg-white/20 text-white/80 border border-white/10 transition">
-                    🏳️ تخطي التخمين (مش عايز أخاطر بلِمّة)
+                    🏳️ تخطي التخمين (تجنب المخاطرة بلِمّة)
                   </button>
                 </div>
               </div>
@@ -4067,7 +4050,7 @@ function App() {
                 مواجهة الجوكر الأخيرة قيد التخمين!
               </p>
               <p className="text-xs text-amber-200/90 font-bold mt-1">
-                {roomState.jokerChallenge.challengerName} معاه الكارت اليتيم رقم [{roomState.jokerChallenge.orphanValue === 11 ? 'كا' : roomState.jokerChallenge.orphanValue === 12 ? 'تش' : roomState.jokerChallenge.orphanValue}] وبيخمن مين اللي قفل اللِمّة بالجوكر!
+                {roomState.jokerChallenge.challengerName} لديه البطاقة المتبقية رقم [{roomState.jokerChallenge.orphanValue === 11 ? 'كا' : roomState.jokerChallenge.orphanValue === 12 ? 'تش' : roomState.jokerChallenge.orphanValue}] ويقوم الآن بتخمين صاحب الجوكر!
               </p>
             </div>
           )
@@ -4093,24 +4076,22 @@ function App() {
                   {speechBubbles[socketRef.current?.id].emoji ? `${speechBubbles[socketRef.current?.id].emoji} ` : ''}{speechBubbles[socketRef.current?.id].text}
                 </div>
               )}
-              <span className={`text-3xl block leading-none p-1 rounded-xl ${speakingPlayers[socketRef.current?.id] ? 'speaking-pulse ring-2 ring-emerald-400' : ''}`}
-                    style={{border:'1.5px solid rgba(0,212,255,0.3)', background:'rgba(0,212,255,0.05)'}}>
+              <span className={`text-3xl block leading-none p-1 rounded-xl border border-sky-400/30 bg-slate-800/80 shadow-sm ${speakingPlayers[socketRef.current?.id] ? 'speaking-pulse ring-2 ring-emerald-400' : ''}`}>
                 {me.avatar}
               </span>
               {speakingPlayers[socketRef.current?.id] && (
-                <span className="absolute -top-2 -right-1 text-[8px] font-black px-1 rounded-full border border-white"
-                      style={{background:'var(--neon-green)', color:'#000'}}>🎙️</span>
+                <span className="absolute -top-2 -right-1 text-[8px] font-black px-1 rounded-full bg-emerald-500 text-white shadow-sm">🎙️</span>
               )}
             </div>
             <div>
-              <p className="text-sm font-black leading-tight" style={{color:'var(--text-main)'}}>
-                {me.name} <span className="text-[10px] font-bold" style={{color:'var(--neon-blue)'}}>• أنت</span>
+              <p className="text-sm font-black leading-tight text-white">
+                {me.name} <span className="text-[10px] font-bold text-sky-400">• أنت</span>
               </p>
               <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full" style={{background:'rgba(180,77,255,0.15)', color:'var(--neon-purple)', border:'1px solid rgba(180,77,255,0.3)'}}>
+                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-purple-950/60 text-purple-200 border border-purple-500/30 shadow-sm">
                   🃏 {me.hand.length}
                 </span>
-                <span className="text-xs font-black px-2.5 py-0.5 rounded-full" style={{background:'rgba(255,215,0,0.1)', color:'var(--neon-gold)', border:'1px solid rgba(255,215,0,0.3)'}}>
+                <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-amber-950/60 text-amber-300 border border-amber-500/30 shadow-sm">
                   ⭐ {me.score || me.sets.length}
                 </span>
                 {/* My Claimed Sets Display with Values */}
@@ -4586,13 +4567,13 @@ function App() {
         </div>
       ))}
 
-      {/* Egyptian Casino Banter Soundboard Drawer (Phase 3) */}
+      {/* Table Reaction Drawer */}
       {showBanterDrawer && (
-        <div className="fixed inset-x-3 bottom-44 sm:bottom-40 sm:max-w-lg sm:mx-auto z-[250] bg-[#1a0520]/95 border-2 border-amber-400 rounded-3xl p-3.5 shadow-[0_0_40px_rgba(250,204,21,0.6)] backdrop-blur-md">
-          <div className="flex items-center justify-between pb-2 mb-2 border-b border-amber-400/30">
+        <div className="fixed inset-x-3 bottom-44 sm:bottom-40 sm:max-w-lg sm:mx-auto z-[250] bg-[#0f172a]/95 border border-slate-700 rounded-3xl p-3.5 shadow-2xl backdrop-blur-md">
+          <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-700/60">
             <div className="flex items-center gap-1.5 text-xs font-black text-amber-300">
               <span className="text-base">🗣️</span>
-              <span>إفيهات وصوتيات كازينو كاتش:</span>
+              <span>تفاعلات ورسائل الطاولة:</span>
             </div>
             <button onClick={() => setShowBanterDrawer(false)} className="text-white/60 hover:text-white text-xs font-bold px-2 py-0.5 rounded-lg bg-white/10">✕</button>
           </div>
@@ -4603,7 +4584,7 @@ function App() {
                 soundFx.init();
                 soundFx.play(b.sound || 'banter');
                 setShowBanterDrawer(false);
-              }} className="bg-black/60 hover:bg-amber-600/30 border border-amber-500/30 hover:border-yellow-400 text-white hover:text-yellow-300 p-2 rounded-xl text-xs font-bold text-right flex items-center gap-2 transition active:scale-95">
+              }} className="bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 hover:border-amber-400 text-white hover:text-yellow-300 p-2 rounded-xl text-xs font-bold text-right flex items-center gap-2 transition active:scale-95">
                 <span className="text-xl shrink-0">{b.emoji}</span>
                 <span className="truncate">{b.text}</span>
               </button>
@@ -4638,7 +4619,7 @@ function App() {
                   فاتورة الحساب - انتهت الجولة
                 </h2>
                 <p className="text-xs text-gray-500 font-bold mt-0.5">
-                  كازينو كاتش الملكي VIP • طاولة #{roomState.code}
+                  لعبة كاتش الرسمية • طاولة #{roomState.code}
                 </p>
                 {first && (
                   <div className="text-sm font-black text-emerald-700 mt-2 bg-emerald-50 py-1.5 px-2 rounded-xl border border-emerald-200 shadow-sm">
@@ -4702,11 +4683,11 @@ function App() {
                             {j.busted ? (
                               <span className="bg-red-600/90 text-white font-black text-[9px] px-1.5 py-0.5 rounded-full shadow border border-red-300 flex items-center gap-0.5 animate-pulse">
                                 <span>🎯</span>
-                                <span>اتقفش من {j.bustedBy}!</span>
+                                <span>تم كشفه بواسطة {j.bustedBy}!</span>
                               </span>
                             ) : (
                               <span className="bg-emerald-600/90 text-white font-black text-[9px] px-1.5 py-0.5 rounded-full shadow border border-emerald-300">
-                                نفد باللِمّة! 💰
+                                نجح بالخداع! 🎯
                               </span>
                             )}
                           </div>
@@ -4717,14 +4698,14 @@ function App() {
                 </div>
               )}
 
-              {/* Egyptian Humor & Countdown Joke Card (Image 8 style) */}
+              {/* Countdown Tip Card */}
               <div className="bg-amber-50 border border-amber-300 rounded-2xl p-2.5 mb-3 text-right text-xs">
                 <p className="font-black text-amber-900 flex items-center gap-1">
-                  <span>⚠️</span>
-                  <span>تنبيه من إدارة كازينو كاتش:</span>
+                  <span>💡</span>
+                  <span>نصيحة وتحدي الجولة القادمة:</span>
                 </p>
                 <p className="text-gray-700 text-[11px] font-bold mt-1 leading-relaxed">
-                  الحاج فزاع والمعلم شنب بيحلفوا الدور الجاي مفيش رحمة.. جاري شحن الحظ والورق! 🎲
+                  استعد للتحدي القادم، راقب أوراق خصومك بتركيز لتقتنص الفوز! 🎲
                 </p>
               </div>
 
@@ -4840,7 +4821,7 @@ function App() {
                 <div className="bg-gradient-to-r from-amber-950/60 to-yellow-950/40 border border-yellow-500/50 rounded-2xl p-3 shadow-md space-y-1">
                   <div className="flex items-center gap-1.5 text-xs font-black text-amber-300">
                     <span>💡</span>
-                    <span>نصيحة الحريف (تكتيك الفوز):</span>
+                    <span>نصيحة تكتيكية (طريق الاحتراف):</span>
                   </div>
                   <p className="text-xs sm:text-sm font-bold text-amber-100/95 leading-relaxed">
                     {details.proTip}
@@ -4851,7 +4832,7 @@ function App() {
                 {me?.hand && me.hand.length > 0 && (
                   <div className="pt-2 border-t border-amber-500/20">
                     <p className="text-xs font-black text-amber-200 mb-1.5">
-                      🃏 تصفح باقي الكروت اللي في إيدك:
+                      🃏 استعراض بطاقات يدك:
                     </p>
                     <div className="flex gap-1.5 overflow-x-auto pb-1">
                       {me.hand.map((c) => (

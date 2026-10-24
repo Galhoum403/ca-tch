@@ -75,31 +75,29 @@
     box-shadow: inset 0 0 45px rgba(0,0,0,0.8), 0 12px 35px rgba(0,0,0,0.85);
   }
 
-  /* ===== CATCH 3D NEON LOGO ===== */
+  /* ===== CATCH 3D LOGO ===== */
   .catch-3d-logo {
-    font-family: 'Cairo', 'Tajawal', sans-serif;
+    font-family: 'Cairo', 'Rubik', sans-serif;
     font-weight: 900;
-    background: linear-gradient(180deg, #ffffff 0%, #00d4ff 45%, #b44dff 100%);
+    background: linear-gradient(180deg, #ffffff 0%, #fef08a 40%, #f59e0b 75%, #b45309 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    filter:
-      drop-shadow(0 2px 0 rgba(0,212,255,0.9))
-      drop-shadow(0 4px 0 rgba(180,77,255,0.7))
-      drop-shadow(0 8px 20px rgba(0,212,255,0.4));
+    filter: drop-shadow(0 4px 10px rgba(0,0,0,0.6));
     letter-spacing: 4px;
   }
 
-  /* ===== BUTTONS ===== */
-  .btn-neon-blue  { background:transparent; color:var(--neon-blue);   border:2px solid var(--neon-blue);   box-shadow:0 0 12px rgba(0,212,255,0.4),inset 0 0 12px rgba(0,212,255,0.05);   text-shadow:0 0 8px var(--neon-blue);   transition:all .2s; }
-  .btn-neon-blue:hover  { background:rgba(0,212,255,0.12);  box-shadow:0 0 25px rgba(0,212,255,0.7); }
-  .btn-neon-red   { background:transparent; color:var(--neon-red);    border:2px solid var(--neon-red);    box-shadow:0 0 12px rgba(255,36,66,0.4),inset 0 0 12px rgba(255,36,66,0.05);    text-shadow:0 0 8px var(--neon-red);    transition:all .2s; }
-  .btn-neon-red:hover   { background:rgba(255,36,66,0.12);   box-shadow:0 0 25px rgba(255,36,66,0.7); }
-  .btn-neon-green { background:transparent; color:var(--neon-green);  border:2px solid var(--neon-green);  box-shadow:0 0 12px rgba(0,255,136,0.4),inset 0 0 12px rgba(0,255,136,0.05);  text-shadow:0 0 8px var(--neon-green);  transition:all .2s; }
-  .btn-neon-green:hover { background:rgba(0,255,136,0.12);  box-shadow:0 0 25px rgba(0,255,136,0.7); }
-  .btn-neon-gold  { background:transparent; color:var(--neon-gold);   border:2px solid var(--neon-gold);   box-shadow:0 0 12px rgba(255,215,0,0.4),inset 0 0 12px rgba(255,215,0,0.05);   text-shadow:0 0 8px var(--neon-gold);   transition:all .2s; }
-  .btn-neon-gold:hover  { background:rgba(255,215,0,0.12);  box-shadow:0 0 25px rgba(255,215,0,0.7); }
-  .btn-neon-purple{ background:transparent; color:var(--neon-purple); border:2px solid var(--neon-purple); box-shadow:0 0 12px rgba(180,77,255,0.4),inset 0 0 12px rgba(180,77,255,0.05); text-shadow:0 0 8px var(--neon-purple); transition:all .2s; }
-  .btn-neon-purple:hover{ background:rgba(180,77,255,0.12); box-shadow:0 0 25px rgba(180,77,255,0.7); }
+  /* ===== SOLID TACTILE BUTTONS ===== */
+  .btn-neon-blue  { background:#0284c7; color:#ffffff; border:1px solid #38bdf8; border-bottom:4px solid #0369a1; box-shadow:0 4px 6px -1px rgba(0,0,0,0.3); transition:all .15s ease; }
+  .btn-neon-blue:active  { transform:translateY(2px); border-bottom-width:2px; }
+  .btn-neon-red   { background:#dc2626; color:#ffffff; border:1px solid #ef4444; border-bottom:4px solid #991b1b; box-shadow:0 4px 6px -1px rgba(0,0,0,0.3); transition:all .15s ease; }
+  .btn-neon-red:active   { transform:translateY(2px); border-bottom-width:2px; }
+  .btn-neon-green { background:#16a34a; color:#ffffff; border:1px solid #22c55e; border-bottom:4px solid #14532d; box-shadow:0 4px 6px -1px rgba(0,0,0,0.3); transition:all .15s ease; }
+  .btn-neon-green:active { transform:translateY(2px); border-bottom-width:2px; }
+  .btn-neon-gold  { background:#d97706; color:#ffffff; border:1px solid #f59e0b; border-bottom:4px solid #92400e; box-shadow:0 4px 6px -1px rgba(0,0,0,0.3); transition:all .15s ease; }
+  .btn-neon-gold:hover   { background:#b45309; }
+  .btn-neon-gold:active  { transform:translateY(2px); border-bottom-width:2px; }
+  .btn-neon-purple{ background:#7c3aed; color:#ffffff; border:1px solid #8b5cf6; border-bottom:4px solid #4c1d95; box-shadow:0 4px 6px -1px rgba(0,0,0,0.3); transition:all .15s ease; }
+  .btn-neon-purple:active{ transform:translateY(2px); border-bottom-width:2px; }
 
   /* Legacy compat */
   .btn-gold    { background:linear-gradient(180deg,#ffd700 0%,#f59e0b 50%,#d97706 100%); color:#1a0a00; border:2px solid #fef08a; box-shadow:0 4px 0 #92400e,0 0 15px rgba(255,215,0,0.3); }
@@ -124,13 +122,15 @@
     filter: drop-shadow(0 4px 8px rgba(0,0,0,.9));
   }
   .card-item:hover:not(.disabled) {
-    transform: translateY(-28px) scale(1.12) !important;
-    filter: drop-shadow(0 12px 24px rgba(0,212,255,0.7)) !important;
+    transform: translateY(-20px) scale(1.08) !important;
+    filter: drop-shadow(0 8px 16px rgba(0,0,0,0.75)) !important;
     z-index: 40 !important;
   }
   .card-item.selected {
-    transform: translateY(-36px) scale(1.18) !important;
-    filter: drop-shadow(0 0 30px #00d4ff) !important;
+    transform: translateY(-28px) scale(1.12) !important;
+    filter: drop-shadow(0 12px 22px rgba(0,0,0,0.85)) !important;
+    outline: 3px solid #f59e0b;
+    border-radius: 12px;
     z-index: 50 !important;
   }
 
@@ -170,14 +170,14 @@
   }
   .hand-fan-card:hover:not(.disabled) {
     z-index: 85 !important;
-    filter: drop-shadow(0 -16px 28px rgba(250,204,21,0.95)) !important;
+    filter: drop-shadow(0 -8px 16px rgba(0,0,0,0.75)) !important;
   }
   .hand-fan-card.selected-fan {
     z-index: 100 !important;
-    filter: drop-shadow(0 -24px 38px #facc15) !important;
+    filter: drop-shadow(0 -12px 20px rgba(245,158,11,0.5)) !important;
   }
   .hand-fan-card.anytime-fan {
-    filter: drop-shadow(0 -8px 16px rgba(239,68,68,0.85));
+    filter: drop-shadow(0 -6px 12px rgba(239,68,68,0.6));
   }
 
   /* ===== CARD DROP & SLAP ANIMATION ===== */
@@ -226,28 +226,29 @@
   }
   .seat-node.target-active:hover { transform: scale(1.12); }
   @keyframes targetPulse {
-    from { filter: drop-shadow(0 0 8px #00ff88); }
-    to   { filter: drop-shadow(0 0 25px #00ff88) brightness(1.15); }
+    from { transform: scale(1); filter: drop-shadow(0 4px 8px rgba(16,185,129,0.5)); }
+    to   { transform: scale(1.06); filter: drop-shadow(0 6px 14px rgba(16,185,129,0.7)); }
   }
 
-  /* ===== AVATAR GLOW RING ===== */
+  /* ===== AVATAR RING ===== */
   .neon-avatar-ring {
     border-radius: 50%;
-    background: rgba(13,17,23,0.95);
+    background: #0f172a;
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 2px solid rgba(255,255,255,0.08);
+    border: 2px solid #334155;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
   }
   .neon-avatar-ring.is-turn {
-    border-color: var(--neon-gold);
-    box-shadow: 0 0 20px rgba(255,215,0,0.7), inset 0 0 15px rgba(255,215,0,0.1);
-    animation: turnGlow 1.5s ease-in-out infinite alternate;
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.35), 0 4px 10px rgba(0, 0, 0, 0.6);
+    animation: turnPulse 1.8s ease-in-out infinite alternate;
   }
-  @keyframes turnGlow {
-    from { box-shadow: 0 0 15px rgba(255,215,0,0.5), inset 0 0 10px rgba(255,215,0,0.1); }
-    to   { box-shadow: 0 0 35px rgba(255,215,0,0.9), inset 0 0 20px rgba(255,215,0,0.25); }
+  @keyframes turnPulse {
+    from { box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.25), 0 4px 6px rgba(0, 0, 0, 0.5); }
+    to   { box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.5), 0 6px 12px rgba(0, 0, 0, 0.7); }
   }
 
   /* ===== TIMER RING ===== */

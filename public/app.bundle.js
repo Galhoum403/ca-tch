@@ -312,61 +312,61 @@ const CARTOON_AVATARS = [{
   id: 'saeedi',
   name: 'الحاج فزاع',
   emoji: '👳‍♂️',
-  desc: 'صعيدي أصيل مبيتهددش',
+  desc: 'خبير استراتيجي ذو حضور قوي',
   cost: 0
 }, {
   id: 'batman',
-  name: 'باتمان الشعبي',
+  name: 'فارس الظلام',
   emoji: '🦇',
-  desc: 'حامي الحارة بالليل',
+  desc: 'خبير التخفي والمباغتة السريعة',
   cost: 20
 }, {
   id: 'muallem',
-  name: 'المعلم شنب',
+  name: 'القائد المحنك',
   emoji: '👨🏻',
-  desc: 'معلم الطاولة بالفانلة',
+  desc: 'أسطورة قراءة طاولة اللعب',
   cost: 20
 }, {
   id: 'captain',
-  name: 'كابتن الطاولة',
+  name: 'الكابتن',
   emoji: '🧢',
-  desc: 'حريف كروت ورهانات',
+  desc: 'محترف قراءة أوراق الخصوم',
   cost: 20
 }, {
   id: 'grandma',
-  name: 'الحجة بركة',
+  name: 'الحكيمة',
   emoji: '👵',
-  desc: 'طيبة بس بتكسب الكل',
+  desc: 'هدوء وتركيز يحسم أصعب الجولات',
   cost: 20
 }, {
   id: 'goth',
-  name: 'بنت الجوث',
+  name: 'الشخصية الغامضة',
   emoji: '🖤',
-  desc: 'غموض ونظرات مرعبة',
+  desc: 'غموض وذكاء غير متوقع',
   cost: 20
 }, {
   id: 'cute_girl',
-  name: 'بنت الكيوت',
+  name: 'النجمة الصاعدة',
   emoji: '🎧',
-  desc: 'سماعات قطة ومزاجه رايق',
+  desc: 'حماس متقد وروح مرحة',
   cost: 20
 }, {
   id: 'chubby',
-  name: 'الفتوة كوكو',
+  name: 'المنافس القوي',
   emoji: '🥊',
-  desc: 'صاحب الضربات القاضية',
+  desc: 'جرأة وتحديات حاسمة',
   cost: 20
 }, {
   id: 'pharaoh',
   name: 'الملك رمسيس',
   emoji: '👑',
-  desc: 'فرعون الكازينو الذهبي',
+  desc: 'أسطورة الفراعنة القدماء',
   cost: 50
 }, {
   id: 'wizard',
-  name: 'الساحر عنتر',
+  name: 'الساحر',
   emoji: '🧙‍♂️',
-  desc: 'بيخفي الورق في ثانية',
+  desc: 'خفة يد ودقة فائقة',
   cost: 50
 }];
 
@@ -390,10 +390,10 @@ const CARD_BACK_SKINS = [{
   border: 'border-yellow-100',
   cost: 20
 }, {
-  id: 'cyan_neon',
-  name: 'سايبر نيون',
-  bg: 'from-cyan-500 to-blue-700',
-  border: 'border-cyan-300',
+  id: 'crystal_blue',
+  name: 'الأزرق الكريستالي',
+  bg: 'from-sky-500 to-blue-700',
+  border: 'border-sky-300',
   cost: 20
 }, {
   id: 'ruby_velvet',
@@ -403,57 +403,57 @@ const CARD_BACK_SKINS = [{
   cost: 20
 }];
 
-// Authentic Egyptian Card-Table Meme Reaction Stickers
+// Table Reaction Stickers
 const MEME_REACTION_STICKERS = [{
   id: 'm1',
-  text: 'ههههه شرير 😈',
+  text: 'حركة غير متوقعة! 😈',
   emoji: '😈',
-  label: 'ضحكة الشر'
+  label: 'دهاء'
 }, {
   id: 'm2',
-  text: 'يا خبر أبيض! 😱',
+  text: 'مفاجأة غير متوقعة! 😱',
   emoji: '😱',
-  label: 'صدمة'
+  label: 'مفاجأة'
 }, {
   id: 'm3',
-  text: 'شاي خمسينة في المخ ☕',
+  text: 'تفكير استراتيجي عميق ☕',
   emoji: '☕',
-  label: 'شاي رايق'
+  label: 'تركيز'
 }, {
   id: 'm4',
-  text: 'عاش يا وحش! 👏',
+  text: 'أحسنت اللعب! 👏',
   emoji: '👏',
-  label: 'عاش يا بطل'
+  label: 'إشادة'
 }, {
   id: 'm5',
-  text: 'اللعب ولّع نار! 🔥',
+  text: 'المنافسة مشتعلة! 🔥',
   emoji: '🔥',
-  label: 'حريقة'
+  label: 'حماس'
 }, {
   id: 'm6',
-  text: 'ههههههه مش قادر 😂',
+  text: 'موقف طريف جداً 😂',
   emoji: '😂',
-  label: 'ميت ضحك'
+  label: 'ضحك'
 }, {
   id: 'm7',
-  text: 'ولا بيهمني ولا بتهدد 😤',
+  text: 'أنا جاهز لأي تحدي! 😤',
   emoji: '😤',
-  label: 'مبتهددش'
+  label: 'تحدي'
 }, {
   id: 'm8',
-  text: 'يا عيني عالورق! 😭',
+  text: 'حظ غير متوقع! 😭',
   emoji: '😭',
-  label: 'حرااام'
+  label: 'صدمة'
 }, {
   id: 'm9',
-  text: 'في الجبهة في الجون 🎯',
+  text: 'إصابة دقيقة في الهدف! 🎯',
   emoji: '🎯',
-  label: 'في الجبهة'
+  label: 'دقة'
 }, {
   id: 'm10',
-  text: 'خلاص شطبت وودعت 💀',
+  text: 'لحظات الحسم الأخيرة 💀',
   emoji: '💀',
-  label: 'خلاص شطبت'
+  label: 'حسم'
 }];
 
 // Daily Quests with 0 initial progress
@@ -807,36 +807,36 @@ class SoundFxEngine {
 }
 const soundFx = new SoundFxEngine();
 const EGYPTIAN_BANTERS = [{
-  text: 'يا حلاوة اللِمّة! 🔥',
+  text: 'ضربة معلم وحسم سريع! 🔥',
   emoji: '🔥',
   sound: 'banter'
 }, {
-  text: 'كاتش في السلك يا معلم! 🚫',
+  text: 'كاتش حاسم في التوقيت المناسب! 🚫',
   emoji: '🚫',
   sound: 'catch'
 }, {
-  text: 'درعك مش نافعك! 🛡️',
+  text: 'تصدّي دفاعي أسطوري! 🛡️',
   emoji: '🛡️',
   sound: 'impact'
 }, {
-  text: 'هات يا باشا من سكات! ✋',
-  emoji: '✋',
+  text: 'ورقة محسوبة ومدروسة بالملّي! 🎯',
+  emoji: '🎯',
   sound: 'whoosh'
 }, {
-  text: 'كداب في أصل وشك! 🤥',
+  text: 'خداع تكتيكي مكشوف بالكامل! 🤥',
   emoji: '🤥',
   sound: 'snap'
 }, {
-  text: 'روّق على حالك واشرب شاي! ☕',
+  text: 'الهدوء والتركيز قبل العاصفة! ☕',
   emoji: '☕',
   sound: 'banter'
 }, {
-  text: 'اللعبة لفت عليك يا غالي! 🔙',
+  text: 'انعكاس كامل لمجرى اللعبة! 🔙',
   emoji: '🔙',
   sound: 'whoosh'
 }, {
-  text: 'كفاية عليك كده النهاردة! 🖐️',
-  emoji: '🖐️',
+  text: 'استعد، الجولة القادمة حاسمة! ⚡',
+  emoji: '⚡',
   sound: 'impact'
 }];
 
@@ -1227,7 +1227,7 @@ class VoiceChatManager {
   }
 }
 
-// --- DRAMATIC CHAMELEON EXIT CONFIRMATION MODAL ---
+// --- PROFESSIONAL EXIT CONFIRMATION MODAL ---
 function ExitConfirmModal({
   isOpen,
   onClose,
@@ -1237,38 +1237,32 @@ function ExitConfirmModal({
 }) {
   if (!isOpen) return null;
   return /*#__PURE__*/React.createElement("div", {
-    className: "fixed inset-0 z-[600] bg-black/80 backdrop-blur-md flex items-center justify-center p-4"
+    className: "fixed inset-0 z-[600] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "w-full max-w-sm bg-gradient-to-b from-[#240812] via-[#16040b] to-[#0a0105] border-2 border-red-500/80 rounded-3xl p-5 shadow-[0_0_50px_rgba(239,68,68,0.45)] text-center text-white relative overflow-hidden font-cairo"
+    className: "w-full max-w-sm bg-slate-900 border border-slate-700/80 rounded-2xl p-5 shadow-2xl text-center text-white relative font-cairo"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "absolute -top-10 -left-10 w-28 h-28 bg-red-600/25 rounded-full blur-2xl pointer-events-none"
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "absolute -bottom-10 -right-10 w-28 h-28 bg-amber-500/20 rounded-full blur-2xl pointer-events-none"
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "relative mb-3 inline-flex items-center justify-center"
+    className: "mb-3 inline-flex items-center justify-center"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "w-20 h-20 rounded-full bg-gradient-to-tr from-red-600 to-amber-500 p-1 shadow-lg shadow-red-500/40"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "w-full h-full bg-[#180308] rounded-full flex items-center justify-center text-4xl"
-  }, isPlaying ? '🦎' : '🚪')), /*#__PURE__*/React.createElement("span", {
-    className: "absolute -bottom-1 -right-1 text-2xl animate-bounce"
-  }, isPlaying ? '🛑' : '👋')), /*#__PURE__*/React.createElement("h3", {
-    className: "text-xl font-black text-amber-300 mb-1.5 drop-shadow-md"
-  }, isPlaying ? lang === 'en' ? 'Leaving So Soon, Champ?! 😱' : 'على فين يا بطل؟! رايح تخلع؟ 😱' : lang === 'en' ? 'Leave Table?' : 'عايز تغادر الطاولة؟ 🚪'), /*#__PURE__*/React.createElement("p", {
-    className: "text-xs text-amber-100/90 font-bold leading-relaxed mb-3 px-1"
-  }, isPlaying ? lang === 'en' ? "You're in the heat of the match! Leaving now will count as a surrender, and your friends on the table will tease you! 😈" : "أنت في عز الجولة يا كابتن! لو خرجت دلوقتي أصحابك على الطاولة هيشمتوا فيك واللِمّات هتروح عليك! 😈" : lang === 'en' ? 'Are you sure you want to leave this table and return to the main lobby?' : 'متأكد إنك عايز تسيب الطاولة دي وترجع للشاشة الرئيسية؟'), isPlaying && /*#__PURE__*/React.createElement("div", {
-    className: "bg-amber-500/10 border border-amber-500/30 rounded-2xl p-2.5 mb-4 text-[11px] font-bold text-amber-200/90 flex items-center gap-2 text-right"
+    className: "w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-400/30 flex items-center justify-center text-2xl shadow-inner"
+  }, isPlaying ? '⚠️' : '🚪')), /*#__PURE__*/React.createElement("h3", {
+    className: "text-lg font-bold text-slate-100 mb-2"
+  }, isPlaying ? lang === 'en' ? 'Confirm Leaving Match' : 'تأكيد مغادرة الجولة' : lang === 'en' ? 'Leave Table' : 'مغادرة الطاولة'), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs text-slate-300 font-medium leading-relaxed mb-4 px-2"
+  }, isPlaying ? lang === 'en' ? 'Are you sure you want to exit? Leaving now will count as a surrender. A smart bot will automatically take over your hand to ensure the game continues seamlessly for remaining players.' : 'هل أنت متأكد من رغبتك في الخروج؟ مغادرتك الآن ستُعتبر انسحاباً، وسيتولى البوت الذكي إكمال اللعب بدلاً منك للحفاظ على سير المباراة لأصدقائك.' : lang === 'en' ? 'Are you sure you want to leave this table and return to the main menu?' : 'هل تريد مغادرة هذه الطاولة والعودة إلى القائمة الرئيسية؟'), isPlaying && /*#__PURE__*/React.createElement("div", {
+    className: "bg-slate-800/80 border border-slate-700 rounded-xl p-2.5 mb-4 text-[11px] text-slate-300 flex items-center gap-2 text-right"
   }, /*#__PURE__*/React.createElement("span", {
-    className: "text-xl shrink-0"
-  }, "🤖"), /*#__PURE__*/React.createElement("span", null, lang === 'en' ? 'Smart Chameleon Bot will take over your seat so the game continues smoothly for your friends!' : 'متقلقش.. لو مضطر تخرج، ذكاء الحرباية (البوت) هيمسك مكانك فوراً عشان متوقفش اللعب على أصحابك!')), /*#__PURE__*/React.createElement("div", {
-    className: "flex flex-col gap-2.5"
+    className: "text-base shrink-0"
+  }, "💡"), /*#__PURE__*/React.createElement("span", {
+    className: "leading-tight"
+  }, lang === 'en' ? 'Note: You can reconnect to this match anytime while it is still in progress.' : 'ملاحظة: يمكنك العودة لمتابعة اللعب طالما أن الجولة الحالية لا تزال جارية.')), /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-col gap-2"
   }, /*#__PURE__*/React.createElement("button", {
     onClick: onClose,
-    className: "w-full py-3 bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-sm rounded-2xl shadow-lg shadow-emerald-900/50 border border-emerald-400/40 active:scale-95 transition-all flex items-center justify-center gap-2"
-  }, /*#__PURE__*/React.createElement("span", null, "💪"), /*#__PURE__*/React.createElement("span", null, isPlaying ? lang === 'en' ? "I'm Staying to Win! (Back)" : "مكمّل ومش هسيب حقي! (رجوع للعب)" : lang === 'en' ? "Stay at Table" : "خليك في الطاولة")), /*#__PURE__*/React.createElement("button", {
+    className: "w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 active:scale-[0.99] text-white font-bold text-xs rounded-xl shadow transition flex items-center justify-center gap-1.5"
+  }, /*#__PURE__*/React.createElement("span", null, "✓"), /*#__PURE__*/React.createElement("span", null, isPlaying ? lang === 'en' ? 'Continue Playing' : 'الاستمرار في اللعب' : lang === 'en' ? 'Stay at Table' : 'البقاء في الطاولة')), /*#__PURE__*/React.createElement("button", {
     onClick: onConfirm,
-    className: "w-full py-2.5 bg-red-950/60 hover:bg-red-900/80 text-red-200 hover:text-white font-black text-xs rounded-2xl border border-red-500/40 hover:border-red-400 active:scale-95 transition-all flex items-center justify-center gap-1.5"
-  }, /*#__PURE__*/React.createElement("span", null, "🏃‍♂️"), /*#__PURE__*/React.createElement("span", null, isPlaying ? lang === 'en' ? 'Surrender & Exit' : 'هخلع خلاص.. خروج من الجولة' : lang === 'en' ? 'Leave Table' : 'مغادرة الطاولة')))));
+    className: "w-full py-2 bg-slate-800 hover:bg-slate-700/80 active:scale-[0.99] text-slate-300 hover:text-white font-medium text-xs rounded-xl border border-slate-700 transition flex items-center justify-center gap-1.5"
+  }, /*#__PURE__*/React.createElement("span", null, "✕"), /*#__PURE__*/React.createElement("span", null, isPlaying ? lang === 'en' ? 'Confirm & Exit' : 'تأكيد الانسحاب والخروج' : lang === 'en' ? 'Leave Table' : 'مغادرة الطاولة')))));
 }
 function App() {
   const socketRef = useRef(null);
@@ -2793,12 +2787,9 @@ function App() {
     return /*#__PURE__*/React.createElement("div", {
       className: "w-full h-[100dvh] max-w-[480px] mx-auto flex flex-col justify-between relative overflow-hidden home-screen-bg text-white font-cairo select-none shadow-2xl"
     }, /*#__PURE__*/React.createElement("header", {
-      className: "w-full shrink-0 px-3 pt-3 pb-2 flex items-center justify-between z-30 border-b",
+      className: "w-full shrink-0 px-3 pt-3 pb-2 flex items-center justify-between z-30 border-b border-slate-700/60 bg-slate-900/95 backdrop-blur-md",
       style: {
-        paddingTop: 'max(10px, env(safe-area-inset-top))',
-        borderColor: 'rgba(0,212,255,0.15)',
-        background: 'rgba(5,8,16,0.9)',
-        backdropFilter: 'blur(12px)'
+        paddingTop: 'max(10px, env(safe-area-inset-top))'
       }
     }, /*#__PURE__*/React.createElement("div", {
       className: "flex items-center gap-2"
@@ -2807,14 +2798,8 @@ function App() {
         setActiveTab('shop');
         setShopSubtab('currency');
       },
-      className: "flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-xs font-black cursor-pointer transition hover:scale-105 active:scale-95",
-      title: "المتجر وبنك الجواهر",
-      style: {
-        borderColor: 'rgba(0,212,255,0.4)',
-        background: 'rgba(0,212,255,0.07)',
-        color: 'var(--neon-blue)',
-        textShadow: '0 0 8px var(--neon-blue)'
-      }
+      className: "flex items-center gap-1.5 px-2.5 py-1 rounded-xl border border-sky-400/30 bg-slate-800/90 text-sky-300 text-xs font-black cursor-pointer transition hover:bg-slate-700/90 active:scale-95 shadow-sm",
+      title: "المتجر وبنك الجواهر"
     }, /*#__PURE__*/React.createElement("span", null, "💎"), /*#__PURE__*/React.createElement("span", null, gems), /*#__PURE__*/React.createElement("span", {
       className: "text-[10px] opacity-70 font-bold"
     }, "+")), /*#__PURE__*/React.createElement("div", {
@@ -2822,14 +2807,8 @@ function App() {
         setActiveTab('shop');
         setShopSubtab('currency');
       },
-      className: "flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-xs font-black cursor-pointer transition hover:scale-105 active:scale-95",
-      title: "المتجر وبنك العملات",
-      style: {
-        borderColor: 'rgba(255,215,0,0.4)',
-        background: 'rgba(255,215,0,0.07)',
-        color: 'var(--neon-gold)',
-        textShadow: '0 0 8px var(--neon-gold)'
-      }
+      className: "flex items-center gap-1.5 px-2.5 py-1 rounded-xl border border-amber-400/30 bg-slate-800/90 text-amber-300 text-xs font-black cursor-pointer transition hover:bg-slate-700/90 active:scale-95 shadow-sm",
+      title: "المتجر وبنك العملات"
     }, /*#__PURE__*/React.createElement("span", null, "⭐"), /*#__PURE__*/React.createElement("span", null, coins), /*#__PURE__*/React.createElement("span", {
       className: "text-[10px] opacity-70 font-bold"
     }, "+"))), /*#__PURE__*/React.createElement("div", {
@@ -2845,30 +2824,14 @@ function App() {
       }
     }), /*#__PURE__*/React.createElement("span", null, connectionStatus === 'connected' ? lang === 'en' ? 'Online' : 'متصل' : connectionStatus === 'connecting' ? lang === 'en' ? 'Connecting' : 'اتصال...' : lang === 'en' ? 'Offline ⚙️' : 'غير متصل ⚙️')), /*#__PURE__*/React.createElement("div", {
       onClick: () => setIsEditingProfile(true),
-      className: "flex items-center gap-1.5 px-2 py-1 rounded-xl border cursor-pointer transition",
-      style: {
-        borderColor: 'rgba(180,77,255,0.4)',
-        background: 'rgba(180,77,255,0.08)'
-      }
+      className: "flex items-center gap-1.5 px-2 py-1 rounded-xl border border-purple-400/30 bg-slate-800/90 cursor-pointer transition hover:bg-slate-700/90 shadow-sm"
     }, /*#__PURE__*/React.createElement("div", {
-      className: "w-6 h-6 rounded-full flex items-center justify-center text-sm",
-      style: {
-        border: '2px solid var(--neon-purple)',
-        boxShadow: '0 0 8px rgba(180,77,255,0.5)'
-      }
+      className: "w-6 h-6 rounded-full flex items-center justify-center text-sm border-2 border-purple-400 bg-purple-950/60"
     }, avatar), /*#__PURE__*/React.createElement("span", {
-      className: "text-[11px] font-black max-w-[55px] truncate",
-      style: {
-        color: 'var(--neon-purple)'
-      }
+      className: "text-[11px] font-black max-w-[55px] truncate text-purple-200"
     }, playerName || (lang === 'en' ? 'Player' : 'لاعب'))), /*#__PURE__*/React.createElement("button", {
       onClick: () => setShowSettingsModal(true),
-      className: "w-8 h-8 rounded-xl flex items-center justify-center text-sm transition border",
-      style: {
-        borderColor: 'rgba(255,255,255,0.1)',
-        background: 'rgba(255,255,255,0.05)',
-        color: 'rgba(255,255,255,0.6)'
-      }
+      className: "w-8 h-8 rounded-xl flex items-center justify-center text-sm transition border border-slate-700 bg-slate-800/80 text-slate-300 hover:text-white hover:bg-slate-700/80"
     }, "⚙️"))), /*#__PURE__*/React.createElement("main", {
       className: "flex-1 w-full overflow-y-auto px-3.5 py-2 flex flex-col justify-between"
     }, activeTab === 'home' && /*#__PURE__*/React.createElement("div", {
@@ -2936,23 +2899,16 @@ function App() {
     }, "✕"))), /*#__PURE__*/React.createElement("div", {
       className: "text-center my-auto py-2 flex flex-col items-center"
     }, /*#__PURE__*/React.createElement("div", {
-      className: "relative mb-4"
+      className: "relative mb-3"
     }, /*#__PURE__*/React.createElement("div", {
       className: "catch-3d-logo text-[72px] sm:text-[88px] leading-none select-none",
       style: {
         letterSpacing: '6px'
       }
     }, "CATCH"), /*#__PURE__*/React.createElement("div", {
-      className: "text-[11px] font-black tracking-[4px] text-center mt-1",
-      style: {
-        color: 'var(--neon-blue)',
-        textShadow: '0 0 10px var(--neon-blue)'
-      }
-    }, "● ", lang === 'en' ? 'THE CARD GAME' : 'لعبة الكروت', " ●")), /*#__PURE__*/React.createElement("div", {
-      className: "w-40 h-px mb-5",
-      style: {
-        background: 'linear-gradient(90deg, transparent, var(--neon-blue), transparent)'
-      }
+      className: "text-[11px] font-black tracking-[3px] text-center mt-2 text-slate-300"
+    }, "● ", lang === 'en' ? 'OFFICIAL STRATEGY CARD GAME' : 'لعبة البطاقات الاستراتيجية الرسمية', " ●")), /*#__PURE__*/React.createElement("div", {
+      className: "w-28 h-0.5 mb-5 bg-gradient-to-r from-transparent via-slate-600 to-transparent rounded-full"
     })), /*#__PURE__*/React.createElement("div", {
       className: "w-full space-y-3 pb-2"
     }, /*#__PURE__*/React.createElement("button", {
@@ -2972,7 +2928,7 @@ function App() {
       className: "flex-1 flex flex-col bg-black/60 rounded-3xl p-3 border border-amber-400/30 overflow-hidden"
     }, /*#__PURE__*/React.createElement("h3", {
       className: "text-base font-black text-yellow-300 text-center pb-2 border-b border-amber-500/20"
-    }, "🛒 متجر الكازينو الملكي"), /*#__PURE__*/React.createElement("div", {
+    }, "🛒 متجر كاتش الرسمي"), /*#__PURE__*/React.createElement("div", {
       className: "flex gap-1 my-2 bg-black/40 p-1 rounded-2xl border border-white/10"
     }, [{
       id: 'stickers',
@@ -3041,7 +2997,7 @@ function App() {
       amount: '+5,000 ⭐',
       price: '$2.99'
     }, {
-      title: lang === 'en' ? 'Royal Casino Vault' : 'خزانة الكازينو الملكية',
+      title: lang === 'en' ? 'Royal Gold Vault' : 'خزانة الذهب الكبرى',
       amount: '+25,000 ⭐',
       price: '$9.99'
     }, {
@@ -3166,7 +3122,7 @@ function App() {
       perk: 'خلفية ذهبية حصرية للطاولة',
       active: vipRank.badge.includes('دايموند')
     }, {
-      tier: '👑 أسطورة كازينو كاتش',
+      tier: '👑 أسطورة كاتش الكبرى',
       req: '25 انتصاراً',
       prize: 'فوز +10,000 عملة + 100 💎',
       perk: 'لقب أسطورة دائم وتاج مذهب',
@@ -3570,7 +3526,7 @@ function App() {
     }, "🧲 كروت الأكشن التكتيكية:"), /*#__PURE__*/React.createElement("p", null, "• ", /*#__PURE__*/React.createElement("b", null, "المغناطيس:"), " اسحب الرقم المختار من كل اللاعبين فوراً.", /*#__PURE__*/React.createElement("br", null), "• ", /*#__PURE__*/React.createElement("b", null, "الحرباية:"), " اختر أي كارت نزل على الأرض في الديسكارد ونفذ قوته.", /*#__PURE__*/React.createElement("br", null), "• ", /*#__PURE__*/React.createElement("b", null, "العب تاني:"), " يمنحك دوراً إضافياً فوراً دون تمرير الدور.", /*#__PURE__*/React.createElement("br", null), "• ", /*#__PURE__*/React.createElement("b", null, "الكداب:"), " يتيح لك الكذب بقول \"معيش\" عند سؤالك عن رقم."))), /*#__PURE__*/React.createElement("button", {
       onClick: () => setShowRulesModal(false),
       className: "btn-gold w-full py-2.5 rounded-xl text-xs font-black mt-2"
-    }, "فهمت القواعد.. يلا نلعب! 🚀"))), showAuthModal && /*#__PURE__*/React.createElement("div", {
+    }, "فهمت القواعد.. لنبدأ اللعب! 🚀"))), showAuthModal && /*#__PURE__*/React.createElement("div", {
       className: "fixed inset-0 z-[400] bg-black/90 backdrop-blur-md flex items-center justify-center p-4"
     }, /*#__PURE__*/React.createElement("div", {
       className: "bg-gradient-to-b from-[#241335] via-[#150a22] to-[#0a0412] border-2 border-amber-400/90 rounded-[28px] p-5 w-full max-w-sm shadow-[0_0_50px_rgba(251,191,36,0.35)] text-right space-y-3 relative pt-3"
@@ -3901,18 +3857,9 @@ function App() {
     })), /*#__PURE__*/React.createElement("div", {
       className: `w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-xl sm:text-2xl neon-avatar-ring transition ${isTurn ? 'is-turn' : ''} ${speakingPlayers[p.id] ? 'speaking-pulse ring-4 ring-emerald-400' : ''}`
     }, p.avatar, speakingPlayers[p.id] && /*#__PURE__*/React.createElement("span", {
-      className: "absolute -top-1.5 text-[8px] font-black px-1 rounded-full border border-white z-30",
-      style: {
-        background: 'var(--neon-green)',
-        color: '#000'
-      }
+      className: "absolute -top-1.5 text-[8px] font-black px-1 rounded-full bg-emerald-500 text-white shadow-sm z-30"
     }, "🎙️"), !p.connected && /*#__PURE__*/React.createElement("span", {
-      className: "absolute -bottom-1 text-[8px] font-black px-1 rounded-full border z-30",
-      style: {
-        background: 'var(--neon-gold)',
-        color: '#000',
-        borderColor: 'var(--neon-gold)'
-      }
+      className: "absolute -bottom-1 text-[8px] font-black px-1 rounded-full bg-amber-600 text-white shadow-sm z-30"
     }, "انقطع"), p.immune && /*#__PURE__*/React.createElement("span", {
       className: "absolute -top-1 -right-1 text-xs drop-shadow"
     }, "🛡️"), p.skipNext && /*#__PURE__*/React.createElement("span", {
@@ -4193,9 +4140,9 @@ function App() {
     className: "text-4xl block mb-1"
   }, "🤥"), /*#__PURE__*/React.createElement("p", {
     className: "text-base font-black text-yellow-300"
-  }, liarPrompt.askerName, " بيطلب منك [", liarPrompt.requestedNumber === 11 ? 'كا' : liarPrompt.requestedNumber === 12 ? 'تش' : liarPrompt.requestedNumber, "] ومعاك منه!"), /*#__PURE__*/React.createElement("p", {
+  }, liarPrompt.askerName, " يطلب منك رقم [", liarPrompt.requestedNumber === 11 ? 'كا' : liarPrompt.requestedNumber === 12 ? 'تش' : liarPrompt.requestedNumber, "] وهو متوفر في يدك!"), /*#__PURE__*/React.createElement("p", {
     className: "text-xs text-amber-200/90 font-bold mb-3 mt-1"
-  }, "معاك كارت « كداب »! تقدر تكذب وتقول معيش وتلبّسه CATCH، أو تديله كارت واحد!"), /*#__PURE__*/React.createElement("div", {
+  }, "لديك كارت « كداب »! يمكنك الإنكار لتوقعه في CATCH، أو تسليمه كارت واحد بأمان."), /*#__PURE__*/React.createElement("div", {
     className: "flex gap-2 justify-center"
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => {
@@ -4205,7 +4152,7 @@ function App() {
       setLiarPrompt(null);
     },
     className: "btn-ruby px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-black flex-1 shadow-lg"
-  }, "🤥 اكذب وقول معيش!"), /*#__PURE__*/React.createElement("button", {
+  }, "🤥 الإنكار واستخدام كداب"), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       socketRef.current.emit('liar_decision', {
         lie: false
@@ -4213,15 +4160,15 @@ function App() {
       setLiarPrompt(null);
     },
     className: "btn-emerald px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-black flex-1 shadow-lg"
-  }, "🤝 اديله كارت واحد بصدق"))), hatEntaPrompt && /*#__PURE__*/React.createElement("div", {
+  }, "🤝 تسليم كارت واحد بأمان"))), hatEntaPrompt && /*#__PURE__*/React.createElement("div", {
     className: "fixed inset-x-4 top-20 sm:top-24 sm:max-w-md sm:mx-auto z-[200] bg-gradient-to-r from-red-950 via-purple-950 to-amber-950 border-3 border-red-500 shadow-[0_10px_40px_rgba(255,0,0,0.8)] rounded-3xl p-4 text-center backdrop-blur-md animate-bounce font-cairo"
   }, /*#__PURE__*/React.createElement("span", {
     className: "text-4xl block mb-1"
   }, "🛑"), /*#__PURE__*/React.createElement("p", {
     className: "text-base font-black text-yellow-300"
-  }, hatEntaPrompt.askerName, " بيطلب منك [", hatEntaPrompt.requestedNumber === 11 ? 'كا' : hatEntaPrompt.requestedNumber === 12 ? 'تش' : hatEntaPrompt.requestedNumber, "]!"), /*#__PURE__*/React.createElement("p", {
+  }, hatEntaPrompt.askerName, " يطلب منك رقم [", hatEntaPrompt.requestedNumber === 11 ? 'كا' : hatEntaPrompt.requestedNumber === 12 ? 'تش' : hatEntaPrompt.requestedNumber, "]!"), /*#__PURE__*/React.createElement("p", {
     className: "text-xs text-amber-200/90 font-bold mb-3 mt-1"
-  }, "معاك كارت « هات انت »! تقدر تقلب الطاولة وتاخد ورقه وتستلم الدور!"), /*#__PURE__*/React.createElement("div", {
+  }, "لديك كارت « هات انت »! يمكنك عكس الطلب والحصول على أوراقه ونقل الدور إليك!"), /*#__PURE__*/React.createElement("div", {
     className: "flex gap-2 justify-center"
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => {
@@ -4248,7 +4195,7 @@ function App() {
     }
   }, "🔄"), /*#__PURE__*/React.createElement("p", {
     className: "text-xl font-black text-yellow-400"
-  }, "بدل أيادي! 🤝"), /*#__PURE__*/React.createElement("p", {
+  }, "تبديل الأيدي! 🤝"), /*#__PURE__*/React.createElement("p", {
     className: "text-sm font-bold text-white mt-1"
   }, "تم تبديل أوراق ", swapAnim.p1Name, " مع ", swapAnim.p2Name, "!"))), jokerShowdownAnim && /*#__PURE__*/React.createElement("div", {
     className: "fixed inset-0 pointer-events-none z-[260] flex items-center justify-center p-4"
@@ -4258,9 +4205,9 @@ function App() {
     className: "text-5xl block mb-2"
   }, jokerShowdownAnim.success ? '🎯' : jokerShowdownAnim.skipped ? '🏳️' : '❌'), /*#__PURE__*/React.createElement("p", {
     className: `text-xl font-black ${jokerShowdownAnim.success ? 'text-emerald-300' : jokerShowdownAnim.skipped ? 'text-amber-200' : 'text-red-400'}`
-  }, jokerShowdownAnim.success ? 'اتقفش متلبس! قَفْشَة الجوكر!' : jokerShowdownAnim.skipped ? 'تم تخطي التخمين' : 'تخمين غير صحيح! عقوبة!'), /*#__PURE__*/React.createElement("p", {
+  }, jokerShowdownAnim.success ? 'كشف الجوكر بنجاح!' : jokerShowdownAnim.skipped ? 'تم تخطي التخمين' : 'تخمين غير صحيح! عقوبة!'), /*#__PURE__*/React.createElement("p", {
     className: "text-xs text-white/90 font-bold mt-2 leading-relaxed"
-  }, jokerShowdownAnim.success ? `${jokerShowdownAnim.challengerName} قفش ${jokerShowdownAnim.accusedName}! لِمّة الجوكر رقم [${jokerShowdownAnim.valLabel}] اتسحبت وراحت للمخمن! 🔥` : jokerShowdownAnim.skipped ? `${jokerShowdownAnim.challengerName} فضّل عدم المخاطرة بلِمّة.` : `${jokerShowdownAnim.challengerName} اتهم ${jokerShowdownAnim.accusedName} بالباطل! صاحب الجوكر الحقيقي هو ${jokerShowdownAnim.actualName || 'صاحب الجوكر'}! ${jokerShowdownAnim.penaltyGiven ? `خسر لِمّة كعقوبة وراحت لصاحب الجوكر ${jokerShowdownAnim.actualName || ''} مكافأة له على نجاح خدعته!` : ''}`))), roomState.jokerChallenge && (roomState.jokerChallenge.isChallengerMe ? /*#__PURE__*/React.createElement("div", {
+  }, jokerShowdownAnim.success ? `${jokerShowdownAnim.challengerName} كشف بطاقة ${jokerShowdownAnim.accusedName}! لِمّة الجوكر رقم [${jokerShowdownAnim.valLabel}] نُقلت للمخمن! 🔥` : jokerShowdownAnim.skipped ? `${jokerShowdownAnim.challengerName} فضّل عدم المخاطرة بلِمّة.` : `${jokerShowdownAnim.challengerName} اتهم ${jokerShowdownAnim.accusedName} بالخطأ! صاحب الجوكر الحقيقي هو ${jokerShowdownAnim.actualName || 'صاحب الجوكر'}! ${jokerShowdownAnim.penaltyGiven ? `خسر لِمّة كعقوبة ونُقلت لصاحب الجوكر ${jokerShowdownAnim.actualName || ''} مكافأة له على نجاح خدعته!` : ''}`))), roomState.jokerChallenge && (roomState.jokerChallenge.isChallengerMe ? /*#__PURE__*/React.createElement("div", {
     className: "fixed inset-0 z-[250] bg-black/85 backdrop-blur-md flex items-center justify-center p-4"
   }, /*#__PURE__*/React.createElement("div", {
     className: "bg-gradient-to-b from-[#250836] via-[#140320] to-[#08010c] border-3 border-yellow-400 rounded-3xl p-5 w-full max-w-md shadow-[0_0_60px_rgba(250,204,21,0.7)] text-center font-cairo"
@@ -4268,19 +4215,19 @@ function App() {
     className: "text-4xl block mb-1"
   }, "🕵️ 🃏"), /*#__PURE__*/React.createElement("h3", {
     className: "text-lg font-black text-yellow-300"
-  }, "قَفْشَة الجوكر الأخيرة! (Joker Showdown)"), /*#__PURE__*/React.createElement("p", {
+  }, "تحدي كشف الجوكر الأخير! (Joker Showdown)"), /*#__PURE__*/React.createElement("p", {
     className: "text-xs text-amber-200/90 font-bold mt-1"
-  }, "معاك الكارت اليتيم رقم ", /*#__PURE__*/React.createElement("span", {
+  }, "لديك البطاقة المتبقية رقم ", /*#__PURE__*/React.createElement("span", {
     className: "bg-yellow-400 text-black px-2 py-0.5 rounded-md font-black"
-  }, "[", roomState.jokerChallenge.orphanValue === 11 ? 'كا' : roomState.jokerChallenge.orphanValue === 12 ? 'تش' : roomState.jokerChallenge.orphanValue, "]"), "! اللِمّة بتاعته اتقفلت في السر بالجوكر (3 كروت + جوكر)!"), /*#__PURE__*/React.createElement("div", {
+  }, "[", roomState.jokerChallenge.orphanValue === 11 ? 'كا' : roomState.jokerChallenge.orphanValue === 12 ? 'تش' : roomState.jokerChallenge.orphanValue, "]"), "! تم إكمال اللِمّة سراً باستخدام الجوكر (3 كروت + جوكر)!"), /*#__PURE__*/React.createElement("div", {
     className: "bg-black/50 border border-yellow-500/30 rounded-2xl p-2.5 my-3 text-right text-xs space-y-1"
   }, /*#__PURE__*/React.createElement("p", {
     className: "text-emerald-300 font-bold flex items-center gap-1"
-  }, /*#__PURE__*/React.createElement("span", null, "🎯"), /*#__PURE__*/React.createElement("span", null, "لو خمنت صح: هتقفشه وتاخد لِمّة الجوكر دي فوراً لحسابك!")), /*#__PURE__*/React.createElement("p", {
+  }, /*#__PURE__*/React.createElement("span", null, "🎯"), /*#__PURE__*/React.createElement("span", null, "إذا كان تخمينك صحيحاً: ستكشف الجوكر وتحصل على لِمّة الجوكر فوراً لحسابك!")), /*#__PURE__*/React.createElement("p", {
     className: "text-red-300 font-bold flex items-center gap-1"
-  }, /*#__PURE__*/React.createElement("span", null, "⚠️"), /*#__PURE__*/React.createElement("span", null, "لو خمنت غلط: هتخسر لِمّة من لِمّاتك كعقوبة وتروح لصاحب الجوكر الحقيقي مكافأة له على نجاح خدعته!"))), /*#__PURE__*/React.createElement("p", {
+  }, /*#__PURE__*/React.createElement("span", null, "⚠️"), /*#__PURE__*/React.createElement("span", null, "إذا كان تخمينك خاطئاً: ستخسر لِمّة من رصيدك كعقوبة وتنتقل لصاحب الجوكر الحقيقي مكافأة له على نجاح خدعته!"))), /*#__PURE__*/React.createElement("p", {
     className: "text-xs font-black text-amber-200 mb-2 text-right"
-  }, "👇 اختر اللاعب اللي شاكك إنه قفل اللِمّة بالجوكر:"), /*#__PURE__*/React.createElement("div", {
+  }, "👇 اختر اللاعب الذي تشك في استخدامه الجوكر:"), /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto p-1 mb-3"
   }, roomState.jokerChallenge.possibleTargets.map(targetP => {
     const isSelected = selectedJokerTarget === targetP.id;
@@ -4309,13 +4256,13 @@ function App() {
       setSelectedJokerTarget(null);
     },
     className: `w-full py-2.5 rounded-2xl text-xs sm:text-sm font-black transition flex items-center justify-center gap-1.5 shadow-lg ${selectedJokerTarget ? 'btn-gold cursor-pointer animate-pulse' : 'bg-white/10 text-white/40 cursor-not-allowed'}`
-  }, /*#__PURE__*/React.createElement("span", null, "🕵️"), /*#__PURE__*/React.createElement("span", null, "اتّهم اللاعب ده واقفش لِمّة الجوكر!")), /*#__PURE__*/React.createElement("button", {
+  }, /*#__PURE__*/React.createElement("span", null, "🕵️"), /*#__PURE__*/React.createElement("span", null, "تأكيد التخمين وكشف لِمّة الجوكر!")), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       socketRef.current.emit('skip_joker_guess');
       setSelectedJokerTarget(null);
     },
     className: "w-full py-2 rounded-2xl text-xs font-bold bg-white/10 hover:bg-white/20 text-white/80 border border-white/10 transition"
-  }, "🏳️ تخطي التخمين (مش عايز أخاطر بلِمّة)")))) : /*#__PURE__*/React.createElement("div", {
+  }, "🏳️ تخطي التخمين (تجنب المخاطرة بلِمّة)")))) : /*#__PURE__*/React.createElement("div", {
     className: "fixed inset-x-4 top-20 sm:top-24 sm:max-w-md sm:mx-auto z-[200] bg-gradient-to-r from-purple-950 via-indigo-950 to-purple-950 border-3 border-yellow-400 shadow-[0_10px_40px_rgba(0,0,0,0.9)] rounded-3xl p-4 text-center backdrop-blur-md animate-pulse font-cairo"
   }, /*#__PURE__*/React.createElement("span", {
     className: "text-3xl block mb-1"
@@ -4323,7 +4270,7 @@ function App() {
     className: "text-base font-black text-yellow-300"
   }, "مواجهة الجوكر الأخيرة قيد التخمين!"), /*#__PURE__*/React.createElement("p", {
     className: "text-xs text-amber-200/90 font-bold mt-1"
-  }, roomState.jokerChallenge.challengerName, " معاه الكارت اليتيم رقم [", roomState.jokerChallenge.orphanValue === 11 ? 'كا' : roomState.jokerChallenge.orphanValue === 12 ? 'تش' : roomState.jokerChallenge.orphanValue, "] وبيخمن مين اللي قفل اللِمّة بالجوكر!"))), /*#__PURE__*/React.createElement("footer", {
+  }, roomState.jokerChallenge.challengerName, " لديه البطاقة المتبقية رقم [", roomState.jokerChallenge.orphanValue === 11 ? 'كا' : roomState.jokerChallenge.orphanValue === 12 ? 'تش' : roomState.jokerChallenge.orphanValue, "] ويقوم الآن بتخمين صاحب الجوكر!"))), /*#__PURE__*/React.createElement("footer", {
     className: "w-full shrink-0 z-40 flex flex-col relative rounded-t-2xl",
     style: {
       background: 'rgba(15, 23, 42, 0.95)',
@@ -4344,43 +4291,19 @@ function App() {
   }, speechBubbles[socketRef.current?.id] && /*#__PURE__*/React.createElement("div", {
     className: "comic-meme-bubble absolute -top-10 -right-2 bg-white text-black px-2.5 py-1 rounded-2xl text-xs font-black whitespace-nowrap z-50 border-2 border-emerald-950 shadow-2xl animate-bounce"
   }, speechBubbles[socketRef.current?.id].emoji ? `${speechBubbles[socketRef.current?.id].emoji} ` : '', speechBubbles[socketRef.current?.id].text), /*#__PURE__*/React.createElement("span", {
-    className: `text-3xl block leading-none p-1 rounded-xl ${speakingPlayers[socketRef.current?.id] ? 'speaking-pulse ring-2 ring-emerald-400' : ''}`,
-    style: {
-      border: '1.5px solid rgba(0,212,255,0.3)',
-      background: 'rgba(0,212,255,0.05)'
-    }
+    className: `text-3xl block leading-none p-1 rounded-xl border border-sky-400/30 bg-slate-800/80 shadow-sm ${speakingPlayers[socketRef.current?.id] ? 'speaking-pulse ring-2 ring-emerald-400' : ''}`
   }, me.avatar), speakingPlayers[socketRef.current?.id] && /*#__PURE__*/React.createElement("span", {
-    className: "absolute -top-2 -right-1 text-[8px] font-black px-1 rounded-full border border-white",
-    style: {
-      background: 'var(--neon-green)',
-      color: '#000'
-    }
+    className: "absolute -top-2 -right-1 text-[8px] font-black px-1 rounded-full bg-emerald-500 text-white shadow-sm"
   }, "🎙️")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
-    className: "text-sm font-black leading-tight",
-    style: {
-      color: 'var(--text-main)'
-    }
+    className: "text-sm font-black leading-tight text-white"
   }, me.name, " ", /*#__PURE__*/React.createElement("span", {
-    className: "text-[10px] font-bold",
-    style: {
-      color: 'var(--neon-blue)'
-    }
+    className: "text-[10px] font-bold text-sky-400"
   }, "• أنت")), /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-2 mt-0.5"
   }, /*#__PURE__*/React.createElement("span", {
-    className: "text-xs font-bold px-2.5 py-0.5 rounded-full",
-    style: {
-      background: 'rgba(180,77,255,0.15)',
-      color: 'var(--neon-purple)',
-      border: '1px solid rgba(180,77,255,0.3)'
-    }
+    className: "text-xs font-bold px-2.5 py-0.5 rounded-full bg-purple-950/60 text-purple-200 border border-purple-500/30 shadow-sm"
   }, "🃏 ", me.hand.length), /*#__PURE__*/React.createElement("span", {
-    className: "text-xs font-black px-2.5 py-0.5 rounded-full",
-    style: {
-      background: 'rgba(255,215,0,0.1)',
-      color: 'var(--neon-gold)',
-      border: '1px solid rgba(255,215,0,0.3)'
-    }
+    className: "text-xs font-black px-2.5 py-0.5 rounded-full bg-amber-950/60 text-amber-300 border border-amber-500/30 shadow-sm"
   }, "⭐ ", me.score || me.sets.length), me.sets && me.sets.length > 0 && /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-1 overflow-x-auto max-w-[140px] sm:max-w-[200px]",
     title: "لِمّاتك المقفولة بأرقامها"
@@ -4735,14 +4658,14 @@ function App() {
     className: "w-14 h-20 rounded-xl border-2 border-yellow-300 shadow-2xl",
     alt: ""
   }))), showBanterDrawer && /*#__PURE__*/React.createElement("div", {
-    className: "fixed inset-x-3 bottom-44 sm:bottom-40 sm:max-w-lg sm:mx-auto z-[250] bg-[#1a0520]/95 border-2 border-amber-400 rounded-3xl p-3.5 shadow-[0_0_40px_rgba(250,204,21,0.6)] backdrop-blur-md"
+    className: "fixed inset-x-3 bottom-44 sm:bottom-40 sm:max-w-lg sm:mx-auto z-[250] bg-[#0f172a]/95 border border-slate-700 rounded-3xl p-3.5 shadow-2xl backdrop-blur-md"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center justify-between pb-2 mb-2 border-b border-amber-400/30"
+    className: "flex items-center justify-between pb-2 mb-2 border-b border-slate-700/60"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-1.5 text-xs font-black text-amber-300"
   }, /*#__PURE__*/React.createElement("span", {
     className: "text-base"
-  }, "🗣️"), /*#__PURE__*/React.createElement("span", null, "إفيهات وصوتيات كازينو كاتش:")), /*#__PURE__*/React.createElement("button", {
+  }, "🗣️"), /*#__PURE__*/React.createElement("span", null, "تفاعلات ورسائل الطاولة:")), /*#__PURE__*/React.createElement("button", {
     onClick: () => setShowBanterDrawer(false),
     className: "text-white/60 hover:text-white text-xs font-bold px-2 py-0.5 rounded-lg bg-white/10"
   }, "✕")), /*#__PURE__*/React.createElement("div", {
@@ -4758,7 +4681,7 @@ function App() {
       soundFx.play(b.sound || 'banter');
       setShowBanterDrawer(false);
     },
-    className: "bg-black/60 hover:bg-amber-600/30 border border-amber-500/30 hover:border-yellow-400 text-white hover:text-yellow-300 p-2 rounded-xl text-xs font-bold text-right flex items-center gap-2 transition active:scale-95"
+    className: "bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 hover:border-amber-400 text-white hover:text-yellow-300 p-2 rounded-xl text-xs font-bold text-right flex items-center gap-2 transition active:scale-95"
   }, /*#__PURE__*/React.createElement("span", {
     className: "text-xl shrink-0"
   }, b.emoji), /*#__PURE__*/React.createElement("span", {
@@ -4790,7 +4713,7 @@ function App() {
       className: "text-xl font-black text-gray-900 tracking-wide"
     }, "فاتورة الحساب - انتهت الجولة"), /*#__PURE__*/React.createElement("p", {
       className: "text-xs text-gray-500 font-bold mt-0.5"
-    }, "كازينو كاتش الملكي VIP • طاولة #", roomState.code), first && /*#__PURE__*/React.createElement("div", {
+    }, "لعبة كاتش الرسمية • طاولة #", roomState.code), first && /*#__PURE__*/React.createElement("div", {
       className: "text-sm font-black text-emerald-700 mt-2 bg-emerald-50 py-1.5 px-2 rounded-xl border border-emerald-200 shadow-sm"
     }, "🏆 البطل المتوج: ", first.name, " ", first.avatar)), /*#__PURE__*/React.createElement("div", {
       className: "space-y-1.5 mb-3.5"
@@ -4840,16 +4763,16 @@ function App() {
         className: "text-yellow-300 bg-purple-900 px-1 py-0.2 rounded font-black border border-yellow-400/40"
       }, "[", valLabel, "]")), j.busted ? /*#__PURE__*/React.createElement("span", {
         className: "bg-red-600/90 text-white font-black text-[9px] px-1.5 py-0.5 rounded-full shadow border border-red-300 flex items-center gap-0.5 animate-pulse"
-      }, /*#__PURE__*/React.createElement("span", null, "🎯"), /*#__PURE__*/React.createElement("span", null, "اتقفش من ", j.bustedBy, "!")) : /*#__PURE__*/React.createElement("span", {
+      }, /*#__PURE__*/React.createElement("span", null, "🎯"), /*#__PURE__*/React.createElement("span", null, "تم كشفه بواسطة ", j.bustedBy, "!")) : /*#__PURE__*/React.createElement("span", {
         className: "bg-emerald-600/90 text-white font-black text-[9px] px-1.5 py-0.5 rounded-full shadow border border-emerald-300"
-      }, "نفد باللِمّة! 💰")));
+      }, "نجح بالخداع! 🎯")));
     }))), /*#__PURE__*/React.createElement("div", {
       className: "bg-amber-50 border border-amber-300 rounded-2xl p-2.5 mb-3 text-right text-xs"
     }, /*#__PURE__*/React.createElement("p", {
       className: "font-black text-amber-900 flex items-center gap-1"
-    }, /*#__PURE__*/React.createElement("span", null, "⚠️"), /*#__PURE__*/React.createElement("span", null, "تنبيه من إدارة كازينو كاتش:")), /*#__PURE__*/React.createElement("p", {
+    }, /*#__PURE__*/React.createElement("span", null, "💡"), /*#__PURE__*/React.createElement("span", null, "نصيحة وتحدي الجولة القادمة:")), /*#__PURE__*/React.createElement("p", {
       className: "text-gray-700 text-[11px] font-bold mt-1 leading-relaxed"
-    }, "الحاج فزاع والمعلم شنب بيحلفوا الدور الجاي مفيش رحمة.. جاري شحن الحظ والورق! 🎲")), /*#__PURE__*/React.createElement("div", {
+    }, "استعد للتحدي القادم، راقب أوراق خصومك بتركيز لتقتنص الفوز! 🎲")), /*#__PURE__*/React.createElement("div", {
       className: "bg-gray-100 border border-gray-200 rounded-2xl p-2 mb-3.5 flex items-center justify-around text-center text-xs"
     }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
       className: "text-[10px] text-gray-500 font-bold block"
@@ -4934,13 +4857,13 @@ function App() {
       className: "bg-gradient-to-r from-amber-950/60 to-yellow-950/40 border border-yellow-500/50 rounded-2xl p-3 shadow-md space-y-1"
     }, /*#__PURE__*/React.createElement("div", {
       className: "flex items-center gap-1.5 text-xs font-black text-amber-300"
-    }, /*#__PURE__*/React.createElement("span", null, "💡"), /*#__PURE__*/React.createElement("span", null, "نصيحة الحريف (تكتيك الفوز):")), /*#__PURE__*/React.createElement("p", {
+    }, /*#__PURE__*/React.createElement("span", null, "💡"), /*#__PURE__*/React.createElement("span", null, "نصيحة تكتيكية (طريق الاحتراف):")), /*#__PURE__*/React.createElement("p", {
       className: "text-xs sm:text-sm font-bold text-amber-100/95 leading-relaxed"
     }, details.proTip)), me?.hand && me.hand.length > 0 && /*#__PURE__*/React.createElement("div", {
       className: "pt-2 border-t border-amber-500/20"
     }, /*#__PURE__*/React.createElement("p", {
       className: "text-xs font-black text-amber-200 mb-1.5"
-    }, "🃏 تصفح باقي الكروت اللي في إيدك:"), /*#__PURE__*/React.createElement("div", {
+    }, "🃏 استعراض بطاقات يدك:"), /*#__PURE__*/React.createElement("div", {
       className: "flex gap-1.5 overflow-x-auto pb-1"
     }, me.hand.map(c => /*#__PURE__*/React.createElement("button", {
       key: c.id,
