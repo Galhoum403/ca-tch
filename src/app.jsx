@@ -902,9 +902,94 @@ class VoiceChatManager {
   }
 }
 
+// --- DRAMATIC CHAMELEON EXIT CONFIRMATION MODAL ---
+function ExitConfirmModal({ isOpen, onClose, onConfirm, isPlaying, lang }) {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 z-[600] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+      <div className="w-full max-w-sm bg-gradient-to-b from-[#240812] via-[#16040b] to-[#0a0105] border-2 border-red-500/80 rounded-3xl p-5 shadow-[0_0_50px_rgba(239,68,68,0.45)] text-center text-white relative overflow-hidden font-cairo">
+        {/* Glow ambient background effect */}
+        <div className="absolute -top-10 -left-10 w-28 h-28 bg-red-600/25 rounded-full blur-2xl pointer-events-none" />
+        <div className="absolute -bottom-10 -right-10 w-28 h-28 bg-amber-500/20 rounded-full blur-2xl pointer-events-none" />
+
+        {/* Mascot / Icon Badge */}
+        <div className="relative mb-3 inline-flex items-center justify-center">
+          <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-red-600 to-amber-500 p-1 shadow-lg shadow-red-500/40">
+            <div className="w-full h-full bg-[#180308] rounded-full flex items-center justify-center text-4xl">
+              {isPlaying ? '🦎' : '🚪'}
+            </div>
+          </div>
+          <span className="absolute -bottom-1 -right-1 text-2xl animate-bounce">
+            {isPlaying ? '🛑' : '👋'}
+          </span>
+        </div>
+
+        {/* Title */}
+        <h3 className="text-xl font-black text-amber-300 mb-1.5 drop-shadow-md">
+          {isPlaying
+            ? (lang === 'en' ? 'Leaving So Soon, Champ?! 😱' : 'على فين يا بطل؟! رايح تخلع؟ 😱')
+            : (lang === 'en' ? 'Leave Table?' : 'عايز تغادر الطاولة؟ 🚪')}
+        </h3>
+
+        {/* Subtitle / Banter */}
+        <p className="text-xs text-amber-100/90 font-bold leading-relaxed mb-3 px-1">
+          {isPlaying
+            ? (lang === 'en'
+                ? "You're in the heat of the match! Leaving now will count as a surrender, and your friends on the table will tease you! 😈"
+                : "أنت في عز الجولة يا كابتن! لو خرجت دلوقتي أصحابك على الطاولة هيشمتوا فيك واللِمّات هتروح عليك! 😈")
+            : (lang === 'en'
+                ? 'Are you sure you want to leave this table and return to the main lobby?'
+                : 'متأكد إنك عايز تسيب الطاولة دي وترجع للشاشة الرئيسية؟')}
+        </p>
+
+        {isPlaying && (
+          <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-2.5 mb-4 text-[11px] font-bold text-amber-200/90 flex items-center gap-2 text-right">
+            <span className="text-xl shrink-0">🤖</span>
+            <span>
+              {lang === 'en'
+                ? 'Smart Chameleon Bot will take over your seat so the game continues smoothly for your friends!'
+                : 'متقلقش.. لو مضطر تخرج، ذكاء الحرباية (البوت) هيمسك مكانك فوراً عشان متوقفش اللعب على أصحابك!'}
+            </span>
+          </div>
+        )}
+
+        {/* Buttons */}
+        <div className="flex flex-col gap-2.5">
+          {/* Stay Button (Primary) */}
+          <button
+            onClick={onClose}
+            className="w-full py-3 bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-sm rounded-2xl shadow-lg shadow-emerald-900/50 border border-emerald-400/40 active:scale-95 transition-all flex items-center justify-center gap-2"
+          >
+            <span>💪</span>
+            <span>
+              {isPlaying
+                ? (lang === 'en' ? "I'm Staying to Win! (Back)" : "مكمّل ومش هسيب حقي! (رجوع للعب)")
+                : (lang === 'en' ? "Stay at Table" : "خليك في الطاولة")}
+            </span>
+          </button>
+
+          {/* Confirm Exit Button (Secondary) */}
+          <button
+            onClick={onConfirm}
+            className="w-full py-2.5 bg-red-950/60 hover:bg-red-900/80 text-red-200 hover:text-white font-black text-xs rounded-2xl border border-red-500/40 hover:border-red-400 active:scale-95 transition-all flex items-center justify-center gap-1.5"
+          >
+            <span>🏃‍♂️</span>
+            <span>
+              {isPlaying
+                ? (lang === 'en' ? 'Surrender & Exit' : 'هخلع خلاص.. خروج من الجولة')
+                : (lang === 'en' ? 'Leave Table' : 'مغادرة الطاولة')}
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const socketRef = useRef(null);
   const [roomState, setRoomState] = useState(null);
+  const [showExitConfirmModal, setShowExitConfirmModal] = useState(false);
   const [playerName, setPlayerName] = useState(() => localStorage.getItem('catch_name') || '');
   const [avatar, setAvatar] = useState(() => localStorage.getItem('catch_avatar') || '😎');
   const [joinCode, setJoinCode] = useState('');
@@ -2186,6 +2271,17 @@ function App() {
     setLastRoomCode('');
     if (socketRef.current) socketRef.current.emit('leave_room');
     setRoomState(null);
+    setShowExitConfirmModal(false);
+  };
+
+  const requestLeaveRoom = () => {
+    soundFx.init();
+    soundFx.play('snap');
+    if (roomState && (roomState.status === 'playing' || roomState.status === 'joker_showdown' || roomState.status === 'lobby')) {
+      setShowExitConfirmModal(true);
+    } else {
+      handleLeaveRoom();
+    }
   };
 
   const handleCardClick = (card) => {
@@ -3224,7 +3320,7 @@ function App() {
         
         {/* Lobby Top Bar */}
         <div className="flex items-center justify-between pb-1 mb-1 border-b border-white/10">
-          <button onClick={handleLeaveRoom} className="btn-ruby text-white px-2.5 py-1 rounded-xl text-xs font-black">
+          <button onClick={requestLeaveRoom} className="btn-ruby text-white px-2.5 py-1 rounded-xl text-xs font-black active:scale-95 transition">
             {t('leaveTable')}
           </button>
           <span className="text-xs font-black text-amber-300">{t('tableNumber')} [{roomState.code}]</span>
@@ -3366,6 +3462,14 @@ function App() {
         </div>
 
         {errorMsg && <div className="fixed bottom-6 bg-red-600 text-white px-6 py-2 rounded-2xl font-bold shadow-2xl z-50 text-xs">{errorMsg}</div>}
+
+        <ExitConfirmModal
+          isOpen={showExitConfirmModal}
+          onClose={() => setShowExitConfirmModal(false)}
+          onConfirm={handleLeaveRoom}
+          isPlaying={false}
+          lang={lang}
+        />
       </div>
     );
   }
@@ -3571,8 +3675,8 @@ function App() {
       <header className="w-full shrink-0 flex items-center justify-between px-2.5 z-30"
               style={{height:'50px', paddingTop:'max(6px,env(safe-area-inset-top))'}}>
         <div className="w-full bg-[#1e0407]/90 backdrop-blur-md border border-amber-500/40 rounded-2xl px-3 py-1 flex items-center justify-between shadow-lg">
-          <button onClick={handleLeaveRoom} className="text-amber-200/90 hover:text-white flex items-center gap-1 text-xs font-black transition">
-            <span className="text-red-400">✕</span>
+          <button onClick={requestLeaveRoom} className="text-amber-200/90 hover:text-white flex items-center gap-1.5 text-xs font-black transition px-2 py-1 rounded-xl bg-red-950/40 hover:bg-red-950/80 border border-red-500/30 active:scale-95 shadow-sm">
+            <span className="text-red-400 font-bold">✕</span>
             <span>خروج</span>
           </button>
 
@@ -5374,6 +5478,14 @@ function App() {
           </div>
         </div>
       )}
+
+      <ExitConfirmModal
+        isOpen={showExitConfirmModal}
+        onClose={() => setShowExitConfirmModal(false)}
+        onConfirm={handleLeaveRoom}
+        isPlaying={roomState.status === 'playing' || roomState.status === 'joker_showdown'}
+        lang={lang}
+      />
 
       {errorMsg && <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-red-600 text-white px-6 py-2.5 rounded-2xl font-bold shadow-2xl z-50 text-sm">{errorMsg}</div>}
     </div>

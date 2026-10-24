@@ -2979,7 +2979,7 @@ function registerSocketHandlers(socket) {
           room.players[0].isHost = true;
           room.hostId = room.players[0].id;
         }
-      } else if (room.status === 'playing') {
+      } else if (room.status === 'playing' || room.status === 'joker_showdown') {
         const hasConnectedHumans = room.players.some(pl => !pl.isBot && pl.connected && pl.id !== socket.id);
         if (!hasConnectedHumans) {
           clearRoomTimers(room);
@@ -2989,8 +2989,12 @@ function registerSocketHandlers(socket) {
           socket.emit('left_room_success');
           return;
         }
+        // Seamless Bot Takeover: convert exiting player to smart Bot so remaining players can finish!
+        p.isBot = true;
+        p.name = `${p.name} 🤖`;
+        room.logs.push(`🤖 غادر ${p.name} واستلم البوت الذكي مكانه لإكمال الجولة.`);
         if (room.players[room.currentIdx]?.id === socket.id) {
-          advanceTurn(room);
+          scheduleBotTurn(room, 1600);
         }
       }
       broadcastRoomState(room);
@@ -3027,15 +3031,18 @@ function registerSocketHandlers(socket) {
               room.players[0].isHost = true;
               room.hostId = room.players[0].id;
             }
-          } else if (room.status === 'playing') {
+          } else if (room.status === 'playing' || room.status === 'joker_showdown') {
             const hasConnectedHumans = room.players.some(pl => !pl.isBot && pl.connected);
             if (!hasConnectedHumans) {
               clearRoomTimers(room);
               rooms.delete(room.code);
               return;
             }
+            p.isBot = true;
+            p.name = `${p.name} 🤖`;
+            room.logs.push(`🤖 انقطع اتصال ${p.name} واستلم البوت مكانه لمواصلة اللعب.`);
             if (room.players[room.currentIdx]?.id === p.id) {
-              advanceTurn(room);
+              scheduleBotTurn(room, 1600);
             }
           }
           broadcastRoomState(room);
