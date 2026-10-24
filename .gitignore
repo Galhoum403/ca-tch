@@ -29,7 +29,6 @@ png cards/
 *.webp
 *.jpg
 !public/chameleon_peeking.jpg
-!public/table_felt_emerald.jpg
 
 # Local Database
 data/*.db*

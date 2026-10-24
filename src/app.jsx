@@ -3628,16 +3628,16 @@ function App() {
       {/* Main Oval Table Area (Matching Generated Mockup) */}
       <main className="flex-1 relative w-full flex flex-col items-center justify-center px-2 py-0.5 overflow-hidden">
         
-        {/* The Oval Felt Table — LUXURY EMERALD FELT & MAHOGANY PADDED RAIL */}
-        <div className="relative w-full max-w-[420px] h-[98%] max-h-[390px] sm:max-h-[430px] rounded-[110px] sm:rounded-[140px] border-[7px] border-[#201209] shadow-[0_0_0_2px_rgba(250,204,21,0.55),0_18px_45px_rgba(0,0,0,0.95),inset_0_0_70px_rgba(0,0,0,0.9)] flex flex-col justify-between items-center p-2.5 overflow-hidden"
-             style={{ background: 'radial-gradient(ellipse at 50% 45%, #0f5238 0%, #083524 55%, #041c13 100%)' }}>
+        {/* Modern Clean Playmat — 100% Friendly Card Game Table */}
+        <div className="relative w-full max-w-[420px] h-[98%] max-h-[390px] sm:max-h-[430px] rounded-[48px] sm:rounded-[56px] border-2 border-sky-400/30 shadow-[0_12px_40px_rgba(0,0,0,0.7),inset_0_0_60px_rgba(0,0,0,0.65)] flex flex-col justify-between items-center p-2.5 overflow-hidden"
+             style={{ background: 'radial-gradient(ellipse at 50% 45%, #1e293b 0%, #0f172a 60%, #070b14 100%)' }}>
           
-          {/* Subtle Inner Golden Dashed Ring */}
-          <div className="absolute inset-2.5 rounded-[95px] sm:rounded-[125px] border border-dashed border-amber-300/25 pointer-events-none" />
+          {/* Subtle Clean Inner Accent Ring */}
+          <div className="absolute inset-2.5 rounded-[40px] sm:rounded-[48px] border border-dashed border-sky-400/20 pointer-events-none" />
 
-          {/* Chameleon Crest Watermark in Felt Center */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.06] select-none">
-            <span className="text-8xl transform scale-125">🦎</span>
+          {/* Friendly Chameleon Mascot Watermark */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.05] select-none">
+            <span className="text-8xl transform scale-110">🦎</span>
           </div>
 
           {/* Top Opponents Row */}
@@ -3962,18 +3962,18 @@ function App() {
           )
         )}
 
-      {/* Bottom Dock: My Hand & Controls — LUXURY LEATHER & GOLD CONSOLE */}
-      <footer className="w-full shrink-0 z-40 flex flex-col relative rounded-t-3xl"
+      {/* Bottom Dock: My Hand & Controls — Modern Clean Card Game Style */}
+      <footer className="w-full shrink-0 z-40 flex flex-col relative rounded-t-2xl"
               style={{
-                background: 'linear-gradient(180deg, rgba(14, 38, 28, 0.96) 0%, rgba(6, 18, 13, 0.98) 100%)',
-                borderTop: '2px solid rgba(212, 175, 55, 0.6)',
-                boxShadow: '0 -8px 30px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.15)',
+                background: 'rgba(15, 23, 42, 0.95)',
+                borderTop: '1px solid rgba(56, 189, 248, 0.25)',
+                boxShadow: '0 -6px 25px rgba(0,0,0,0.7)',
                 backdropFilter: 'blur(16px)',
                 paddingBottom: 'max(8px,env(safe-area-inset-bottom))'
               }}>
         
         {/* Profile Status Bar */}
-        <div className="flex items-center justify-between px-4 py-2 border-b" style={{borderColor:'rgba(212,175,55,0.15)'}}>
+        <div className="flex items-center justify-between px-4 py-2 border-b" style={{borderColor:'rgba(255,255,255,0.08)'}}>
           <div className="flex items-center gap-3">
             <div className="relative">
               {/* My Speech Bubble */}
