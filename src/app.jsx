@@ -3776,10 +3776,10 @@ function App() {
           <div className="fixed inset-x-4 top-20 sm:top-24 sm:max-w-md sm:mx-auto z-[200] bg-gradient-to-r from-red-950 via-purple-950 to-red-950 border-3 border-yellow-400 shadow-[0_10px_40px_rgba(0,0,0,0.9)] rounded-3xl p-4 text-center backdrop-blur-md animate-bounce">
             <span className="text-4xl block mb-1">🤥</span>
             <p className="text-base font-black text-yellow-300">
-              {liarPrompt.askerName} بيطلب منك [{liarPrompt.requestedNumber === 11 ? 'كا' : liarPrompt.requestedNumber === 12 ? 'تش' : liarPrompt.requestedNumber}] ومعاك {liarPrompt.count} كارت!
+              {liarPrompt.askerName} بيطلب منك [{liarPrompt.requestedNumber === 11 ? 'كا' : liarPrompt.requestedNumber === 12 ? 'تش' : liarPrompt.requestedNumber}] ومعاك منه!
             </p>
             <p className="text-xs text-amber-200/90 font-bold mb-3 mt-1">
-              معاك كارت « كداب »! تقدر تكذب وتقول معيش وتخليه ياخد CATCH!
+              معاك كارت « كداب »! تقدر تكذب وتقول معيش وتلبّسه CATCH، أو تديله كارت واحد!
             </p>
             <div className="flex gap-2 justify-center">
               <button onClick={() => {
@@ -3792,7 +3792,7 @@ function App() {
                 socketRef.current.emit('liar_decision', { lie: false });
                 setLiarPrompt(null);
               }} className="btn-emerald px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-black flex-1 shadow-lg">
-                🤝 اديله الكروت بصدق
+                🤝 اديله كارت واحد بصدق
               </button>
             </div>
           </div>

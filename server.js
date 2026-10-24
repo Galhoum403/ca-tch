@@ -376,10 +376,6 @@ function updateBotMemoryOnSuccess(room, askerIdx, targetIdx, requestedNumber) {
       if (!p.botMemory) p.botMemory = { knownPlayerCards: {} };
       if (!p.botMemory.knownPlayerCards) p.botMemory.knownPlayerCards = {};
       
-      // Target no longer has this number
-      if (p.botMemory.knownPlayerCards[target.id]) {
-        p.botMemory.knownPlayerCards[target.id].delete(requestedNumber);
-      }
       // Asker definitely has this number now
       if (!p.botMemory.knownPlayerCards[asker.id]) {
         p.botMemory.knownPlayerCards[asker.id] = new Set();
@@ -1137,11 +1133,11 @@ function continueNormalAskAfterHatEnta(room, askerIdx, targetIdx, requestedNumbe
         }
       } else {
         // Human player: Send decision prompt (Give or Lie)
-        target.pendingLiarPrompt = { askerIdx, requestedNumber, count: matchingCards.length };
+        target.pendingLiarPrompt = { askerIdx, requestedNumber, count: 1 };
         emitToPlayer(target.id, 'liar_decision_prompt', {
           askerName: asker.name,
           requestedNumber,
-          count: matchingCards.length
+          count: 1
         });
         const lbl = requestedNumber === 11 ? 'كا' : requestedNumber === 12 ? 'تش' : `${requestedNumber}`;
         room.logs.push(`🤔 ${asker.name} طلب [${lbl}] من ${target.name}... معاه كارت كداب وبيقرر يكدب ولا يقول الحقيقة!`);
@@ -1158,21 +1154,28 @@ function continueNormalAskAfterHatEnta(room, askerIdx, targetIdx, requestedNumbe
 function executeTruthfulTransfer(room, askerIdx, targetIdx, requestedNumber) {
   const asker = room.players[askerIdx];
   const target = room.players[targetIdx];
-  const matchingCards = target.hand.filter(c => c.type === 'number' && c.value === requestedNumber);
-  const matchIds = new Set(matchingCards.map(c => c.id));
-  target.hand = target.hand.filter(c => !matchIds.has(c.id));
-  asker.hand.push(...matchingCards);
+  
+  // Find ONE matching card from target's hand
+  const cardIndex = target.hand.findIndex(c => c.type === 'number' && c.value === requestedNumber);
+  if (cardIndex === -1) {
+    executeCatchDraw(room, askerIdx, targetIdx, requestedNumber);
+    return;
+  }
+
+  // Transfer only ONE card at a time as per tactical rule!
+  const transferredCard = target.hand.splice(cardIndex, 1)[0];
+  asker.hand.push(transferredCard);
   asker.successCount = (asker.successCount || 0) + 1;
   room.emptyDeckPassCount = 0;
 
   const lbl = requestedNumber === 11 ? 'كا' : requestedNumber === 12 ? 'تش' : `${requestedNumber}`;
-  room.logs.push(`✅ ${asker.name} طلب [${lbl}] من ${target.name} ونجح! أخذ ${matchingCards.length} كارت 👏`);
+  room.logs.push(`✅ ${asker.name} طلب [${lbl}] من ${target.name} ونجح! أخذ كارت واحد 👏`);
   room.lastEvent = {
     type: 'ask_success',
     asker: asker.name,
     target: target.name,
     value: requestedNumber,
-    count: matchingCards.length
+    count: 1
   };
 
   broadcastActionAnnouncement(room, {
@@ -1183,9 +1186,9 @@ function executeTruthfulTransfer(room, askerIdx, targetIdx, requestedNumber) {
     actorAvatar: asker.avatar,
     targetName: target.name,
     targetAvatar: target.avatar,
-    desc: `${asker.name} طلب رقم [ ${lbl} ] من ${target.name} وأخذ منه ${matchingCards.length} ${matchingCards.length === 1 ? 'كارت' : 'كروت'}! ويستمر دوره.`,
+    desc: `${asker.name} طلب رقم [ ${lbl} ] من ${target.name} وأخذ منه كارت واحد! ويستمر دوره لو يحب يجازف ويطلب تاني.`,
     sound: 'impact',
-    duration: 5000
+    duration: 3800
   });
 
   emitToRoom(room.code, 'card_transfer_anim', {
@@ -1194,7 +1197,7 @@ function executeTruthfulTransfer(room, askerIdx, targetIdx, requestedNumber) {
     fromName: target.name,
     toName: asker.name,
     cardValue: requestedNumber,
-    count: matchingCards.length
+    count: 1
   });
 
   emitToRoom(room.code, 'ask_showdown_anim', {
@@ -1208,7 +1211,7 @@ function executeTruthfulTransfer(room, askerIdx, targetIdx, requestedNumber) {
     targetId: target.id,
     cardValue: requestedNumber,
     success: true,
-    count: matchingCards.length
+    count: 1
   });
   updateBotMemoryOnSuccess(room, askerIdx, targetIdx, requestedNumber);
 
@@ -1269,10 +1272,10 @@ function executeHatEntaCounter(room, targetIdx, askerIdx, requestedNumber) {
 
   const matchingInAsker = asker.hand.filter(c => c.type === 'number' && c.value === requestedNumber);
   if (matchingInAsker.length > 0) {
-    const matchIds = new Set(matchingInAsker.map(c => c.id));
-    asker.hand = asker.hand.filter(c => !matchIds.has(c.id));
-    target.hand.push(...matchingInAsker);
-    room.logs.push(`👏 ${target.name} نجح في أخذ ${matchingInAsker.length} كارت من ${asker.name} بكارت هات انت!`);
+    const cardIdx = asker.hand.findIndex(c => c.type === 'number' && c.value === requestedNumber);
+    const transferred = asker.hand.splice(cardIdx, 1)[0];
+    target.hand.push(transferred);
+    room.logs.push(`👏 ${target.name} نجح في أخذ كارت واحد (${lbl}) من ${asker.name} بكارت هات انت!`);
   } else {
     room.logs.push(`🔍 ${target.name} عكس الطلب لكن ${asker.name} مكنش معاه رقم [${lbl}]!`);
   }
@@ -1284,7 +1287,7 @@ function executeHatEntaCounter(room, targetIdx, askerIdx, requestedNumber) {
     actorAvatar: target.avatar,
     targetName: asker.name,
     targetAvatar: asker.avatar,
-    desc: `${target.name} رفع كارت "هات انت"! عكس الطلب على ${asker.name} واستولى على الدور!`,
+    desc: `${target.name} رفع كارت "هات انت"! عكس الطلب على ${asker.name} وأخذ كارت واحد واستولى على الدور!`,
     sound: 'impact',
     duration: 3500
   });
@@ -1300,7 +1303,7 @@ function executeHatEntaCounter(room, targetIdx, askerIdx, requestedNumber) {
     targetId: asker.id,
     cardValue: requestedNumber,
     success: matchingInAsker.length > 0,
-    count: matchingInAsker.length
+    count: matchingInAsker.length > 0 ? 1 : 0
   });
 
   room.currentIdx = targetIdx;

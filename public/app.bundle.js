@@ -4125,9 +4125,9 @@ function App() {
     className: "text-4xl block mb-1"
   }, "🤥"), /*#__PURE__*/React.createElement("p", {
     className: "text-base font-black text-yellow-300"
-  }, liarPrompt.askerName, " بيطلب منك [", liarPrompt.requestedNumber === 11 ? 'كا' : liarPrompt.requestedNumber === 12 ? 'تش' : liarPrompt.requestedNumber, "] ومعاك ", liarPrompt.count, " كارت!"), /*#__PURE__*/React.createElement("p", {
+  }, liarPrompt.askerName, " بيطلب منك [", liarPrompt.requestedNumber === 11 ? 'كا' : liarPrompt.requestedNumber === 12 ? 'تش' : liarPrompt.requestedNumber, "] ومعاك منه!"), /*#__PURE__*/React.createElement("p", {
     className: "text-xs text-amber-200/90 font-bold mb-3 mt-1"
-  }, "معاك كارت « كداب »! تقدر تكذب وتقول معيش وتخليه ياخد CATCH!"), /*#__PURE__*/React.createElement("div", {
+  }, "معاك كارت « كداب »! تقدر تكذب وتقول معيش وتلبّسه CATCH، أو تديله كارت واحد!"), /*#__PURE__*/React.createElement("div", {
     className: "flex gap-2 justify-center"
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => {
@@ -4145,7 +4145,7 @@ function App() {
       setLiarPrompt(null);
     },
     className: "btn-emerald px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-black flex-1 shadow-lg"
-  }, "🤝 اديله الكروت بصدق"))), hatEntaPrompt && /*#__PURE__*/React.createElement("div", {
+  }, "🤝 اديله كارت واحد بصدق"))), hatEntaPrompt && /*#__PURE__*/React.createElement("div", {
     className: "fixed inset-x-4 top-20 sm:top-24 sm:max-w-md sm:mx-auto z-[200] bg-gradient-to-r from-red-950 via-purple-950 to-amber-950 border-3 border-red-500 shadow-[0_10px_40px_rgba(255,0,0,0.8)] rounded-3xl p-4 text-center backdrop-blur-md animate-bounce font-cairo"
   }, /*#__PURE__*/React.createElement("span", {
     className: "text-4xl block mb-1"
