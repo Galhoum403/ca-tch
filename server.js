@@ -1,3 +1,11 @@
+console.log('🚀 Initializing CATCH Game Server...');
+process.on('uncaughtException', (err) => {
+  console.error('💥 UNCAUGHT EXCEPTION:', err);
+});
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('💥 UNHANDLED REJECTION:', reason);
+});
+
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
