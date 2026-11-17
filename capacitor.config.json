@@ -3,7 +3,7 @@
   "appName": "CATCH",
   "webDir": "public",
   "server": {
-    "url": "https://ca-tch-production.up.railway.app",
+    "url": "https://ca-tch.up.railway.app",
     "cleartext": true,
     "allowNavigation": [
       "*"
