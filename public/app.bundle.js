@@ -40,6 +40,46 @@ const COMIC_MEME_STICKERS = [{
   quote: 'اعمل نفسك ميت! 💀',
   image: './stickers/meme_alaa_nazer.jpg',
   sound: 'impact'
+}, {
+  id: 'henedi_ismailiya',
+  actor: 'محمد هنيدي',
+  movie: 'إسماعيلية رايح جاي',
+  character: 'مصطفى',
+  quote: 'ومن سيكين! 😱',
+  image: './stickers/meme_henedi_ismailiya.jpg',
+  sound: 'banter'
+}, {
+  id: 'lomby_lomby',
+  actor: 'محمد سعد',
+  movie: 'اللمبي',
+  character: 'اللمبي',
+  quote: 'صبح صبح! 😂',
+  image: './stickers/meme_lomby_lomby.jpg',
+  sound: 'banter'
+}, {
+  id: 'adel_bolice',
+  actor: 'عادل إمام',
+  movie: 'المشبوه',
+  character: 'بوليسي',
+  quote: 'بشك فيك! 🕵️',
+  image: './stickers/meme_adel_bolice.jpg',
+  sound: 'catch'
+}, {
+  id: 'hasan_hosny',
+  actor: 'حسن حسني',
+  movie: 'كلاسيك',
+  character: 'كوميدي',
+  quote: 'إيه ده يا بني! 😱',
+  image: './stickers/meme_hasan_hosny.jpg',
+  sound: 'whoosh'
+}, {
+  id: 'samir_ghanem',
+  actor: 'سمير غانم',
+  movie: 'كلاسيك',
+  character: 'كوميدي',
+  quote: 'يا حلاوة! 😄',
+  image: './stickers/meme_samir_ghanem.jpg',
+  sound: 'banter'
 }];
 const RADIAL_REACTIONS = [{
   emoji: '👍',
