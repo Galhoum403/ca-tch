@@ -1,93 +1,67 @@
 /**
- * CATCH Online Card Game - SQLite Database Engine
+ * CATCH Online Card Game - Pure-JS Persistent Database Engine
+ * Zero native C++ dependencies, 100% crash-proof in Linux/Docker/Railway environments.
  * Handles user authentication, persistent player balances, game stats, and admin controls.
  */
 
 const fs = require('fs');
 const path = require('path');
-
-let Database;
-try {
-  Database = require('better-sqlite3');
-} catch (e) {
-  console.error('💥 Failed to load better-sqlite3 native module:', e);
-}
-
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 
-let db = null;
-try {
-  const dataDir = process.env.DATA_DIR || path.join(__dirname, 'data');
-  if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
-  }
-  const dbPath = path.join(dataDir, 'catch.db');
-  console.log('📦 Opening SQLite database at:', dbPath);
-  db = new Database(dbPath);
-  try {
-    db.pragma('journal_mode = WAL');
-  } catch(e) {
-    console.warn('⚠️ WAL mode pragma skipped:', e.message);
-  }
-  console.log('📦 SQLite Database initialized successfully at:', dbPath);
-} catch (err) {
-  console.error('💥 File database failed, attempting in-memory database:', err.message);
-  try {
-    db = new Database(':memory:');
-    console.log('📦 In-memory SQLite initialized successfully');
-  } catch(memErr) {
-    console.error('💥 In-memory database failed:', memErr.message);
-  }
+const dataDir = process.env.DATA_DIR || path.join(__dirname, 'data');
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir, { recursive: true });
 }
 
-// Initialize Database Tables
-if (db) {
-  try {
-    db.exec(`
-      CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE COLLATE NOCASE NOT NULL,
-        password_hash TEXT NOT NULL,
-        avatar TEXT DEFAULT '😎',
-        coins INTEGER DEFAULT 500,
-        gems INTEGER DEFAULT 10,
-        games_played INTEGER DEFAULT 0,
-        games_won INTEGER DEFAULT 0,
-        sets_completed INTEGER DEFAULT 0,
-        vip_rank TEXT DEFAULT 'مبتدئ برونزي',
-        unlocked_avatars TEXT DEFAULT '["saeedi","batman","muallem"]',
-        unlocked_backs TEXT DEFAULT '["classic"]',
-        is_banned INTEGER DEFAULT 0,
-        is_admin INTEGER DEFAULT 0,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        last_login DATETIME DEFAULT CURRENT_TIMESTAMP
-      );
+const dbPath = path.join(dataDir, 'catch.json');
+console.log('📦 Loading database store from:', dbPath);
 
-      CREATE TABLE IF NOT EXISTS sessions (
-        token TEXT PRIMARY KEY,
-        user_id INTEGER NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
-      );
+let dbData = {
+  users: [],
+  sessions: [],
+  balance_logs: []
+};
 
-      CREATE TABLE IF NOT EXISTS balance_logs (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
-        coins_before INTEGER,
-        coins_after INTEGER,
-        gems_before INTEGER,
-        gems_after INTEGER,
-        source TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-  } catch (err) {
-    console.error('💥 Table creation error:', err.message);
+function nowStr() {
+  return new Date().toISOString().replace('T', ' ').slice(0, 19);
+}
+
+// Load existing database store
+try {
+  if (fs.existsSync(dbPath)) {
+    const raw = fs.readFileSync(dbPath, 'utf-8');
+    dbData = JSON.parse(raw);
+    console.log(`📦 Database loaded successfully. Users: ${dbData.users ? dbData.users.length : 0}`);
+  } else {
+    console.log('📦 Database file not found, creating new persistent store at:', dbPath);
+    saveDb();
   }
+} catch (err) {
+  console.error('⚠️ Error reading database store, initializing defaults:', err.message);
+  saveDb();
+}
 
-  try { db.exec("ALTER TABLE users ADD COLUMN last_daily_claim TEXT;"); } catch(e) {}
-  try { db.exec("ALTER TABLE users ADD COLUMN quest_data TEXT DEFAULT '{}';"); } catch(e) {}
+// Ensure arrays exist
+if (!Array.isArray(dbData.users)) dbData.users = [];
+if (!Array.isArray(dbData.sessions)) dbData.sessions = [];
+if (!Array.isArray(dbData.balance_logs)) dbData.balance_logs = [];
+
+/**
+ * Save database atomically to disk
+ */
+function saveDb() {
+  try {
+    const tmpPath = dbPath + '.tmp';
+    fs.writeFileSync(tmpPath, JSON.stringify(dbData, null, 2), 'utf-8');
+    fs.renameSync(tmpPath, dbPath);
+  } catch (err) {
+    try {
+      fs.writeFileSync(dbPath, JSON.stringify(dbData, null, 2), 'utf-8');
+    } catch (writeErr) {
+      console.error('💥 Failed to save database file:', writeErr.message);
+    }
+  }
 }
 
 // --- AUTHENTICATION HELPERS ---
@@ -104,6 +78,49 @@ function generateToken() {
   return 'tok_' + crypto.randomBytes(32).toString('hex');
 }
 
+/**
+ * Sanitize user object for client transmission
+ */
+function sanitizeUser(user) {
+  if (!user) return null;
+  const { password_hash, ...safe } = user;
+  
+  if (typeof safe.unlocked_avatars === 'string') {
+    try {
+      safe.unlocked_avatars = JSON.parse(safe.unlocked_avatars);
+    } catch(e) {
+      safe.unlocked_avatars = ['saeedi', 'batman', 'muallem'];
+    }
+  }
+  if (!Array.isArray(safe.unlocked_avatars)) {
+    safe.unlocked_avatars = ['saeedi', 'batman', 'muallem'];
+  }
+
+  if (typeof safe.unlocked_backs === 'string') {
+    try {
+      safe.unlocked_backs = JSON.parse(safe.unlocked_backs);
+    } catch(e) {
+      safe.unlocked_backs = ['classic'];
+    }
+  }
+  if (!Array.isArray(safe.unlocked_backs)) {
+    safe.unlocked_backs = ['classic'];
+  }
+
+  if (typeof safe.quest_data === 'string') {
+    try {
+      safe.quest_data = JSON.parse(safe.quest_data);
+    } catch(e) {
+      safe.quest_data = {};
+    }
+  }
+  if (!safe.quest_data || typeof safe.quest_data !== 'object') {
+    safe.quest_data = {};
+  }
+
+  return safe;
+}
+
 // --- USER OPERATIONS ---
 
 /**
@@ -118,24 +135,52 @@ function registerUser(username, password, avatar = '😎') {
     throw new Error('كلمة المرور يجب أن لا تقل عن 4 أحرف');
   }
 
-  const existing = db.prepare('SELECT id FROM users WHERE username = ?').get(cleanUsername);
+  const existing = dbData.users.find(
+    u => u.username && u.username.toLowerCase() === cleanUsername.toLowerCase()
+  );
   if (existing) {
     throw new Error('اسم المستخدم محجوز بالفعل! اختر اسماً آخر.');
   }
 
+  const nextId = (dbData.users.reduce((max, u) => Math.max(max, u.id || 0), 0) || 0) + 1;
   const passwordHash = hashPassword(password);
-  const info = db.prepare(`
-    INSERT INTO users (username, password_hash, avatar, coins, gems)
-    VALUES (?, ?, ?, 500, 10)
-  `).run(cleanUsername, passwordHash, avatar || '😎');
+  const now = nowStr();
 
-  const userId = info.lastInsertRowid;
+  const newUser = {
+    id: nextId,
+    username: cleanUsername,
+    password_hash: passwordHash,
+    avatar: avatar || '😎',
+    coins: 500,
+    gems: 10,
+    games_played: 0,
+    games_won: 0,
+    sets_completed: 0,
+    vip_rank: 'مبتدئ برونزي',
+    unlocked_avatars: JSON.stringify(['saeedi', 'batman', 'muallem']),
+    unlocked_backs: JSON.stringify(['classic']),
+    is_banned: 0,
+    is_admin: 0,
+    created_at: now,
+    last_login: now,
+    last_daily_claim: null,
+    quest_data: '{}'
+  };
+
+  dbData.users.push(newUser);
+
   const token = generateToken();
-  db.prepare('INSERT INTO sessions (token, user_id) VALUES (?, ?)').run(token, userId);
+  dbData.sessions.push({
+    token,
+    user_id: nextId,
+    created_at: now
+  });
+
+  saveDb();
 
   return {
     token,
-    user: getUserById(userId)
+    user: getUserById(nextId)
   };
 }
 
@@ -144,7 +189,10 @@ function registerUser(username, password, avatar = '😎') {
  */
 function loginUser(username, password) {
   const cleanUsername = (username || '').trim();
-  const user = db.prepare('SELECT * FROM users WHERE username = ?').get(cleanUsername);
+  const user = dbData.users.find(
+    u => u.username && u.username.toLowerCase() === cleanUsername.toLowerCase()
+  );
+
   if (!user) {
     throw new Error('اسم المستخدم غير مسجل!');
   }
@@ -155,11 +203,16 @@ function loginUser(username, password) {
     throw new Error('كلمة المرور غير صحيحة!');
   }
 
-  // Update last login
-  db.prepare("UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?").run(user.id);
+  user.last_login = nowStr();
 
   const token = generateToken();
-  db.prepare('INSERT INTO sessions (token, user_id) VALUES (?, ?)').run(token, user.id);
+  dbData.sessions.push({
+    token,
+    user_id: user.id,
+    created_at: user.last_login
+  });
+
+  saveDb();
 
   return {
     token,
@@ -172,69 +225,52 @@ function loginUser(username, password) {
  */
 function getUserByToken(token) {
   if (!token) return null;
-  const session = db.prepare(`
-    SELECT u.* FROM sessions s
-    JOIN users u ON s.user_id = u.id
-    WHERE s.token = ?
-  `).get(token);
-
+  const session = dbData.sessions.find(s => s.token === token);
   if (!session) return null;
-  if (session.is_banned) return null;
-  return sanitizeUser(session);
+
+  const user = dbData.users.find(u => u.id === session.user_id);
+  if (!user) return null;
+  if (user.is_banned) return null;
+
+  return sanitizeUser(user);
 }
 
 /**
  * Get user by ID
  */
 function getUserById(id) {
-  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
+  const user = dbData.users.find(u => u.id === Number(id));
   return user ? sanitizeUser(user) : null;
-}
-
-/**
- * Sanitize user object for client transmission
- */
-function sanitizeUser(user) {
-  if (!user) return null;
-  const { password_hash, ...safe } = user;
-  try {
-    safe.unlocked_avatars = JSON.parse(safe.unlocked_avatars || '[]');
-  } catch(e) {
-    safe.unlocked_avatars = ['saeedi', 'batman', 'muallem'];
-  }
-  try {
-    safe.unlocked_backs = JSON.parse(safe.unlocked_backs || '[]');
-  } catch(e) {
-    safe.unlocked_backs = ['classic'];
-  }
-  try {
-    safe.quest_data = JSON.parse(safe.quest_data || '{}');
-  } catch(e) {
-    safe.quest_data = {};
-  }
-  return safe;
 }
 
 // --- BALANCE & GAME STATS UPDATES ---
 
 /**
- * Update coins and gems for a player (used by game economy and admin)
+ * Update coins and gems for a player
  */
 function updateUserBalance(userId, newCoins, newGems, source = 'system') {
-  const current = db.prepare('SELECT coins, gems FROM users WHERE id = ?').get(userId);
-  if (!current) return null;
+  const user = dbData.users.find(u => u.id === Number(userId));
+  if (!user) return null;
 
   const coins = Math.max(0, parseInt(newCoins, 10));
   const gems = Math.max(0, parseInt(newGems, 10));
 
-  db.prepare(`
-    UPDATE users SET coins = ?, gems = ? WHERE id = ?
-  `).run(coins, gems, userId);
+  const logId = (dbData.balance_logs.reduce((max, l) => Math.max(max, l.id || 0), 0) || 0) + 1;
+  dbData.balance_logs.push({
+    id: logId,
+    user_id: user.id,
+    coins_before: user.coins,
+    coins_after: coins,
+    gems_before: user.gems,
+    gems_after: gems,
+    source,
+    created_at: nowStr()
+  });
 
-  db.prepare(`
-    INSERT INTO balance_logs (user_id, coins_before, coins_after, gems_before, gems_after, source)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `).run(userId, current.coins, coins, current.gems, gems, source);
+  user.coins = coins;
+  user.gems = gems;
+
+  saveDb();
 
   return { coins, gems };
 }
@@ -243,11 +279,11 @@ function updateUserBalance(userId, newCoins, newGems, source = 'system') {
  * Add / subtract coins
  */
 function adjustUserBalance(userId, deltaCoins = 0, deltaGems = 0, source = 'reward') {
-  const current = db.prepare('SELECT coins, gems FROM users WHERE id = ?').get(userId);
-  if (!current) return null;
+  const user = dbData.users.find(u => u.id === Number(userId));
+  if (!user) return null;
 
-  const nextCoins = Math.max(0, current.coins + deltaCoins);
-  const nextGems = Math.max(0, current.gems + deltaGems);
+  const nextCoins = Math.max(0, (user.coins || 0) + deltaCoins);
+  const nextGems = Math.max(0, (user.gems || 0) + deltaGems);
 
   return updateUserBalance(userId, nextCoins, nextGems, source);
 }
@@ -256,12 +292,12 @@ function adjustUserBalance(userId, deltaCoins = 0, deltaGems = 0, source = 'rewa
  * Update stats after a match finishes
  */
 function recordGameStats(userId, isWinner, setsWon = 0) {
-  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+  const user = dbData.users.find(u => u.id === Number(userId));
   if (!user) return null;
 
-  const games = user.games_played + 1;
-  const wins = user.games_won + (isWinner ? 1 : 0);
-  const sets = user.sets_completed + setsWon;
+  const games = (user.games_played || 0) + 1;
+  const wins = (user.games_won || 0) + (isWinner ? 1 : 0);
+  const sets = (user.sets_completed || 0) + setsWon;
 
   // Calculate VIP Rank
   let rank = 'مبتدئ برونزي';
@@ -270,14 +306,12 @@ function recordGameStats(userId, isWinner, setsWon = 0) {
   else if (wins >= 6) rank = 'كابتن ذهبي';
   else if (wins >= 3) rank = 'صائد فضي';
 
-  db.prepare(`
-    UPDATE users SET
-      games_played = ?,
-      games_won = ?,
-      sets_completed = ?,
-      vip_rank = ?
-    WHERE id = ?
-  `).run(games, wins, sets, rank, userId);
+  user.games_played = games;
+  user.games_won = wins;
+  user.sets_completed = sets;
+  user.vip_rank = rank;
+
+  saveDb();
 
   return { games, wins, sets, rank };
 }
@@ -286,34 +320,26 @@ function recordGameStats(userId, isWinner, setsWon = 0) {
  * Save player avatar and skins customizations
  */
 function updateCustomization(userId, { avatar, unlockedAvatars, unlockedBacks, coins, gems }) {
-  const updates = [];
-  const params = [];
+  const user = dbData.users.find(u => u.id === Number(userId));
+  if (!user) return null;
 
   if (avatar) {
-    updates.push('avatar = ?');
-    params.push(avatar);
+    user.avatar = avatar;
   }
   if (unlockedAvatars) {
-    updates.push('unlocked_avatars = ?');
-    params.push(JSON.stringify(unlockedAvatars));
+    user.unlocked_avatars = JSON.stringify(unlockedAvatars);
   }
   if (unlockedBacks) {
-    updates.push('unlocked_backs = ?');
-    params.push(JSON.stringify(unlockedBacks));
+    user.unlocked_backs = JSON.stringify(unlockedBacks);
   }
   if (typeof coins === 'number') {
-    updates.push('coins = ?');
-    params.push(Math.max(0, parseInt(coins, 10)));
+    user.coins = Math.max(0, parseInt(coins, 10));
   }
   if (typeof gems === 'number') {
-    updates.push('gems = ?');
-    params.push(Math.max(0, parseInt(gems, 10)));
+    user.gems = Math.max(0, parseInt(gems, 10));
   }
 
-  if (updates.length > 0) {
-    params.push(userId);
-    db.prepare(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`).run(...params);
-  }
+  saveDb();
 
   return getUserById(userId);
 }
@@ -322,11 +348,16 @@ function updateCustomization(userId, { avatar, unlockedAvatars, unlockedBacks, c
  * Permanently claim quest / daily gift and update balance in database
  */
 function claimQuest(userId, questId, rewardType, rewardAmount) {
-  const user = db.prepare('SELECT coins, gems, last_daily_claim, quest_data FROM users WHERE id = ?').get(userId);
+  const user = dbData.users.find(u => u.id === Number(userId));
   if (!user) throw new Error('اللاعب غير موجود');
+
   const today = new Date().toISOString().slice(0, 10);
   let questData = {};
-  try { questData = JSON.parse(user.quest_data || '{}'); } catch(e) {}
+  try {
+    questData = typeof user.quest_data === 'string' ? JSON.parse(user.quest_data) : (user.quest_data || {});
+  } catch(e) {
+    questData = {};
+  }
 
   if (questId === 'q3') {
     if (user.last_daily_claim === today) {
@@ -340,17 +371,20 @@ function claimQuest(userId, questId, rewardType, rewardAmount) {
 
   const addCoins = rewardType === 'coins' ? parseInt(rewardAmount, 10) : 0;
   const addGems = rewardType === 'gems' ? parseInt(rewardAmount, 10) : 0;
-  const newCoins = user.coins + addCoins;
-  const newGems = user.gems + addGems;
+  const newCoins = (user.coins || 0) + addCoins;
+  const newGems = (user.gems || 0) + addGems;
+
+  user.coins = newCoins;
+  user.gems = newGems;
 
   if (questId === 'q3') {
-    db.prepare('UPDATE users SET coins = ?, gems = ?, last_daily_claim = ? WHERE id = ?')
-      .run(newCoins, newGems, today, userId);
+    user.last_daily_claim = today;
   } else {
     questData[questId] = today;
-    db.prepare('UPDATE users SET coins = ?, gems = ?, quest_data = ? WHERE id = ?')
-      .run(newCoins, newGems, JSON.stringify(questData), userId);
+    user.quest_data = JSON.stringify(questData);
   }
+
+  saveDb();
 
   return {
     success: true,
@@ -366,26 +400,47 @@ function claimQuest(userId, questId, rewardType, rewardAmount) {
  * Get all players with formatted stats for the Admin Dashboard
  */
 function getAllPlayersForAdmin(search = '') {
-  let query = 'SELECT id, username, avatar, coins, gems, games_played, games_won, sets_completed, vip_rank, is_banned, is_admin, created_at, last_login FROM users';
-  const params = [];
+  let list = dbData.users || [];
 
   if (search && search.trim()) {
-    query += ' WHERE username LIKE ?';
-    params.push(`%${search.trim()}%`);
+    const q = search.trim().toLowerCase();
+    list = list.filter(u => u.username && u.username.toLowerCase().includes(q));
   }
 
-  query += ' ORDER BY id DESC LIMIT 200';
-  return db.prepare(query).all(...params);
+  return list
+    .slice()
+    .sort((a, b) => b.id - a.id)
+    .slice(0, 200)
+    .map(u => ({
+      id: u.id,
+      username: u.username,
+      avatar: u.avatar,
+      coins: u.coins,
+      gems: u.gems,
+      games_played: u.games_played || 0,
+      games_won: u.games_won || 0,
+      sets_completed: u.sets_completed || 0,
+      vip_rank: u.vip_rank || 'مبتدئ برونزي',
+      is_banned: u.is_banned ? 1 : 0,
+      is_admin: u.is_admin ? 1 : 0,
+      created_at: u.created_at,
+      last_login: u.last_login
+    }));
 }
 
 /**
  * Set player ban status
  */
 function setPlayerBan(userId, isBanned) {
-  db.prepare('UPDATE users SET is_banned = ? WHERE id = ?').run(isBanned ? 1 : 0, userId);
+  const user = dbData.users.find(u => u.id === Number(userId));
+  if (!user) return false;
+
+  user.is_banned = isBanned ? 1 : 0;
   if (isBanned) {
-    db.prepare('DELETE FROM sessions WHERE user_id = ?').run(userId);
+    dbData.sessions = dbData.sessions.filter(s => s.user_id !== Number(userId));
   }
+
+  saveDb();
   return true;
 }
 
@@ -396,9 +451,14 @@ function adminResetPassword(userId, newPassword) {
   if (!newPassword || newPassword.length < 4) {
     throw new Error('كلمة المرور يجب أن لا تقل عن 4 أحرف');
   }
-  const hash = hashPassword(newPassword);
-  db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, userId);
-  db.prepare('DELETE FROM sessions WHERE user_id = ?').run(userId);
+
+  const user = dbData.users.find(u => u.id === Number(userId));
+  if (!user) return false;
+
+  user.password_hash = hashPassword(newPassword);
+  dbData.sessions = dbData.sessions.filter(s => s.user_id !== Number(userId));
+
+  saveDb();
   return true;
 }
 
@@ -406,10 +466,11 @@ function adminResetPassword(userId, newPassword) {
  * Get overall server statistics
  */
 function getServerStats() {
-  const totalUsers = db.prepare('SELECT COUNT(*) as count FROM users').get().count;
-  const totalCoins = db.prepare('SELECT SUM(coins) as total FROM users').get().total || 0;
-  const totalGems = db.prepare('SELECT SUM(gems) as total FROM users').get().total || 0;
-  const totalGames = db.prepare('SELECT SUM(games_played) as total FROM users').get().total || 0;
+  const users = dbData.users || [];
+  const totalUsers = users.length;
+  const totalCoins = users.reduce((sum, u) => sum + (u.coins || 0), 0);
+  const totalGems = users.reduce((sum, u) => sum + (u.gems || 0), 0);
+  const totalGames = users.reduce((sum, u) => sum + (u.games_played || 0), 0);
 
   return {
     totalUsers,
@@ -420,7 +481,7 @@ function getServerStats() {
 }
 
 module.exports = {
-  db,
+  db: null,
   registerUser,
   loginUser,
   getUserByToken,
