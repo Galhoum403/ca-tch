@@ -29,6 +29,7 @@ png cards/
 *.webp
 *.jpg
 !public/chameleon_peeking.jpg
+!public/stickers/*.jpg
 
 # Local Database
 data/*.db*
