@@ -1728,11 +1728,12 @@ function App() {
 
   // Helper to get active server URL for sharing and connections
   const getServerBaseUrl = () => {
-    const custom = localStorage.getItem('catch_server_url');
-    if (custom && custom.trim()) return custom.trim().replace(/\/+$/, '');
     const isNativeCapacitor = window.Capacitor?.isNativePlatform?.() || window.location.protocol === 'capacitor:' || window.location.protocol === 'file:' || window.location.hostname === 'localhost' && !window.location.port;
     if (isNativeCapacitor) return 'https://ca-tch.up.railway.app';
-    return window.location.origin;
+    if (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin.startsWith('http')) {
+      return window.location.origin;
+    }
+    return 'https://ca-tch.up.railway.app';
   };
 
   // Check connection before launching any room
@@ -1740,8 +1741,10 @@ function App() {
     if (connectionStatus !== 'connected' || !socketRef.current?.connected) {
       soundFx.init();
       soundFx.play('impact');
-      setErrorMsg(t('notConnectedAlert'));
-      setShowSettingsModal(true);
+      setErrorMsg(lang === 'en' ? 'Connecting to game server... Please try again in a moment' : 'جاري الاتصال بسيرفر اللعبة... يرجى إعادة المحاولة بعد ثانية');
+      try {
+        socketRef.current?.connect?.();
+      } catch (e) {}
       return false;
     }
     return true;
@@ -2099,20 +2102,26 @@ function App() {
     setVoiceNotice(msg);
     setTimeout(() => setVoiceNotice(prev => prev === msg ? '' : prev), 3500);
   };
-  const [serverUrlInput, setServerUrlInput] = useState(() => {
-    return localStorage.getItem('catch_server_url') || 'https://ca-tch.up.railway.app';
-  });
   useEffect(() => {
     soundFx.muted = muted;
   }, [muted]);
   useEffect(() => {
+    // Purge any stale legacy server URLs from localStorage
+    try {
+      localStorage.removeItem('catch_server_url');
+    } catch (e) {}
     const isNativeCapacitor = window.Capacitor?.isNativePlatform?.() || window.location.protocol === 'capacitor:' || window.location.protocol === 'file:' || window.location.hostname === 'localhost' && !window.location.port;
-    const storedServer = localStorage.getItem('catch_server_url');
-    const targetUrl = storedServer || (isNativeCapacitor ? 'https://ca-tch.up.railway.app' : undefined);
+    const targetUrl = isNativeCapacitor ? 'https://ca-tch.up.railway.app' : undefined;
     const socket = targetUrl ? io(targetUrl, {
-      transports: ['websocket', 'polling']
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000
     }) : io({
-      transports: ['websocket', 'polling']
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000
     });
     socketRef.current = socket;
 
@@ -3513,14 +3522,14 @@ function App() {
         setLang('ar');
         localStorage.setItem('catch_lang', 'ar');
       },
-      className: `px-2.5 py-1 rounded-lg text-xs font-black border transition ${lang === 'ar' ? 'bg-amber-500 text-black border-amber-300 shadow' : 'bg-black/50 text-white/70 border-white/10'}`
-    }, "العربية 🇪🇬"), /*#__PURE__*/React.createElement("button", {
+      className: `px-3 py-1 rounded-lg text-xs font-black border transition ${lang === 'ar' ? 'bg-amber-500 text-black border-amber-300 shadow' : 'bg-black/50 text-white/70 border-white/10'}`
+    }, "العربية"), /*#__PURE__*/React.createElement("button", {
       onClick: () => {
         setLang('en');
         localStorage.setItem('catch_lang', 'en');
       },
-      className: `px-2.5 py-1 rounded-lg text-xs font-black border transition ${lang === 'en' ? 'bg-amber-500 text-black border-amber-300 shadow' : 'bg-black/50 text-white/70 border-white/10'}`
-    }, "English 🇬🇧"))), /*#__PURE__*/React.createElement("div", {
+      className: `px-3 py-1 rounded-lg text-xs font-black border transition ${lang === 'en' ? 'bg-amber-500 text-black border-amber-300 shadow' : 'bg-black/50 text-white/70 border-white/10'}`
+    }, "EN"))), /*#__PURE__*/React.createElement("div", {
       className: "flex items-center justify-between bg-black/40 p-2.5 rounded-xl border border-white/10"
     }, /*#__PURE__*/React.createElement("span", {
       className: "font-bold"
