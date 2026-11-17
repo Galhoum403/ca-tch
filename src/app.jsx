@@ -477,7 +477,10 @@ class SoundFxEngine {
   }
   init() {
     if (!this.ctx) {
-      try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){}
+      try { 
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx) this.ctx = new AudioCtx(); 
+      } catch(e){}
     }
     if (this.ctx && !this.noiseBuffer) {
       try {
@@ -493,89 +496,172 @@ class SoundFxEngine {
     else if (name === 'catch' || name === 'catch_slam') triggerHaptic('heavy');
     else if (name === 'impact' || name === 'celebration') triggerHaptic('medium');
 
-    if (this.muted || !this.ctx) return;
+    if (this.muted) return;
+    if (!this.ctx) this.init();
+    if (!this.ctx) return;
+    if (this.ctx.state === 'suspended') {
+      this.ctx.resume().catch(() => {});
+    }
+
     try {
       const t = this.ctx.currentTime;
       if (name === 'snap') {
+        // Crisp acoustic card flick / table tap
+        if (this.noiseBuffer) {
+          const noise = this.ctx.createBufferSource();
+          noise.buffer = this.noiseBuffer;
+          const filter = this.ctx.createBiquadFilter();
+          filter.type = 'bandpass';
+          filter.frequency.setValueAtTime(3200, t);
+          filter.Q.setValueAtTime(2.2, t);
+          const gainN = this.ctx.createGain();
+          gainN.gain.setValueAtTime(0.15, t);
+          gainN.gain.exponentialRampToValueAtTime(0.001, t + 0.025);
+          noise.connect(filter);
+          filter.connect(gainN);
+          gainN.connect(this.ctx.destination);
+          noise.start(t);
+        }
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
-        osc.connect(gain); gain.connect(this.ctx.destination);
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(600, t);
-        osc.frequency.exponentialRampToValueAtTime(120, t + 0.08);
-        gain.gain.setValueAtTime(0.25, t);
-        gain.gain.exponentialRampToValueAtTime(0.01, t + 0.08);
-        osc.start(t); osc.stop(t + 0.08);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(480, t);
+        osc.frequency.exponentialRampToValueAtTime(140, t + 0.035);
+        gain.gain.setValueAtTime(0.2, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.04);
       } else if (name === 'whoosh' || name === 'card_slide') {
+        // Silky smooth velvet card slide
         if (!this.noiseBuffer) this.init();
         if (!this.noiseBuffer) return;
         const noise = this.ctx.createBufferSource();
         noise.buffer = this.noiseBuffer;
         const filter = this.ctx.createBiquadFilter();
         filter.type = 'bandpass';
-        filter.frequency.setValueAtTime(750, t);
-        filter.frequency.exponentialRampToValueAtTime(250, t + 0.2);
+        filter.frequency.setValueAtTime(1100, t);
+        filter.frequency.exponentialRampToValueAtTime(420, t + 0.11);
+        filter.Q.setValueAtTime(1.1, t);
         const gain = this.ctx.createGain();
-        gain.gain.setValueAtTime(0.18, t);
-        gain.gain.exponentialRampToValueAtTime(0.01, t + 0.2);
-        noise.connect(filter); filter.connect(gain); gain.connect(this.ctx.destination);
+        gain.gain.setValueAtTime(0.001, t);
+        gain.gain.linearRampToValueAtTime(0.12, t + 0.015);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.ctx.destination);
         noise.start(t);
       } else if (name === 'catch' || name === 'catch_slam') {
+        // Deep, dramatic wooden table slam with crisp acoustic impact (no electronic buzz)
+        if (this.noiseBuffer) {
+          const noise = this.ctx.createBufferSource();
+          noise.buffer = this.noiseBuffer;
+          const filter = this.ctx.createBiquadFilter();
+          filter.type = 'bandpass';
+          filter.frequency.setValueAtTime(1400, t);
+          filter.Q.setValueAtTime(1.4, t);
+          const gainN = this.ctx.createGain();
+          gainN.gain.setValueAtTime(0.22, t);
+          gainN.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+          noise.connect(filter);
+          filter.connect(gainN);
+          gainN.connect(this.ctx.destination);
+          noise.start(t);
+        }
+        // Heavy oak table body resonance
         const osc1 = this.ctx.createOscillator();
+        const gain1 = this.ctx.createGain();
+        osc1.type = 'triangle';
+        osc1.frequency.setValueAtTime(150, t);
+        osc1.frequency.exponentialRampToValueAtTime(45, t + 0.16);
+        gain1.gain.setValueAtTime(0.35, t);
+        gain1.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+        osc1.connect(gain1);
+        gain1.connect(this.ctx.destination);
+        osc1.start(t);
+        osc1.stop(t + 0.2);
+
+        // Sub-bass punch
         const osc2 = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc1.type = 'sawtooth';
-        osc2.type = 'square';
-        osc1.frequency.setValueAtTime(400, t);
-        osc1.frequency.exponentialRampToValueAtTime(80, t + 0.45);
-        osc2.frequency.setValueAtTime(260, t);
-        osc2.frequency.exponentialRampToValueAtTime(60, t + 0.45);
-        gain.gain.setValueAtTime(0.35, t);
-        gain.gain.exponentialRampToValueAtTime(0.01, t + 0.5);
-        osc1.connect(gain); osc2.connect(gain); gain.connect(this.ctx.destination);
-        osc1.start(t); osc2.start(t); osc1.stop(t + 0.5); osc2.stop(t + 0.5);
+        const gain2 = this.ctx.createGain();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(75, t);
+        osc2.frequency.exponentialRampToValueAtTime(30, t + 0.22);
+        gain2.gain.setValueAtTime(0.3, t);
+        gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.26);
+        osc2.connect(gain2);
+        gain2.connect(this.ctx.destination);
+        osc2.start(t);
+        osc2.stop(t + 0.26);
       } else if (name === 'celebration') {
-        [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+        // Crystal casino bell & gold coins victory chime
+        const notes = [1046.5, 1318.5, 1568.0, 2093.0];
+        notes.forEach((freq, idx) => {
+          const st = t + (idx * 0.08);
           const osc = this.ctx.createOscillator();
           const gain = this.ctx.createGain();
-          const st = t + (idx * 0.11);
-          osc.type = 'triangle';
+          osc.type = 'sine';
           osc.frequency.setValueAtTime(freq, st);
-          gain.gain.setValueAtTime(0.22, st);
-          gain.gain.exponentialRampToValueAtTime(0.001, st + 0.7);
-          osc.connect(gain); gain.connect(this.ctx.destination);
-          osc.start(st); osc.stop(st + 0.7);
+          gain.gain.setValueAtTime(0.001, st);
+          gain.gain.linearRampToValueAtTime(0.16, st + 0.012);
+          gain.gain.exponentialRampToValueAtTime(0.001, st + 0.55);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(st);
+          osc.stop(st + 0.55);
+
+          // Harmonic chime sparkle
+          const oscHigh = this.ctx.createOscillator();
+          const gainHigh = this.ctx.createGain();
+          oscHigh.type = 'sine';
+          oscHigh.frequency.setValueAtTime(freq * 2, st);
+          gainHigh.gain.setValueAtTime(0.035, st);
+          gainHigh.gain.exponentialRampToValueAtTime(0.001, st + 0.22);
+          oscHigh.connect(gainHigh);
+          gainHigh.connect(this.ctx.destination);
+          oscHigh.start(st);
+          oscHigh.stop(st + 0.22);
         });
       } else if (name === 'banter') {
+        // Playful bubble pop
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(880, t);
-        osc.frequency.setValueAtTime(1174, t + 0.1);
+        osc.frequency.setValueAtTime(420, t);
+        osc.frequency.exponentialRampToValueAtTime(1200, t + 0.035);
         gain.gain.setValueAtTime(0.2, t);
-        gain.gain.exponentialRampToValueAtTime(0.01, t + 0.28);
-        osc.connect(gain); gain.connect(this.ctx.destination);
-        osc.start(t); osc.stop(t + 0.28);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.06);
       } else if (name === 'impact') {
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(180, t);
-        osc.frequency.exponentialRampToValueAtTime(30, t + 0.3);
-        gain.gain.setValueAtTime(0.3, t);
-        gain.gain.exponentialRampToValueAtTime(0.01, t + 0.3);
-        osc.connect(gain); gain.connect(this.ctx.destination);
-        osc.start(t); osc.stop(t + 0.3);
-      } else if (name === 'tick') {
+        // Gentle wood knock / polite thud
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(950, t);
-        osc.frequency.exponentialRampToValueAtTime(350, t + 0.04);
-        gain.gain.setValueAtTime(0.12, t);
-        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
-        osc.connect(gain); gain.connect(this.ctx.destination);
-        osc.start(t); osc.stop(t + 0.04);
+        osc.frequency.setValueAtTime(240, t);
+        osc.frequency.exponentialRampToValueAtTime(110, t + 0.075);
+        gain.gain.setValueAtTime(0.22, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.085);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.085);
+      } else if (name === 'tick') {
+        // Subtle watch tick
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(1300, t);
+        osc.frequency.exponentialRampToValueAtTime(420, t + 0.018);
+        gain.gain.setValueAtTime(0.09, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.022);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.022);
       }
     } catch(e){}
   }
@@ -610,14 +696,20 @@ class SoundFxEngine {
       step++;
       freqs.forEach(freq => {
         const osc = this.ctx.createOscillator();
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(420, t);
         const gain = this.ctx.createGain();
         osc.type = 'sine';
         osc.frequency.setValueAtTime(freq, t);
         gain.gain.setValueAtTime(0.001, t);
-        gain.gain.linearRampToValueAtTime(0.03, t + 0.8);
+        gain.gain.linearRampToValueAtTime(0.018, t + 1.0);
         gain.gain.exponentialRampToValueAtTime(0.001, t + 3.8);
-        osc.connect(gain); gain.connect(this.ctx.destination);
-        osc.start(t); osc.stop(t + 3.8);
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(t);
+        osc.stop(t + 3.8);
       });
     };
     playChord();
@@ -2625,9 +2717,6 @@ function App() {
                   <div className="catch-3d-logo text-[72px] sm:text-[88px] leading-none select-none" style={{letterSpacing: '6px'}}>
                     CATCH
                   </div>
-                  <div className="text-[11px] font-black tracking-[3px] text-center mt-2 text-slate-300">
-                    ● {lang === 'en' ? 'OFFICIAL STRATEGY CARD GAME' : 'لعبة البطاقات الاستراتيجية الرسمية'} ●
-                  </div>
                 </div>
 
                 {/* Subtle divider */}
@@ -3101,13 +3190,10 @@ function App() {
                       <span className="text-amber-300">⭐ {coins} عملة</span>
                       <span className="text-cyan-300">💎 {gems} جوهرة</span>
                     </div>
-                    <div className="flex gap-2 pt-1">
-                      <button onClick={handleLogout} className="flex-1 bg-red-900/40 hover:bg-red-900/60 text-red-200 border border-red-500/40 py-1.5 rounded-xl text-[11px] font-black transition">
+                    <div className="pt-1">
+                      <button onClick={handleLogout} className="w-full bg-red-900/40 hover:bg-red-900/60 text-red-200 border border-red-500/40 py-2 rounded-xl text-xs font-black transition">
                         🚪 {lang === 'en' ? 'Log Out' : 'تسجيل الخروج'}
                       </button>
-                      <a href="/admin" target="_blank" rel="noopener noreferrer" className="px-3 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/40 py-1.5 rounded-xl text-[11px] font-black flex items-center justify-center transition">
-                        🛡️ {lang === 'en' ? 'Admin' : 'الإدارة'}
-                      </a>
                     </div>
                   </div>
                 ) : (
@@ -3118,59 +3204,18 @@ function App() {
                         <p className="text-[10px] text-amber-200/60">{lang === 'en' ? 'Register to save your balance & rank!' : 'سجل حسابك لضمان عدم ضياع العملات والجواهر'}</p>
                       </div>
                     </div>
-                    <div className="flex gap-2 pt-1">
+                    <div className="pt-1">
                       <button onClick={() => { setShowSettingsModal(false); setShowAuthModal(true); }}
-                        className="flex-1 btn-gold py-1.5 rounded-xl text-[11px] font-black shadow-md">
+                        className="w-full btn-gold py-2 rounded-xl text-xs font-black shadow-md">
                         🔑 {lang === 'en' ? 'Sign In / Register' : 'تسجيل الدخول / حساب جديد'}
                       </button>
-                      <a href="/admin" target="_blank" rel="noopener noreferrer" className="px-3 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/40 py-1.5 rounded-xl text-[11px] font-black flex items-center justify-center transition">
-                        🛡️ {lang === 'en' ? 'Admin' : 'لوحة الإدارة'}
-                      </a>
                     </div>
                   </div>
                 )}
 
-                {/* Server Endpoint Configuration */}
-                <div className="bg-black/40 p-2.5 rounded-xl border border-white/10 space-y-1.5">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-bold text-amber-200">🌐 {t('serverIp')}</span>
-                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${connectionStatus === 'connected' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-red-500/20 text-red-300 border-red-500/30'}`}>
-                      {connectionStatus === 'connected' ? `✓ ${t('connected')}` : `✕ ${t('disconnected')}`}
-                    </span>
-                  </div>
-                  <input 
-                    type="text" 
-                    value={serverUrlInput} 
-                    onChange={e => setServerUrlInput(e.target.value)}
-                    placeholder="https://ca-tch.up.railway.app"
-                    className="w-full bg-black/60 border border-amber-500/30 rounded-lg px-2.5 py-1.5 text-xs text-white dir-ltr font-mono focus:border-yellow-400 focus:outline-none"
-                  />
-                  <div className="flex gap-1.5">
-                    <button 
-                      onClick={() => {
-                        const cleanUrl = serverUrlInput.trim();
-                        if (cleanUrl) {
-                          localStorage.setItem('catch_server_url', cleanUrl);
-                        } else {
-                          localStorage.removeItem('catch_server_url');
-                        }
-                        showVoiceNotice(lang === 'en' ? '⚡ Server saved! Reconnecting...' : '⚡ تم حفظ عنوان السيرفر! جاري إعادة الاتصال...');
-                        setTimeout(() => location.reload(), 600);
-                      }}
-                      className="flex-1 btn-gold py-1.5 rounded-lg text-[11px] font-black">
-                      {t('saveAndReconnect')}
-                    </button>
-                    <button 
-                      onClick={() => {
-                        setServerUrlInput('https://ca-tch.up.railway.app');
-                        localStorage.setItem('catch_server_url', 'https://ca-tch.up.railway.app');
-                        showVoiceNotice(lang === 'en' ? '⚡ Reset to Cloud Server!' : '⚡ تم تعيين سيرفر السحابة الرسمي!');
-                        setTimeout(() => location.reload(), 600);
-                      }}
-                      className="bg-white/10 hover:bg-white/20 text-amber-200 border border-white/20 px-2 py-1.5 rounded-lg text-[10px] font-bold" title="Default Cloud">
-                      Cloud
-                    </button>
-                  </div>
+                {/* Game Edition / Version Info */}
+                <div className="text-center py-1 text-[11px] text-amber-200/50 font-mono select-none">
+                  CATCH • Online Edition
                 </div>
               </div>
 
