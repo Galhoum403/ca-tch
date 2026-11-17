@@ -2285,11 +2285,13 @@ function launchMatchmakingRoom(matchedPlayers) {
   room.isPublic = true;
 
   host.socket.join(room.code);
+  host.socket.currentRoomCode = room.code;
   host.socket.emit('match_found', { code: room.code, playersCount: 4 });
 
   for (let i = 1; i < matchedPlayers.length; i++) {
     const p = matchedPlayers[i];
     p.socket.join(room.code);
+    p.socket.currentRoomCode = room.code;
     room.players.push({
       id: p.socket.id,
       userId: p.userId || null,
@@ -2334,6 +2336,20 @@ function launchMatchmakingRoom(matchedPlayers) {
   startGameInstance(room);
 }
 
+function getRoomForSocket(socket) {
+  if (!socket) return null;
+  if (socket.currentRoomCode && rooms.has(socket.currentRoomCode)) {
+    return rooms.get(socket.currentRoomCode);
+  }
+  for (const [code, r] of rooms.entries()) {
+    if (r.players && r.players.some(p => p.id === socket.id)) {
+      socket.currentRoomCode = code;
+      return r;
+    }
+  }
+  return null;
+}
+
 // ====== SOCKET EVENT HANDLERS (SHARED BY SOCKET.IO AND GODOT WEBSOCKET) ======
 function registerSocketHandlers(socket) {
   let currentRoomCode = null;
@@ -2376,6 +2392,7 @@ function registerSocketHandlers(socket) {
     }
 
     currentRoomCode = room.code;
+    socket.currentRoomCode = room.code;
     socket.join(room.code);
     socket.emit('reconnect_success', { code: room.code, name: existingPlayer.name });
     room.logs.push(`🔄 استأنف ${existingPlayer.name} الاتصال وعاد إلى مقعده!`);
@@ -2410,6 +2427,7 @@ function registerSocketHandlers(socket) {
     const cleanName = sanitizeName(name, 'لاعب VIP');
     const room = createRoom(socket.id, cleanName, avatar, userId, sessionToken);
     currentRoomCode = room.code;
+    socket.currentRoomCode = room.code;
     socket.join(room.code);
     socket.emit('room_created', { code: room.code });
     broadcastRoomState(room);
@@ -2422,6 +2440,7 @@ function registerSocketHandlers(socket) {
     const cleanName = sanitizeName(name, 'لاعب VIP');
     const room = createRoom(socket.id, cleanName, avatar, userId, sessionToken);
     currentRoomCode = room.code;
+    socket.currentRoomCode = room.code;
     socket.join(room.code);
 
     // Add 3 Bots
@@ -2551,6 +2570,7 @@ function registerSocketHandlers(socket) {
 
     const cleanName = sanitizeName(name, `لاعب ${room.players.length + 1}`);
     currentRoomCode = rCode;
+    socket.currentRoomCode = rCode;
     socket.join(rCode);
 
     room.players.push({
@@ -2576,8 +2596,7 @@ function registerSocketHandlers(socket) {
 
   // Add Bot
   socket.on('add_bot', () => {
-    if (!currentRoomCode) return;
-    const room = rooms.get(currentRoomCode);
+    const room = getRoomForSocket(socket);
     if (!room || room.status !== 'lobby' || room.players[0].id !== socket.id) return;
 
     if (room.players.length >= room.maxPlayers) {
@@ -2610,8 +2629,7 @@ function registerSocketHandlers(socket) {
 
   // Remove Bot
   socket.on('remove_bot', () => {
-    if (!currentRoomCode) return;
-    const room = rooms.get(currentRoomCode);
+    const room = getRoomForSocket(socket);
     if (!room || room.status !== 'lobby' || room.players[0].id !== socket.id) return;
 
     const botIdx = room.players.map(p => p.isBot).lastIndexOf(true);
@@ -2624,8 +2642,7 @@ function registerSocketHandlers(socket) {
 
   // Update Room Settings (turnSpeed, winTarget)
   socket.on('update_room_settings', ({ turnSpeed, winTarget } = {}) => {
-    if (!currentRoomCode) return;
-    const room = rooms.get(currentRoomCode);
+    const room = getRoomForSocket(socket);
     if (!room || room.status !== 'lobby' || room.players[0].id !== socket.id) return;
 
     if (turnSpeed) room.turnSpeed = turnSpeed;
@@ -2639,8 +2656,7 @@ function registerSocketHandlers(socket) {
 
   // Rematch / New Round with same players
   socket.on('rematch', () => {
-    if (!currentRoomCode) return;
-    const room = rooms.get(currentRoomCode);
+    const room = getRoomForSocket(socket);
     if (!room || room.status !== 'gameover' || room.players[0].id !== socket.id) return;
 
     clearRoomTimers(room);
@@ -2694,8 +2710,7 @@ function registerSocketHandlers(socket) {
 
   // Start Game
   socket.on('start_game', () => {
-    if (!currentRoomCode) return;
-    const room = rooms.get(currentRoomCode);
+    const room = getRoomForSocket(socket);
     if (!room || room.status !== 'lobby' || room.players[0].id !== socket.id) return;
 
     if (room.players.length < room.minPlayers) {
@@ -2708,8 +2723,7 @@ function registerSocketHandlers(socket) {
 
   // Action: Draw Card (ALLOWED ONLY IF PLAYER HAS NO NUMBER CARDS IN HAND!)
   socket.on('draw_card', () => {
-    if (!currentRoomCode) return;
-    const room = rooms.get(currentRoomCode);
+    const room = getRoomForSocket(socket);
     if (!room || room.status !== 'playing') return;
 
     const pIdx = room.players.findIndex(p => p.id === socket.id);
@@ -2745,8 +2759,7 @@ function registerSocketHandlers(socket) {
   // Action: Throw Item at Opponent (VIP Lounge interactive items: tea, slipper, tomato, bomb, rocket, heart)
   socket.on('throw_item', ({ targetIdx, itemType } = {}) => {
     if (!checkRateLimit()) return;
-    if (!currentRoomCode) return;
-    const room = rooms.get(currentRoomCode);
+    const room = getRoomForSocket(socket);
     if (!room) return;
 
     const senderIdx = room.players.findIndex(p => p.id === socket.id);
@@ -2768,8 +2781,7 @@ function registerSocketHandlers(socket) {
   // Action: Egyptian Quick Chat Phrases (with speech bubble over avatar)
   socket.on('quick_chat', ({ text, emoji } = {}) => {
     if (!checkRateLimit()) return;
-    if (!currentRoomCode) return;
-    const room = rooms.get(currentRoomCode);
+    const room = getRoomForSocket(socket);
     if (!room) return;
 
     const senderIdx = room.players.findIndex(p => p.id === socket.id);
@@ -2788,8 +2800,7 @@ function registerSocketHandlers(socket) {
   // Action: Ask for Number (Anti-Cheat Validated)
   socket.on('ask_number', ({ targetIdx, value } = {}) => {
     if (!checkRateLimit()) return;
-    if (!currentRoomCode) return;
-    const room = rooms.get(currentRoomCode);
+    const room = getRoomForSocket(socket);
     if (!room || room.status !== 'playing') return;
 
     const pIdx = room.players.findIndex(p => p.id === socket.id);
@@ -2817,8 +2828,7 @@ function registerSocketHandlers(socket) {
 
   // Action: Liar decision (Truth or Lie)
   socket.on('liar_decision', ({ lie } = {}) => {
-    if (!currentRoomCode) return;
-    const room = rooms.get(currentRoomCode);
+    const room = getRoomForSocket(socket);
     if (!room || room.status !== 'playing') return;
 
     const pIdx = room.players.findIndex(p => p.id === socket.id);
@@ -2838,8 +2848,7 @@ function registerSocketHandlers(socket) {
   // Action: Play Action Card
   socket.on('play_action_card', ({ cardId, targetIdx, value, copiedAction } = {}) => {
     if (!checkRateLimit()) return;
-    if (!currentRoomCode) return;
-    const room = rooms.get(currentRoomCode);
+    const room = getRoomForSocket(socket);
     if (!room || room.status !== 'playing') return;
 
     const pIdx = room.players.findIndex(p => p.id === socket.id);
@@ -2863,8 +2872,7 @@ function registerSocketHandlers(socket) {
   // Action: Use Joker Card (Optional set completion with 3 cards)
   socket.on('use_joker', ({ cardId, value } = {}) => {
     if (!checkRateLimit()) return;
-    if (!currentRoomCode) return;
-    const room = rooms.get(currentRoomCode);
+    const room = getRoomForSocket(socket);
     if (!room || room.status !== 'playing') return;
 
     const pIdx = room.players.findIndex(p => p.id === socket.id);
@@ -2930,8 +2938,7 @@ function registerSocketHandlers(socket) {
   // Action: Claim Natural 4-of-a-kind Set (Manual set drop by human player)
   socket.on('claim_natural_set', ({ number } = {}) => {
     if (!checkRateLimit()) return;
-    if (!currentRoomCode) return;
-    const room = rooms.get(currentRoomCode);
+    const room = getRoomForSocket(socket);
     if (!room || room.status !== 'playing') return;
 
     const pIdx = room.players.findIndex(p => p.id === socket.id);
@@ -2999,8 +3006,7 @@ function registerSocketHandlers(socket) {
 
   // Counter Action: Reverse Ask with Hat Enta (هات انت كـ رد فعل فوري عند طلب الكارت)
   socket.on('counter_with_hat_enta', () => {
-    if (!currentRoomCode) return;
-    const room = rooms.get(currentRoomCode);
+    const room = getRoomForSocket(socket);
     if (!room || room.status !== 'playing') return;
 
     const pIdx = room.players.findIndex(p => p.id === socket.id);
@@ -3017,8 +3023,7 @@ function registerSocketHandlers(socket) {
   });
 
   socket.on('ignore_hat_enta', () => {
-    if (!currentRoomCode) return;
-    const room = rooms.get(currentRoomCode);
+    const room = getRoomForSocket(socket);
     if (!room || room.status !== 'playing') return;
 
     const pIdx = room.players.findIndex(p => p.id === socket.id);
@@ -3038,8 +3043,7 @@ function registerSocketHandlers(socket) {
 
   // Joker Showdown: Submit Guess for who used the Joker
   socket.on('submit_joker_guess', ({ targetPlayerId } = {}) => {
-    if (!currentRoomCode) return;
-    const room = rooms.get(currentRoomCode);
+    const room = getRoomForSocket(socket);
     if (!room || room.status !== 'joker_showdown' || !room.activeJokerChallenge) return;
     if (room.activeJokerChallenge.holder.id !== socket.id) return;
     resolveJokerChallenge(room, targetPlayerId);
@@ -3047,8 +3051,7 @@ function registerSocketHandlers(socket) {
 
   // Joker Showdown: Skip Guess to avoid penalty risk
   socket.on('skip_joker_guess', () => {
-    if (!currentRoomCode) return;
-    const room = rooms.get(currentRoomCode);
+    const room = getRoomForSocket(socket);
     if (!room || room.status !== 'joker_showdown' || !room.activeJokerChallenge) return;
     if (room.activeJokerChallenge.holder.id !== socket.id) return;
     resolveJokerChallenge(room, null);
@@ -3056,8 +3059,7 @@ function registerSocketHandlers(socket) {
 
   // Reaction / Emoji Chat
   socket.on('send_reaction', ({ emoji } = {}) => {
-    if (!currentRoomCode) return;
-    const room = rooms.get(currentRoomCode);
+    const room = getRoomForSocket(socket);
     if (!room) return;
     const sender = room.players.find(p => p.id === socket.id);
     if (sender) {
@@ -3070,8 +3072,7 @@ function registerSocketHandlers(socket) {
 
   // Meme Sticker Broadcast (Speech Bubble over Avatar)
   socket.on('send_meme_sticker', ({ stickerUrl, stickerText } = {}) => {
-    if (!currentRoomCode) return;
-    const room = rooms.get(currentRoomCode);
+    const room = getRoomForSocket(socket);
     if (!room) return;
     const sender = room.players.find(p => p.id === socket.id);
     if (sender) {
@@ -3094,8 +3095,7 @@ function registerSocketHandlers(socket) {
   });
 
   socket.on('webrtc_voice_state', ({ isMuted, isSpeaking } = {}) => {
-    if (!currentRoomCode) return;
-    const room = rooms.get(currentRoomCode);
+    const room = getRoomForSocket(socket);
     if (!room) return;
     emitToRoom(room.code, 'webrtc_voice_state', {
       playerId: socket.id,
@@ -3110,8 +3110,7 @@ function registerSocketHandlers(socket) {
     const qIdx = matchmakingQueue.findIndex(q => q.socket.id === socket.id);
     if (qIdx !== -1) matchmakingQueue.splice(qIdx, 1);
 
-    if (!currentRoomCode) return;
-    const room = rooms.get(currentRoomCode);
+    const room = getRoomForSocket(socket);
     if (!room) return;
 
     const p = room.players.find(pl => pl.id === socket.id);
@@ -3124,7 +3123,7 @@ function registerSocketHandlers(socket) {
         room.players = room.players.filter(pl => pl.id !== socket.id);
         if (room.players.length === 0) {
           clearRoomTimers(room);
-          rooms.delete(currentRoomCode);
+          rooms.delete(room.code);
         } else if (p.isHost && room.players.length > 0) {
           room.players[0].isHost = true;
           room.hostId = room.players[0].id;
@@ -3133,8 +3132,9 @@ function registerSocketHandlers(socket) {
         const hasConnectedHumans = room.players.some(pl => !pl.isBot && pl.connected && pl.id !== socket.id);
         if (!hasConnectedHumans) {
           clearRoomTimers(room);
-          rooms.delete(currentRoomCode);
+          rooms.delete(room.code);
           socket.leave(room.code);
+          socket.currentRoomCode = null;
           currentRoomCode = null;
           socket.emit('left_room_success');
           return;
@@ -3151,6 +3151,7 @@ function registerSocketHandlers(socket) {
     }
 
     socket.leave(room.code);
+    socket.currentRoomCode = null;
     currentRoomCode = null;
     socket.emit('left_room_success');
   });
@@ -3166,8 +3167,7 @@ function registerSocketHandlers(socket) {
     const qIdx = matchmakingQueue.findIndex(q => q.socket.id === socket.id);
     if (qIdx !== -1) matchmakingQueue.splice(qIdx, 1);
 
-    if (!currentRoomCode) return;
-    const room = rooms.get(currentRoomCode);
+    const room = getRoomForSocket(socket);
     if (!room) return;
 
     const p = room.players.find(pl => pl.id === socket.id);

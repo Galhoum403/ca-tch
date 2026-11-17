@@ -2066,8 +2066,8 @@ function App() {
     }
   }, [roomState?.status, roomState?.winner]);
 
-  const me = roomState?.players?.find(p => p.id === socketRef.current?.id);
-  const isMyTurn = roomState?.status === 'playing' && roomState?.players[roomState.currentIdx]?.id === socketRef.current?.id;
+  const me = roomState?.players?.find(p => p.id === socketRef.current?.id) || roomState?.players?.find(p => Array.isArray(p.hand));
+  const isMyTurn = (roomState?.isMyTurn !== undefined) ? roomState.isMyTurn : (roomState?.status === 'playing' && roomState?.players[roomState.currentIdx]?.id === socketRef.current?.id);
   const isHost = me?.isHost;
 
   // Sorted Hand: Numbers (0-10, CA 11, TCH 12) -> Action cards
@@ -2549,7 +2549,7 @@ function App() {
     if (!isMyTurn && !isAnyTime) return;
 
     const target = roomState.players[targetIdx];
-    if (!target || target.id === socketRef.current.id) return;
+    if (!target || target.id === socketRef.current?.id || (me && target.id === me.id)) return;
     if (target.immune && selectedCard.type !== 'magnatees') {
       setErrorMsg(`${target.name} محمي بالدرع!`);
       setTimeout(() => setErrorMsg(''), 2000);
@@ -2565,7 +2565,9 @@ function App() {
       }
       if (!isMyTurn) return;
       // Normal Ask
-      socketRef.current.emit('ask_number', { targetIdx, value: selectedCard.value });
+      soundFx.init();
+      soundFx.play('snap');
+      socketRef.current?.emit('ask_number', { targetIdx, value: selectedCard.value });
       setSelectedCard(null);
       setCustomValue(null);
     } else if (selectedCard.type === 'special') {
