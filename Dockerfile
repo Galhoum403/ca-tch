@@ -1,9 +1,6 @@
-FROM node:20-bullseye-slim
+FROM node:20-bookworm
 
 WORKDIR /app
-
-# Install native build tools for SQLite compilation
-RUN apt-get update && apt-get install -y python3 make g++ && rm -rf /var/lib/apt/lists/*
 
 COPY package*.json ./
 RUN npm install --production

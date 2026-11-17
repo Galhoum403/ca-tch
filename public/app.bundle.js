@@ -1661,7 +1661,7 @@ function App() {
     const custom = localStorage.getItem('catch_server_url');
     if (custom && custom.trim()) return custom.trim().replace(/\/+$/, '');
     const isNativeCapacitor = window.Capacitor?.isNativePlatform?.() || window.location.protocol === 'capacitor:' || window.location.protocol === 'file:' || window.location.hostname === 'localhost' && !window.location.port;
-    if (isNativeCapacitor) return 'http://192.168.1.15:3000';
+    if (isNativeCapacitor) return 'https://web-production-f210ea1c.up.railway.app';
     return window.location.origin;
   };
 
@@ -2030,7 +2030,7 @@ function App() {
     setTimeout(() => setVoiceNotice(prev => prev === msg ? '' : prev), 3500);
   };
   const [serverUrlInput, setServerUrlInput] = useState(() => {
-    return localStorage.getItem('catch_server_url') || 'http://192.168.1.15:3000';
+    return localStorage.getItem('catch_server_url') || 'https://web-production-f210ea1c.up.railway.app';
   });
   useEffect(() => {
     soundFx.muted = muted;
@@ -2038,7 +2038,7 @@ function App() {
   useEffect(() => {
     const isNativeCapacitor = window.Capacitor?.isNativePlatform?.() || window.location.protocol === 'capacitor:' || window.location.protocol === 'file:' || window.location.hostname === 'localhost' && !window.location.port;
     const storedServer = localStorage.getItem('catch_server_url');
-    const targetUrl = storedServer || (isNativeCapacitor ? 'http://192.168.1.15:3000' : undefined);
+    const targetUrl = storedServer || (isNativeCapacitor ? 'https://web-production-f210ea1c.up.railway.app' : undefined);
     const socket = targetUrl ? io(targetUrl, {
       transports: ['websocket', 'polling']
     }) : io({
@@ -3542,7 +3542,7 @@ function App() {
       type: "text",
       value: serverUrlInput,
       onChange: e => setServerUrlInput(e.target.value),
-      placeholder: "http://192.168.1.15:3000",
+      placeholder: "https://web-production-f210ea1c.up.railway.app",
       className: "w-full bg-black/60 border border-amber-500/30 rounded-lg px-2.5 py-1.5 text-xs text-white dir-ltr font-mono focus:border-yellow-400 focus:outline-none"
     }), /*#__PURE__*/React.createElement("div", {
       className: "flex gap-1.5"
@@ -3560,14 +3560,14 @@ function App() {
       className: "flex-1 btn-gold py-1.5 rounded-lg text-[11px] font-black"
     }, t('saveAndReconnect')), /*#__PURE__*/React.createElement("button", {
       onClick: () => {
-        setServerUrlInput('http://192.168.1.15:3000');
-        localStorage.setItem('catch_server_url', 'http://192.168.1.15:3000');
-        showVoiceNotice(lang === 'en' ? '⚡ Reset to default IP: 192.168.1.15' : '⚡ تم تعيين IP الافتراضي (192.168.1.15)!');
+        setServerUrlInput('https://web-production-f210ea1c.up.railway.app');
+        localStorage.setItem('catch_server_url', 'https://web-production-f210ea1c.up.railway.app');
+        showVoiceNotice(lang === 'en' ? '⚡ Reset to Cloud Server!' : '⚡ تم تعيين سيرفر السحابة الرسمي!');
         setTimeout(() => location.reload(), 600);
       },
       className: "bg-white/10 hover:bg-white/20 text-amber-200 border border-white/20 px-2 py-1.5 rounded-lg text-[10px] font-bold",
-      title: "Default IP"
-    }, "Default")))), /*#__PURE__*/React.createElement("button", {
+      title: "Default Cloud"
+    }, "Cloud")))), /*#__PURE__*/React.createElement("button", {
       onClick: () => setShowSettingsModal(false),
       className: "btn-gold w-full py-2 rounded-xl text-xs font-black"
     }, t('closeSettings')))), isEditingProfile && /*#__PURE__*/React.createElement("div", {

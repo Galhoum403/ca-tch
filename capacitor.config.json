@@ -3,7 +3,7 @@
   "appName": "CATCH",
   "webDir": "public",
   "server": {
-    "url": "http://192.168.1.15:3000",
+    "url": "https://web-production-f210ea1c.up.railway.app",
     "cleartext": true,
     "allowNavigation": [
       "*"
