@@ -1347,7 +1347,7 @@ function App() {
     const custom = localStorage.getItem('catch_server_url');
     if (custom && custom.trim()) return custom.trim().replace(/\/+$/, '');
     const isNativeCapacitor = window.Capacitor?.isNativePlatform?.() || window.location.protocol === 'capacitor:' || window.location.protocol === 'file:' || (window.location.hostname === 'localhost' && !window.location.port);
-    if (isNativeCapacitor) return 'https://web-production-f210ea1c.up.railway.app';
+    if (isNativeCapacitor) return 'https://ca-tch-production.up.railway.app';
     return window.location.origin;
   };
 
@@ -1689,7 +1689,7 @@ function App() {
   };
 
   const [serverUrlInput, setServerUrlInput] = useState(() => {
-    return localStorage.getItem('catch_server_url') || 'https://web-production-f210ea1c.up.railway.app';
+    return localStorage.getItem('catch_server_url') || 'https://ca-tch-production.up.railway.app';
   });
 
   useEffect(() => {
@@ -1699,7 +1699,7 @@ function App() {
   useEffect(() => {
     const isNativeCapacitor = window.Capacitor?.isNativePlatform?.() || window.location.protocol === 'capacitor:' || window.location.protocol === 'file:' || (window.location.hostname === 'localhost' && !window.location.port);
     const storedServer = localStorage.getItem('catch_server_url');
-    const targetUrl = storedServer || (isNativeCapacitor ? 'https://web-production-f210ea1c.up.railway.app' : undefined);
+    const targetUrl = storedServer || (isNativeCapacitor ? 'https://ca-tch-production.up.railway.app' : undefined);
     const socket = targetUrl ? io(targetUrl, { transports: ['websocket', 'polling'] }) : io({ transports: ['websocket', 'polling'] });
     socketRef.current = socket;
 
@@ -3142,7 +3142,7 @@ function App() {
                     type="text" 
                     value={serverUrlInput} 
                     onChange={e => setServerUrlInput(e.target.value)}
-                    placeholder="https://web-production-f210ea1c.up.railway.app"
+                    placeholder="https://ca-tch-production.up.railway.app"
                     className="w-full bg-black/60 border border-amber-500/30 rounded-lg px-2.5 py-1.5 text-xs text-white dir-ltr font-mono focus:border-yellow-400 focus:outline-none"
                   />
                   <div className="flex gap-1.5">
@@ -3162,8 +3162,8 @@ function App() {
                     </button>
                     <button 
                       onClick={() => {
-                        setServerUrlInput('https://web-production-f210ea1c.up.railway.app');
-                        localStorage.setItem('catch_server_url', 'https://web-production-f210ea1c.up.railway.app');
+                        setServerUrlInput('https://ca-tch-production.up.railway.app');
+                        localStorage.setItem('catch_server_url', 'https://ca-tch-production.up.railway.app');
                         showVoiceNotice(lang === 'en' ? '⚡ Reset to Cloud Server!' : '⚡ تم تعيين سيرفر السحابة الرسمي!');
                         setTimeout(() => location.reload(), 600);
                       }}
