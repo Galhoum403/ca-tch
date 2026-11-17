@@ -3130,7 +3130,11 @@ function App() {
     }, /*#__PURE__*/React.createElement("span", null, "🔒"), /*#__PURE__*/React.createElement("span", null, t('privateTable'))), /*#__PURE__*/React.createElement("button", {
       onClick: handleStartBotTraining,
       className: "btn-neon-blue py-3 rounded-2xl text-sm font-black flex items-center justify-center gap-1.5 transition active:scale-95"
-    }, /*#__PURE__*/React.createElement("span", null, "🤖"), /*#__PURE__*/React.createElement("span", null, t('training')))))), activeTab === 'shop' && /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("span", null, "🤖"), /*#__PURE__*/React.createElement("span", null, t('training')))), !window.Capacitor?.isNativePlatform?.() && /*#__PURE__*/React.createElement("a", {
+      href: "/catch.apk",
+      download: "CATCH.apk",
+      className: "w-full py-2.5 px-4 rounded-xl text-xs font-bold text-amber-300/90 hover:text-amber-200 bg-white/5 hover:bg-white/10 border border-amber-400/20 flex items-center justify-center gap-2 transition active:scale-95 shadow-sm"
+    }, /*#__PURE__*/React.createElement("span", null, "📲"), /*#__PURE__*/React.createElement("span", null, lang === 'en' ? 'Download Android App (APK)' : 'تحميل تطبيق الأندرويد (APK مباشر)')))), activeTab === 'shop' && /*#__PURE__*/React.createElement("div", {
       className: "flex-1 flex flex-col bg-black/60 rounded-3xl p-3 border border-amber-400/30 overflow-hidden"
     }, /*#__PURE__*/React.createElement("h3", {
       className: "text-base font-black text-yellow-300 text-center pb-2 border-b border-amber-500/20"

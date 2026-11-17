@@ -2748,6 +2748,14 @@ function App() {
                     <span>🤖</span><span>{t('training')}</span>
                   </button>
                 </div>
+
+                {!window.Capacitor?.isNativePlatform?.() && (
+                  <a href="/catch.apk" download="CATCH.apk"
+                    className="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-amber-300/90 hover:text-amber-200 bg-white/5 hover:bg-white/10 border border-amber-400/20 flex items-center justify-center gap-2 transition active:scale-95 shadow-sm">
+                    <span>📲</span>
+                    <span>{lang === 'en' ? 'Download Android App (APK)' : 'تحميل تطبيق الأندرويد (APK مباشر)'}</span>
+                  </a>
+                )}
               </div>
 
             </div>
