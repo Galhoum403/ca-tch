@@ -1,4 +1,6 @@
 console.log('🚀 Initializing CATCH Game Server...');
+console.log(`🚀 Node: ${process.version}, Platform: ${process.platform} ${process.arch}, ENV PORT: ${process.env.PORT}`);
+
 process.on('uncaughtException', (err) => {
   console.error('💥 UNCAUGHT EXCEPTION:', err);
 });
@@ -6,6 +8,7 @@ process.on('unhandledRejection', (reason, promise) => {
   console.error('💥 UNHANDLED REJECTION:', reason);
 });
 
+console.log('📦 Requiring express and http...');
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -18,9 +21,10 @@ const io = new Server(server, {
   cors: { origin: '*' }
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = parseInt(process.env.PORT, 10) || 3000;
+console.log(`📦 Port configured: ${PORT}`);
+
 const WebSocket = require('ws');
-const WS_PORT = process.env.WS_PORT || 3001;
 const wsSockets = new Map();
 const wsRooms = new Map();
 
@@ -42,10 +46,16 @@ function emitToPlayer(playerId, event, data) {
   }
 }
 
+console.log('📦 Requiring db.js...');
 const db = require('./db.js');
+console.log('📦 db.js loaded successfully!');
+
 const ADMIN_SECRET_KEY = process.env.ADMIN_KEY || 'admin2026';
 
 app.use(express.json());
+
+// Health Check Endpoint
+app.get('/health', (req, res) => res.status(200).send('OK'));
 
 // Serve static frontend files
 app.use((req, res, next) => {

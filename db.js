@@ -5,67 +5,90 @@
 
 const fs = require('fs');
 const path = require('path');
-const Database = require('better-sqlite3');
+
+let Database;
+try {
+  Database = require('better-sqlite3');
+} catch (e) {
+  console.error('💥 Failed to load better-sqlite3 native module:', e);
+}
+
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 
-// Ensure data directory exists (supports persistent cloud mount via DATA_DIR)
-const dataDir = process.env.DATA_DIR || path.join(__dirname, 'data');
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true });
+let db = null;
+try {
+  const dataDir = process.env.DATA_DIR || path.join(__dirname, 'data');
+  if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+  }
+  const dbPath = path.join(dataDir, 'catch.db');
+  console.log('📦 Opening SQLite database at:', dbPath);
+  db = new Database(dbPath);
+  try {
+    db.pragma('journal_mode = WAL');
+  } catch(e) {
+    console.warn('⚠️ WAL mode pragma skipped:', e.message);
+  }
+  console.log('📦 SQLite Database initialized successfully at:', dbPath);
+} catch (err) {
+  console.error('💥 File database failed, attempting in-memory database:', err.message);
+  try {
+    db = new Database(':memory:');
+    console.log('📦 In-memory SQLite initialized successfully');
+  } catch(memErr) {
+    console.error('💥 In-memory database failed:', memErr.message);
+  }
 }
 
-const dbPath = path.join(dataDir, 'catch.db');
-const db = new Database(dbPath);
-
-// Enable WAL mode for high concurrency
-db.pragma('journal_mode = WAL');
-
 // Initialize Database Tables
-db.exec(`
-  CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT UNIQUE COLLATE NOCASE NOT NULL,
-    password_hash TEXT NOT NULL,
-    avatar TEXT DEFAULT '😎',
-    coins INTEGER DEFAULT 500,
-    gems INTEGER DEFAULT 10,
-    games_played INTEGER DEFAULT 0,
-    games_won INTEGER DEFAULT 0,
-    sets_completed INTEGER DEFAULT 0,
-    vip_rank TEXT DEFAULT 'مبتدئ برونزي',
-    unlocked_avatars TEXT DEFAULT '["saeedi","batman","muallem"]',
-    unlocked_backs TEXT DEFAULT '["classic"]',
-    is_banned INTEGER DEFAULT 0,
-    is_admin INTEGER DEFAULT 0,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    last_login DATETIME DEFAULT CURRENT_TIMESTAMP
-  );
+if (db) {
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE COLLATE NOCASE NOT NULL,
+        password_hash TEXT NOT NULL,
+        avatar TEXT DEFAULT '😎',
+        coins INTEGER DEFAULT 500,
+        gems INTEGER DEFAULT 10,
+        games_played INTEGER DEFAULT 0,
+        games_won INTEGER DEFAULT 0,
+        sets_completed INTEGER DEFAULT 0,
+        vip_rank TEXT DEFAULT 'مبتدئ برونزي',
+        unlocked_avatars TEXT DEFAULT '["saeedi","batman","muallem"]',
+        unlocked_backs TEXT DEFAULT '["classic"]',
+        is_banned INTEGER DEFAULT 0,
+        is_admin INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        last_login DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
 
-  CREATE TABLE IF NOT EXISTS sessions (
-    token TEXT PRIMARY KEY,
-    user_id INTEGER NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
-  );
+      CREATE TABLE IF NOT EXISTS sessions (
+        token TEXT PRIMARY KEY,
+        user_id INTEGER NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+      );
 
-  CREATE TABLE IF NOT EXISTS balance_logs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    coins_before INTEGER,
-    coins_after INTEGER,
-    gems_before INTEGER,
-    gems_after INTEGER,
-    source TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  );
-`);
+      CREATE TABLE IF NOT EXISTS balance_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        coins_before INTEGER,
+        coins_after INTEGER,
+        gems_before INTEGER,
+        gems_after INTEGER,
+        source TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+  } catch (err) {
+    console.error('💥 Table creation error:', err.message);
+  }
 
-// Migrations for existing databases
-try { db.exec("ALTER TABLE users ADD COLUMN last_daily_claim TEXT;"); } catch(e) {}
-try { db.exec("ALTER TABLE users ADD COLUMN quest_data TEXT DEFAULT '{}';"); } catch(e) {}
-
-console.log('📦 SQLite Database initialized successfully at:', dbPath);
+  try { db.exec("ALTER TABLE users ADD COLUMN last_daily_claim TEXT;"); } catch(e) {}
+  try { db.exec("ALTER TABLE users ADD COLUMN quest_data TEXT DEFAULT '{}';"); } catch(e) {}
+}
 
 // --- AUTHENTICATION HELPERS ---
 
