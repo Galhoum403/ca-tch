@@ -1974,7 +1974,8 @@ function App() {
       setAuthPassword('');
       if (socketRef.current?.connected) {
         socketRef.current.emit('set_user_session', {
-          userId: data.user.id
+          userId: data.user.id,
+          sessionToken: data.token
         });
       }
       soundFx.init();
@@ -2114,12 +2115,12 @@ function App() {
     const isNativeCapacitor = window.Capacitor?.isNativePlatform?.() || window.location.protocol === 'capacitor:' || window.location.protocol === 'file:' || window.location.hostname === 'localhost' && !window.location.port;
     const targetUrl = isNativeCapacitor ? 'https://ca-tch.up.railway.app' : undefined;
     const socket = targetUrl ? io(targetUrl, {
-      transports: ['websocket', 'polling'],
+      transports: ['polling', 'websocket'],
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1000
     }) : io({
-      transports: ['websocket', 'polling'],
+      transports: ['polling', 'websocket'],
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1000
@@ -2130,7 +2131,8 @@ function App() {
     socket.on('connect', () => {
       setConnectionStatus('connected');
       socket.emit('set_user_session', {
-        userId
+        userId,
+        sessionToken: localStorage.getItem('catch_token')
       });
       const savedRoom = localStorage.getItem('catch_last_room');
       const savedName = localStorage.getItem('catch_name') || playerName;
@@ -2142,6 +2144,23 @@ function App() {
           name: savedName
         });
       }
+    });
+
+    // Single-device session termination (kick when logged in elsewhere)
+    socket.on('session_terminated', ({
+      message,
+      reason
+    }) => {
+      soundFx.init();
+      soundFx.play('impact');
+      localStorage.removeItem('catch_token');
+      localStorage.removeItem('catch_last_room');
+      setCurrentUser(null);
+      setIsGuest(true);
+      setIsInGame(false);
+      setIsMatchmaking(false);
+      setActiveTab('home');
+      setErrorMsg(message || (lang === 'en' ? '⚠️ Logged in from another device!' : '⚠️ تم فتح هذا الحساب من جهاز آخر! تم تسجيل الخروج تلقائياً.'));
     });
     socket.on('disconnect', () => {
       setConnectionStatus('disconnected');

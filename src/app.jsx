@@ -1660,7 +1660,7 @@ function App() {
       setIsEditingProfile(false);
       setAuthPassword('');
       if (socketRef.current?.connected) {
-        socketRef.current.emit('set_user_session', { userId: data.user.id });
+        socketRef.current.emit('set_user_session', { userId: data.user.id, sessionToken: data.token });
       }
       soundFx.init();
       soundFx.play('celebration');
@@ -1795,14 +1795,14 @@ function App() {
     const isNativeCapacitor = window.Capacitor?.isNativePlatform?.() || window.location.protocol === 'capacitor:' || window.location.protocol === 'file:' || (window.location.hostname === 'localhost' && !window.location.port);
     const targetUrl = isNativeCapacitor ? 'https://ca-tch.up.railway.app' : undefined;
     const socket = targetUrl 
-      ? io(targetUrl, { transports: ['websocket', 'polling'], reconnection: true, reconnectionAttempts: Infinity, reconnectionDelay: 1000 }) 
-      : io({ transports: ['websocket', 'polling'], reconnection: true, reconnectionAttempts: Infinity, reconnectionDelay: 1000 });
+      ? io(targetUrl, { transports: ['polling', 'websocket'], reconnection: true, reconnectionAttempts: Infinity, reconnectionDelay: 1000 }) 
+      : io({ transports: ['polling', 'websocket'], reconnection: true, reconnectionAttempts: Infinity, reconnectionDelay: 1000 });
     socketRef.current = socket;
 
     // Realtime connection tracking
     socket.on('connect', () => {
       setConnectionStatus('connected');
-      socket.emit('set_user_session', { userId });
+      socket.emit('set_user_session', { userId, sessionToken: localStorage.getItem('catch_token') });
       const savedRoom = localStorage.getItem('catch_last_room');
       const savedName = localStorage.getItem('catch_name') || playerName;
       if (savedRoom) {
@@ -1813,6 +1813,20 @@ function App() {
           name: savedName
         });
       }
+    });
+
+    // Single-device session termination (kick when logged in elsewhere)
+    socket.on('session_terminated', ({ message, reason }) => {
+      soundFx.init();
+      soundFx.play('impact');
+      localStorage.removeItem('catch_token');
+      localStorage.removeItem('catch_last_room');
+      setCurrentUser(null);
+      setIsGuest(true);
+      setIsInGame(false);
+      setIsMatchmaking(false);
+      setActiveTab('home');
+      setErrorMsg(message || (lang === 'en' ? '⚠️ Logged in from another device!' : '⚠️ تم فتح هذا الحساب من جهاز آخر! تم تسجيل الخروج تلقائياً.'));
     });
 
     socket.on('disconnect', () => {

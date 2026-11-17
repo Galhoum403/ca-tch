@@ -205,6 +205,9 @@ function loginUser(username, password) {
 
   user.last_login = nowStr();
 
+  // Invalidate any previous sessions for this user (single-device login enforcement)
+  dbData.sessions = dbData.sessions.filter(s => s.user_id !== user.id);
+
   const token = generateToken();
   dbData.sessions.push({
     token,

@@ -27,6 +27,27 @@ console.log(`📦 Port configured: ${PORT}`);
 const WebSocket = require('ws');
 const wsSockets = new Map();
 const wsRooms = new Map();
+const userSockets = new Map(); // Map<userId, socket> for single-device session enforcement
+
+function kickPreviousUserSession(userId, exceptSocketId = null) {
+  if (!userId) return;
+  const uid = Number(userId);
+  const existingSocket = userSockets.get(uid);
+  if (existingSocket && existingSocket.id !== exceptSocketId) {
+    console.log(`🔒 User ${uid} connected from another device. Kicking previous socket ${existingSocket.id}`);
+    existingSocket.emit('session_terminated', {
+      reason: 'multiple_logins',
+      message: '⚠️ تم فتح هذا الحساب من جهاز آخر! تم تسجيل الخروج من هذا الجهاز تلقائياً.'
+    });
+    // Remove from queue if waiting
+    const qIdx = matchmakingQueue.findIndex(q => q.socket.id === existingSocket.id);
+    if (qIdx !== -1) matchmakingQueue.splice(qIdx, 1);
+    setTimeout(() => {
+      try { existingSocket.disconnect(true); } catch(e){}
+    }, 400);
+    userSockets.delete(uid);
+  }
+}
 
 function emitToRoom(roomCode, event, data) {
   io.to(roomCode).emit(event, data);
@@ -85,6 +106,9 @@ app.post('/api/login', (req, res) => {
   try {
     const { username, password } = req.body;
     const result = db.loginUser(username, password);
+    if (result.user && result.user.id) {
+      kickPreviousUserSession(result.user.id);
+    }
     res.json({ success: true, ...result });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
@@ -2358,9 +2382,25 @@ function registerSocketHandlers(socket) {
     broadcastRoomState(room);
   }
 
-  // User Session Registration (Syncs User ID with Socket for real-time balance updates)
-  socket.on('set_user_session', ({ userId } = {}) => {
-    if (userId) socket.userId = userId;
+  // User Session Registration (Enforces single-device login & real-time user sync)
+  socket.on('set_user_session', ({ userId, sessionToken } = {}) => {
+    if (!userId) return;
+    const uid = Number(userId);
+
+    if (sessionToken) {
+      const user = db.getUserByToken(sessionToken);
+      if (!user || user.id !== uid) {
+        socket.emit('session_terminated', {
+          reason: 'invalid_session',
+          message: 'انتهت صلاحية جلستك أو تم تسجيل الدخول من جهاز آخر!'
+        });
+        return;
+      }
+    }
+
+    kickPreviousUserSession(uid, socket.id);
+    userSockets.set(uid, socket);
+    socket.userId = uid;
   });
 
   // Create Room
@@ -3117,6 +3157,11 @@ function registerSocketHandlers(socket) {
 
   // Disconnect Handling (with 25s Grace Period for Mobile/Reload Recovery)
   socket.on('disconnect', () => {
+    // Clean up userSockets map
+    if (socket.userId && userSockets.get(socket.userId)?.id === socket.id) {
+      userSockets.delete(socket.userId);
+    }
+
     // Clean up matchmaking queue if waiting
     const qIdx = matchmakingQueue.findIndex(q => q.socket.id === socket.id);
     if (qIdx !== -1) matchmakingQueue.splice(qIdx, 1);
