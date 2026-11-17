@@ -8,6 +8,7 @@
     "build": "node build.js"
   },
   "dependencies": {
+    "@babel/standalone": "^8.0.5",
     "@capacitor/android": "^8.5.3",
     "@capacitor/cli": "^8.5.3",
     "@capacitor/core": "^8.5.3",
@@ -21,7 +22,6 @@
     "ws": "^8.21.3"
   },
   "devDependencies": {
-    "@babel/standalone": "^8.0.5",
     "socket.io-client": "^4.8.3"
   }
 }
