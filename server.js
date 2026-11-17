@@ -2143,6 +2143,155 @@ function handlePlayAction(room, player, card, extraData = {}, isChameleonSub = f
   }
 }
 
+// ====== START GAME INSTANCE (UNIFIED CORE LAUNCHER) ======
+function startGameInstance(room) {
+  clearRoomTimers(room);
+
+  // Build & Deal Deck
+  room.deck = shuffle(buildDeck());
+  room.discardPile = [];
+  room.lastPlayedCard = null;
+  room.status = 'playing';
+  room.currentIdx = 0;
+  room.direction = 1;
+
+  for (const player of room.players) {
+    player.hand = room.deck.splice(0, 5);
+    player.sets = [];
+    player.immune = false;
+    player.skipNext = false;
+    player.extraTurns = 0;
+    player.pendingLiarPrompt = null;
+    player.pendingHatEntaPrompt = null;
+    player.mustDiscardKdab = false;
+    player.botMemory = { knownPlayerCards: {} };
+  }
+
+  room.logs.push(`🚀 بدأت اللعبة رسمياً بـ ${room.players.length} لاعبين!`);
+  room.logs.push(`🎴 تم توزيع 5 كروت لكل لاعب. الدور الأول لـ: ${room.players[0].name}`);
+  room.lastEvent = { type: 'game_started' };
+
+  applySetCheck(room);
+  broadcastRoomState(room);
+
+  // Official Rule: If first player has NO numbers in hand, they auto-draw 1 card and turn advances!
+  const firstP = room.players[0];
+  const hasNumbers = firstP.hand.some(c => c.type === 'number');
+  if (!hasNumbers && room.deck.length > 0) {
+    const drawn = room.deck.shift();
+    firstP.hand.push(drawn);
+    room.logs.push(`📥 ${firstP.name} معندوش أي أرقام في إيده! سحب كارت تلقائياً وانتهى دوره.`);
+    broadcastActionAnnouncement(room, {
+      cardType: 'deck',
+      title: '📥 سـحـــــب كـــــارت!',
+      actorName: firstP.name,
+      actorAvatar: firstP.avatar,
+      desc: `${firstP.name} معندوش أي أرقام في إيده! سحب كارت تلقائياً وتمرر الدور.`,
+      sound: 'card',
+      duration: 2000
+    });
+    advanceTurn(room);
+  } else {
+    startTurnTimer(room);
+    if (room.players[0].isBot) scheduleBotTurn(room);
+  }
+}
+
+// ====== SMART MATCHMAKING QUEUE (1-CLICK PLAY NOW) ======
+const matchmakingQueue = [];
+let matchmakingInterval = null;
+
+function processMatchmakingQueue() {
+  // Filter out disconnected sockets
+  for (let i = matchmakingQueue.length - 1; i >= 0; i--) {
+    if (!matchmakingQueue[i].socket.connected) {
+      matchmakingQueue.splice(i, 1);
+    }
+  }
+
+  if (matchmakingQueue.length === 0) {
+    if (matchmakingInterval) {
+      clearInterval(matchmakingInterval);
+      matchmakingInterval = null;
+    }
+    return;
+  }
+
+  const now = Date.now();
+
+  // If 4 or more real players waiting -> launch immediately!
+  while (matchmakingQueue.length >= 4) {
+    const matched = matchmakingQueue.splice(0, 4);
+    launchMatchmakingRoom(matched);
+  }
+
+  // If oldest player in queue waited >= 3.5 seconds -> start match with available humans + bots
+  if (matchmakingQueue.length > 0) {
+    const oldest = matchmakingQueue[0];
+    if (now - oldest.queuedAt >= 3500) {
+      const takeCount = Math.min(matchmakingQueue.length, 4);
+      const matched = matchmakingQueue.splice(0, takeCount);
+      launchMatchmakingRoom(matched);
+    }
+  }
+}
+
+function launchMatchmakingRoom(matchedPlayers) {
+  if (!matchedPlayers || matchedPlayers.length === 0) return;
+  const host = matchedPlayers[0];
+  const room = createRoom(host.socket.id, host.name, host.avatar, host.userId, host.sessionToken);
+  room.isPublic = true;
+
+  host.socket.join(room.code);
+  host.socket.emit('match_found', { code: room.code, playersCount: 4 });
+
+  for (let i = 1; i < matchedPlayers.length; i++) {
+    const p = matchedPlayers[i];
+    p.socket.join(room.code);
+    room.players.push({
+      id: p.socket.id,
+      userId: p.userId || null,
+      sessionToken: p.sessionToken || null,
+      name: p.name,
+      avatar: p.avatar,
+      isHost: false,
+      isBot: false,
+      connected: true,
+      hand: [],
+      sets: [],
+      immune: false,
+      skipNext: false,
+      extraTurns: 0,
+      botMemory: {}
+    });
+    p.socket.emit('match_found', { code: room.code, playersCount: 4 });
+  }
+
+  // Fill empty spots up to 4 with smart bots
+  const neededBots = 4 - room.players.length;
+  for (let b = 0; b < neededBots; b++) {
+    const bName = BOT_NAMES[(room.players.length + b) % BOT_NAMES.length];
+    const bAvatar = BOT_AVATARS[(room.players.length + b) % BOT_AVATARS.length];
+    room.players.push({
+      id: `bot_${Date.now()}_${b}_${Math.random().toString(36).slice(2, 7)}`,
+      name: bName,
+      avatar: bAvatar,
+      isHost: false,
+      isBot: true,
+      connected: true,
+      hand: [],
+      sets: [],
+      immune: false,
+      skipNext: false,
+      extraTurns: 0,
+      botMemory: {}
+    });
+    room.logs.push(`🤖 انضم ${bName} إلى طاولة اللعب السريع.`);
+  }
+
+  startGameInstance(room);
+}
+
 // ====== SOCKET EVENT HANDLERS (SHARED BY SOCKET.IO AND GODOT WEBSOCKET) ======
 function registerSocketHandlers(socket) {
   let currentRoomCode = null;
@@ -2222,7 +2371,7 @@ function registerSocketHandlers(socket) {
       const bName = BOT_NAMES[i % BOT_NAMES.length];
       const bAvatar = BOT_AVATARS[i % BOT_AVATARS.length];
       room.players.push({
-        id: `bot_${Date.now()}_${i}_${Math.random()}`,
+        id: `bot_${Date.now()}_${i}_${Math.random().toString(36).slice(2, 7)}`,
         name: bName,
         avatar: bAvatar,
         isHost: false,
@@ -2238,49 +2387,47 @@ function registerSocketHandlers(socket) {
       room.logs.push(`🤖 تمت إضافة بوت: ${bName}`);
     }
 
-    // Deal and start game immediately
-    room.deck = shuffle(buildDeck());
-    room.discardPile = [];
-    room.lastPlayedCard = null;
-    room.status = 'playing';
-    room.currentIdx = 0;
-    room.direction = 1;
+    startGameInstance(room);
+  });
 
-    for (const player of room.players) {
-      player.hand = room.deck.splice(0, 5);
-      player.sets = [];
-      player.immune = false;
-      player.skipNext = false;
-      player.extraTurns = 0;
+  // Smart Matchmaking Queue: 1-Click Join (Instant Play Now)
+  socket.on('join_matchmaking', ({ name, avatar, userId, sessionToken } = {}) => {
+    if (!checkRateLimit()) return;
+    if (userId) socket.userId = userId;
+    const cleanName = sanitizeName(name, 'لاعب VIP');
+
+    // Remove if already in queue
+    const existingIdx = matchmakingQueue.findIndex(q => q.socket.id === socket.id);
+    if (existingIdx !== -1) matchmakingQueue.splice(existingIdx, 1);
+
+    matchmakingQueue.push({
+      socket,
+      name: cleanName,
+      avatar: avatar || '😎',
+      userId: userId || null,
+      sessionToken: sessionToken || null,
+      queuedAt: Date.now()
+    });
+
+    socket.emit('matchmaking_status', {
+      status: 'searching',
+      position: matchmakingQueue.length,
+      estimatedSeconds: 3
+    });
+
+    if (!matchmakingInterval) {
+      matchmakingInterval = setInterval(processMatchmakingQueue, 1000);
     }
+    processMatchmakingQueue();
+  });
 
-    room.logs.push(`🚀 بدأت جولة تدريب البوتات بـ 4 لاعبين!`);
-    room.logs.push(`🎴 تم توزيع 5 كروت لكل لاعب. الدور الأول لـ: ${room.players[0].name}`);
-    room.lastEvent = { type: 'game_started' };
-
-    applySetCheck(room);
-    broadcastRoomState(room);
-
-    const firstP = room.players[0];
-    const hasNumbers = firstP.hand.some(c => c.type === 'number');
-    if (!hasNumbers && room.deck.length > 0) {
-      const drawn = room.deck.shift();
-      firstP.hand.push(drawn);
-      room.logs.push(`📥 ${firstP.name} معندوش أي أرقام في إيده! سحب كارت تلقائياً وانتهى دوره.`);
-      broadcastActionAnnouncement(room, {
-        cardType: 'deck',
-        title: '📥 سـحـــــب كـــــارت!',
-        actorName: firstP.name,
-        actorAvatar: firstP.avatar,
-        desc: `${firstP.name} معندوش أي أرقام في إيده! سحب كارت تلقائياً وتمرر الدور.`,
-        sound: 'card',
-        duration: 2000
-      });
-      advanceTurn(room);
-    } else {
-      startTurnTimer(room);
-      if (room.players[0].isBot) scheduleBotTurn(room);
+  // Cancel Matchmaking Search
+  socket.on('cancel_matchmaking', () => {
+    const idx = matchmakingQueue.findIndex(q => q.socket.id === socket.id);
+    if (idx !== -1) {
+      matchmakingQueue.splice(idx, 1);
     }
+    socket.emit('matchmaking_status', { status: 'cancelled' });
   });
 
   // Reconnect Room (Secure Token-Based Recovery, Seat-Hijacking Protected)
@@ -2498,66 +2645,7 @@ function registerSocketHandlers(socket) {
       return;
     }
 
-    clearRoomTimers(room);
-
-    // Build & Deal Deck
-    room.deck = shuffle(buildDeck());
-    room.discardPile = [];
-    room.lastPlayedCard = null;
-    room.status = 'playing';
-    room.currentIdx = 0;
-    room.direction = 1;
-
-    // Deal 5 cards each
-    for (const player of room.players) {
-      player.hand = room.deck.splice(0, 5);
-      player.sets = [];
-      player.immune = false;
-      player.skipNext = false;
-      player.extraTurns = 0;
-      player.pendingLiarPrompt = null;
-      player.pendingHatEntaPrompt = null;
-      player.mustDiscardKdab = false;
-      player.botMemory = { knownPlayerCards: {} };
-    }
-
-    room.logs.push(`🚀 بدأت اللعبة رسمياً بـ ${room.players.length} لاعبين!`);
-    room.logs.push(`🎴 تم توزيع 5 كروت لكل لاعب. الدور الأول لـ: ${room.players[0].name}`);
-    room.lastEvent = { type: 'game_started' };
-
-    applySetCheck(room);
-    broadcastRoomState(room);
-
-    // Official Rule: If first player has NO numbers in hand, they auto-draw 1 card and turn advances!
-    const firstP = room.players[0];
-    const hasNumbers = firstP.hand.some(c => c.type === 'number');
-    if (!hasNumbers && room.deck.length > 0) {
-      const drawn = room.deck.shift();
-      firstP.hand.push(drawn);
-      room.logs.push(`📥 ${firstP.name} معندوش أي أرقام في إيده! سحب كارت تلقائياً وانتهى دوره.`);
-      broadcastActionAnnouncement(room, {
-        cardType: 'deck',
-        title: '📥 سـحـــــب كـــــارت!',
-        actorName: firstP.name,
-        actorAvatar: firstP.avatar,
-        desc: `${firstP.name} معندوش أي أرقام في إيده! سحب كارت تلقائياً وتمرر الدور.`,
-        sound: 'card',
-        duration: 2000
-      });
-      applySetCheck(room, firstP);
-      broadcastRoomState(room);
-      scheduleActionTimeout(room, () => {
-        advanceTurn(room);
-      }, 2000);
-      return;
-    }
-
-    startTurnTimer(room);
-
-    // If first player is bot
-    if (room.players[0].isBot) {
-      scheduleBotTurn(room, 2500);
-    }
+    startGameInstance(room);
   });
 
   // Action: Draw Card (ALLOWED ONLY IF PLAYER HAS NO NUMBER CARDS IN HAND!)
@@ -2960,6 +3048,10 @@ function registerSocketHandlers(socket) {
 
   // Leave Room (Explicit exit by player)
   socket.on('leave_room', () => {
+    // Clean up matchmaking queue if waiting
+    const qIdx = matchmakingQueue.findIndex(q => q.socket.id === socket.id);
+    if (qIdx !== -1) matchmakingQueue.splice(qIdx, 1);
+
     if (!currentRoomCode) return;
     const room = rooms.get(currentRoomCode);
     if (!room) return;
@@ -3007,6 +3099,10 @@ function registerSocketHandlers(socket) {
 
   // Disconnect Handling (with 25s Grace Period for Mobile/Reload Recovery)
   socket.on('disconnect', () => {
+    // Clean up matchmaking queue if waiting
+    const qIdx = matchmakingQueue.findIndex(q => q.socket.id === socket.id);
+    if (qIdx !== -1) matchmakingQueue.splice(qIdx, 1);
+
     if (!currentRoomCode) return;
     const room = rooms.get(currentRoomCode);
     if (!room) return;
@@ -3057,10 +3153,19 @@ io.on('connection', (socket) => {
   registerSocketHandlers(socket);
 });
 
-// Godot Native WebSocket Server
-const wss = new WebSocket.Server({ port: WS_PORT }, () => {
-  console.log(`🔌 Godot Native WebSocket Bridge listening on ws://0.0.0.0:${WS_PORT}`);
-});
+// Godot Native WebSocket Server (Cloud & Standalone Resilient)
+let wss;
+try {
+  wss = new WebSocket.Server({ port: WS_PORT }, () => {
+    console.log(`🔌 Godot Native WebSocket Bridge listening on ws://0.0.0.0:${WS_PORT}`);
+  });
+  wss.on('error', (err) => {
+    console.warn(`WebSocket error on port ${WS_PORT} (normal in single-port cloud hosts):`, err.message);
+  });
+} catch(e) {
+  console.warn(`Standalone port ${WS_PORT} unavailable, attaching to main HTTP server:`, e.message);
+  wss = new WebSocket.Server({ server, path: '/ws' });
+}
 
 wss.on('connection', (ws) => {
   const wsId = 'ws_' + Math.random().toString(36).substring(2, 9);

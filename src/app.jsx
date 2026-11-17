@@ -368,6 +368,10 @@ const TRANSLATIONS = {
     chooseAvatar: 'اختر شخصية VIP',
     liveMic: '🎙️ مايك الطاولة',
     micOn: '🎙️ مايك شغال',
+    quickMatchmaking: 'بحث سريع ومنافسة فورية ⚡',
+    searchingMatch: 'جاري البحث عن طاولة ومنافسين... 🔍',
+    findingPlayersDesc: 'يتم تجميع 4 لاعبين أو إكمال المقاعد بالبوتات الذكية فوراً.',
+    cancelSearch: 'إلغاء البحث ✕',
   },
   en: {
     playNow: 'Play Now',
@@ -420,6 +424,10 @@ const TRANSLATIONS = {
     chooseAvatar: 'Choose VIP Avatar',
     liveMic: '🎙️ Table Mic',
     micOn: '🎙️ Mic Active',
+    quickMatchmaking: 'Quick Play & Matchmaking ⚡',
+    searchingMatch: 'Searching for table & players... 🔍',
+    findingPlayersDesc: 'Matching 4 players or instantly filling seats with smart bots.',
+    cancelSearch: 'Cancel Search ✕',
   }
 };
 
@@ -1214,6 +1222,25 @@ function App() {
   const [showPrivateRoomModal, setShowPrivateRoomModal] = useState(false);
   const autoStartBotsRef = useRef(false);
 
+  // Smart 1-Click Matchmaking Queue State
+  const [isMatchmaking, setIsMatchmaking] = useState(false);
+  const [matchmakingTime, setMatchmakingTime] = useState(0);
+
+  useEffect(() => {
+    let timer = null;
+    if (isMatchmaking) {
+      setMatchmakingTime(0);
+      timer = setInterval(() => {
+        setMatchmakingTime(prev => prev + 1);
+      }, 1000);
+    } else {
+      setMatchmakingTime(0);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [isMatchmaking]);
+
   // Helper to sync economy changes directly to SQLite database
   const syncEconomyToServer = (nextCoins, nextGems) => {
     const token = localStorage.getItem('catch_token');
@@ -1334,6 +1361,27 @@ function App() {
       return false;
     }
     return true;
+  };
+
+  // Instant 1-Click Smart Matchmaking
+  const handleStartMatchmaking = () => {
+    soundFx.init();
+    if (!ensureConnected()) return;
+    soundFx.play('snap');
+    const finalName = playerName.trim() || (lang === 'en' ? 'VIP Player' : 'لاعب VIP');
+    setPlayerName(finalName);
+    localStorage.setItem('catch_name', finalName);
+    localStorage.setItem('catch_avatar', avatar);
+    setShowPlayModal(false);
+    setIsMatchmaking(true);
+    socketRef.current?.emit('join_matchmaking', { name: finalName, avatar, userId, sessionToken });
+  };
+
+  const handleCancelMatchmaking = () => {
+    soundFx.init();
+    soundFx.play('snap');
+    setIsMatchmaking(false);
+    socketRef.current?.emit('cancel_matchmaking');
   };
 
   // Direct 1-Click Bot Match via Dedicated Server Event
@@ -1704,6 +1752,17 @@ function App() {
       localStorage.removeItem('catch_last_room');
       setLastRoomCode('');
       setRoomState(null);
+      setIsMatchmaking(false);
+    });
+
+    socket.on('match_found', ({ code }) => {
+      setIsMatchmaking(false);
+      setShowPlayModal(false);
+      localStorage.setItem('catch_last_room', code);
+      setLastRoomCode(code);
+      soundFx.init();
+      soundFx.play('celebration');
+      showVoiceNotice(lang === 'en' ? 'Match Found! Game Starting... 🚀' : 'تم العثور على طاولة ومنافسين! تبدأ الجولة الآن... 🚀');
     });
 
     socket.on('room_state', (state) => {
@@ -2577,10 +2636,10 @@ function App() {
 
               {/* Main CTA Buttons */}
               <div className="w-full space-y-3 pb-2">
-                <button onClick={() => setShowPlayModal(true)}
-                  className="btn-neon-green w-full py-4 rounded-2xl text-xl font-black flex items-center justify-center gap-3 transition active:scale-95">
-                  <span className="text-2xl">▶</span>
-                  <span>{t('playNow')}</span>
+                <button onClick={handleStartMatchmaking}
+                  className="btn-neon-green w-full py-4 rounded-2xl text-xl font-black flex items-center justify-center gap-3 transition active:scale-95 shadow-xl">
+                  <span className="text-2xl">⚡</span>
+                  <span>{lang === 'en' ? 'Play Now (Quick Match)' : 'العب الآن (بحث فوري)'}</span>
                 </button>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -2910,12 +2969,9 @@ function App() {
               </div>
 
               <div className="space-y-2.5 pt-1">
-                <button onClick={() => {
-                  setShowPlayModal(false);
-                  handleCreateRoom();
-                }} className="btn-3d-green w-full py-3 rounded-2xl text-base font-black flex items-center justify-center gap-2">
+                <button onClick={handleStartMatchmaking} className="btn-3d-green w-full py-3 rounded-2xl text-base font-black flex items-center justify-center gap-2">
                   <span>⚡</span>
-                  <span>{t('quickTable')}</span>
+                  <span>{t('quickMatchmaking')}</span>
                 </button>
 
                 <button onClick={() => {
@@ -3507,7 +3563,46 @@ function App() {
 
         {errorMsg && <div className="fixed bottom-6 bg-red-600 text-white px-6 py-2 rounded-2xl font-bold shadow-2xl z-50 text-xs">{errorMsg}</div>}
 
-        <ExitConfirmModal
+        {/* SMART MATCHMAKING RADAR SEARCH MODAL */}
+      {isMatchmaking && (
+        <div className="fixed inset-0 z-[450] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="w-full max-w-sm bg-slate-900 border-2 border-amber-400/80 rounded-3xl p-6 shadow-2xl text-center space-y-4 font-cairo">
+            {/* Radar Pulse Effect */}
+            <div className="relative w-24 h-24 mx-auto flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full border-2 border-emerald-400 animate-ping opacity-60"></div>
+              <div className="absolute inset-2 rounded-full border-2 border-amber-400 animate-pulse"></div>
+              <div className="w-16 h-16 rounded-full bg-slate-800 border border-amber-400/60 flex items-center justify-center text-3xl shadow-inner">
+                🃏
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-base font-black text-white">
+                {t('searchingMatch')}
+              </h3>
+              <p className="text-xs text-slate-300 font-medium mt-1 leading-relaxed">
+                {t('findingPlayersDesc')}
+              </p>
+            </div>
+
+            <div className="bg-slate-800/90 border border-slate-700 rounded-2xl py-2 px-4 inline-flex items-center gap-2 shadow-inner">
+              <span className="text-xs text-amber-300 font-bold">⏱️ الوقت:</span>
+              <span className="text-sm font-mono font-black text-white">
+                {Math.floor(matchmakingTime / 60)}:{(matchmakingTime % 60).toString().padStart(2, '0')}
+              </span>
+            </div>
+
+            <button
+              onClick={handleCancelMatchmaking}
+              className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 hover:text-white font-bold text-xs rounded-xl border border-slate-700 transition"
+            >
+              {t('cancelSearch')}
+            </button>
+          </div>
+        </div>
+      )}
+
+      <ExitConfirmModal
           isOpen={showExitConfirmModal}
           onClose={() => setShowExitConfirmModal(false)}
           onConfirm={handleLeaveRoom}

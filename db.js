@@ -9,8 +9,8 @@ const Database = require('better-sqlite3');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 
-// Ensure data directory exists
-const dataDir = path.join(__dirname, 'data');
+// Ensure data directory exists (supports persistent cloud mount via DATA_DIR)
+const dataDir = process.env.DATA_DIR || path.join(__dirname, 'data');
 if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir, { recursive: true });
 }

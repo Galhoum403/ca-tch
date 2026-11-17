@@ -589,7 +589,11 @@ const TRANSLATIONS = {
     playerNameLabel: 'اسم اللاعب',
     chooseAvatar: 'اختر شخصية VIP',
     liveMic: '🎙️ مايك الطاولة',
-    micOn: '🎙️ مايك شغال'
+    micOn: '🎙️ مايك شغال',
+    quickMatchmaking: 'بحث سريع ومنافسة فورية ⚡',
+    searchingMatch: 'جاري البحث عن طاولة ومنافسين... 🔍',
+    findingPlayersDesc: 'يتم تجميع 4 لاعبين أو إكمال المقاعد بالبوتات الذكية فوراً.',
+    cancelSearch: 'إلغاء البحث ✕'
   },
   en: {
     playNow: 'Play Now',
@@ -641,7 +645,11 @@ const TRANSLATIONS = {
     playerNameLabel: 'Player Name',
     chooseAvatar: 'Choose VIP Avatar',
     liveMic: '🎙️ Table Mic',
-    micOn: '🎙️ Mic Active'
+    micOn: '🎙️ Mic Active',
+    quickMatchmaking: 'Quick Play & Matchmaking ⚡',
+    searchingMatch: 'Searching for table & players... 🔍',
+    findingPlayersDesc: 'Matching 4 players or instantly filling seats with smart bots.',
+    cancelSearch: 'Cancel Search ✕'
   }
 };
 function getCardImage(card) {
@@ -1522,6 +1530,24 @@ function App() {
   const [showPrivateRoomModal, setShowPrivateRoomModal] = useState(false);
   const autoStartBotsRef = useRef(false);
 
+  // Smart 1-Click Matchmaking Queue State
+  const [isMatchmaking, setIsMatchmaking] = useState(false);
+  const [matchmakingTime, setMatchmakingTime] = useState(0);
+  useEffect(() => {
+    let timer = null;
+    if (isMatchmaking) {
+      setMatchmakingTime(0);
+      timer = setInterval(() => {
+        setMatchmakingTime(prev => prev + 1);
+      }, 1000);
+    } else {
+      setMatchmakingTime(0);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [isMatchmaking]);
+
   // Helper to sync economy changes directly to SQLite database
   const syncEconomyToServer = (nextCoins, nextGems) => {
     const token = localStorage.getItem('catch_token');
@@ -1649,6 +1675,31 @@ function App() {
       return false;
     }
     return true;
+  };
+
+  // Instant 1-Click Smart Matchmaking
+  const handleStartMatchmaking = () => {
+    soundFx.init();
+    if (!ensureConnected()) return;
+    soundFx.play('snap');
+    const finalName = playerName.trim() || (lang === 'en' ? 'VIP Player' : 'لاعب VIP');
+    setPlayerName(finalName);
+    localStorage.setItem('catch_name', finalName);
+    localStorage.setItem('catch_avatar', avatar);
+    setShowPlayModal(false);
+    setIsMatchmaking(true);
+    socketRef.current?.emit('join_matchmaking', {
+      name: finalName,
+      avatar,
+      userId,
+      sessionToken
+    });
+  };
+  const handleCancelMatchmaking = () => {
+    soundFx.init();
+    soundFx.play('snap');
+    setIsMatchmaking(false);
+    socketRef.current?.emit('cancel_matchmaking');
   };
 
   // Direct 1-Click Bot Match via Dedicated Server Event
@@ -2044,6 +2095,18 @@ function App() {
       localStorage.removeItem('catch_last_room');
       setLastRoomCode('');
       setRoomState(null);
+      setIsMatchmaking(false);
+    });
+    socket.on('match_found', ({
+      code
+    }) => {
+      setIsMatchmaking(false);
+      setShowPlayModal(false);
+      localStorage.setItem('catch_last_room', code);
+      setLastRoomCode(code);
+      soundFx.init();
+      soundFx.play('celebration');
+      showVoiceNotice(lang === 'en' ? 'Match Found! Game Starting... 🚀' : 'تم العثور على طاولة ومنافسين! تبدأ الجولة الآن... 🚀');
     });
     socket.on('room_state', state => {
       setRoomState(state);
@@ -2964,11 +3027,11 @@ function App() {
     })), /*#__PURE__*/React.createElement("div", {
       className: "w-full space-y-3 pb-2"
     }, /*#__PURE__*/React.createElement("button", {
-      onClick: () => setShowPlayModal(true),
-      className: "btn-neon-green w-full py-4 rounded-2xl text-xl font-black flex items-center justify-center gap-3 transition active:scale-95"
+      onClick: handleStartMatchmaking,
+      className: "btn-neon-green w-full py-4 rounded-2xl text-xl font-black flex items-center justify-center gap-3 transition active:scale-95 shadow-xl"
     }, /*#__PURE__*/React.createElement("span", {
       className: "text-2xl"
-    }, "▶"), /*#__PURE__*/React.createElement("span", null, t('playNow'))), /*#__PURE__*/React.createElement("div", {
+    }, "⚡"), /*#__PURE__*/React.createElement("span", null, lang === 'en' ? 'Play Now (Quick Match)' : 'العب الآن (بحث فوري)')), /*#__PURE__*/React.createElement("div", {
       className: "grid grid-cols-2 gap-3"
     }, /*#__PURE__*/React.createElement("button", {
       onClick: () => setShowPrivateRoomModal(true),
@@ -3303,12 +3366,9 @@ function App() {
     }, "✕")), /*#__PURE__*/React.createElement("div", {
       className: "space-y-2.5 pt-1"
     }, /*#__PURE__*/React.createElement("button", {
-      onClick: () => {
-        setShowPlayModal(false);
-        handleCreateRoom();
-      },
+      onClick: handleStartMatchmaking,
       className: "btn-3d-green w-full py-3 rounded-2xl text-base font-black flex items-center justify-center gap-2"
-    }, /*#__PURE__*/React.createElement("span", null, "⚡"), /*#__PURE__*/React.createElement("span", null, t('quickTable'))), /*#__PURE__*/React.createElement("button", {
+    }, /*#__PURE__*/React.createElement("span", null, "⚡"), /*#__PURE__*/React.createElement("span", null, t('quickMatchmaking'))), /*#__PURE__*/React.createElement("button", {
       onClick: () => {
         setShowPlayModal(false);
         handleStartBotTraining();
@@ -3809,7 +3869,32 @@ function App() {
       className: "text-center text-amber-200 text-xs font-bold bg-black/50 py-3 rounded-2xl border border-amber-500/20 animate-pulse"
     }, lang === 'en' ? '⏳ Waiting for host to start the game...' : '⏳ في انتظار المضيف لبدء اللعبة...')), errorMsg && /*#__PURE__*/React.createElement("div", {
       className: "fixed bottom-6 bg-red-600 text-white px-6 py-2 rounded-2xl font-bold shadow-2xl z-50 text-xs"
-    }, errorMsg), /*#__PURE__*/React.createElement(ExitConfirmModal, {
+    }, errorMsg), isMatchmaking && /*#__PURE__*/React.createElement("div", {
+      className: "fixed inset-0 z-[450] bg-black/80 backdrop-blur-md flex items-center justify-center p-4"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "w-full max-w-sm bg-slate-900 border-2 border-amber-400/80 rounded-3xl p-6 shadow-2xl text-center space-y-4 font-cairo"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "relative w-24 h-24 mx-auto flex items-center justify-center"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "absolute inset-0 rounded-full border-2 border-emerald-400 animate-ping opacity-60"
+    }), /*#__PURE__*/React.createElement("div", {
+      className: "absolute inset-2 rounded-full border-2 border-amber-400 animate-pulse"
+    }), /*#__PURE__*/React.createElement("div", {
+      className: "w-16 h-16 rounded-full bg-slate-800 border border-amber-400/60 flex items-center justify-center text-3xl shadow-inner"
+    }, "🃏")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", {
+      className: "text-base font-black text-white"
+    }, t('searchingMatch')), /*#__PURE__*/React.createElement("p", {
+      className: "text-xs text-slate-300 font-medium mt-1 leading-relaxed"
+    }, t('findingPlayersDesc'))), /*#__PURE__*/React.createElement("div", {
+      className: "bg-slate-800/90 border border-slate-700 rounded-2xl py-2 px-4 inline-flex items-center gap-2 shadow-inner"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-xs text-amber-300 font-bold"
+    }, "⏱️ الوقت:"), /*#__PURE__*/React.createElement("span", {
+      className: "text-sm font-mono font-black text-white"
+    }, Math.floor(matchmakingTime / 60), ":", (matchmakingTime % 60).toString().padStart(2, '0'))), /*#__PURE__*/React.createElement("button", {
+      onClick: handleCancelMatchmaking,
+      className: "w-full py-2.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 hover:text-white font-bold text-xs rounded-xl border border-slate-700 transition"
+    }, t('cancelSearch')))), /*#__PURE__*/React.createElement(ExitConfirmModal, {
       isOpen: showExitConfirmModal,
       onClose: () => setShowExitConfirmModal(false),
       onConfirm: handleLeaveRoom,
