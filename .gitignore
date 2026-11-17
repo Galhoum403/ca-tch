@@ -8,6 +8,8 @@ android/.gradle/
 android/build/
 dist/
 *.apk
+!public/catch.apk
+!public/catch-live.apk
 
 # Godot binaries & caches
 godot/
