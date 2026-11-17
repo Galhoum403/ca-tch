@@ -1446,14 +1446,15 @@ function App() {
 
   // Check connection before launching any room
   const ensureConnected = () => {
-    if (connectionStatus !== 'connected' || !socketRef.current?.connected) {
-      soundFx.init();
-      soundFx.play('impact');
-      setErrorMsg(lang === 'en' ? 'Connecting to game server... Please try again in a moment' : 'جاري الاتصال بسيرفر اللعبة... يرجى إعادة المحاولة بعد ثانية');
-      try { socketRef.current?.connect?.(); } catch(e){}
-      return false;
+    if (socketRef.current?.connected) {
+      if (connectionStatus !== 'connected') setConnectionStatus('connected');
+      return true;
     }
-    return true;
+    soundFx.init();
+    soundFx.play('impact');
+    setErrorMsg(lang === 'en' ? 'Connecting to game server... Please try again in a moment' : 'جاري الاتصال بسيرفر اللعبة... يرجى إعادة المحاولة بعد ثانية');
+    try { socketRef.current?.connect?.(); } catch(e){}
+    return false;
   };
 
   // Instant 1-Click Smart Matchmaking
@@ -2617,33 +2618,20 @@ function App() {
             </div>
           </div>
 
-          {/* Right: Connection Status & Avatar Pill & Settings */}
+          {/* Right: Avatar Pill & Settings */}
           <div className="flex items-center gap-1.5">
-            <div onClick={() => setShowSettingsModal(true)}
-                 className={`flex items-center gap-1 px-2 py-1 rounded-xl border text-[10px] font-bold cursor-pointer transition ${
-                   connectionStatus === 'connected' 
-                     ? 'border-emerald-400/40 bg-emerald-500/10 text-emerald-300' 
-                     : connectionStatus === 'connecting'
-                       ? 'border-yellow-400/40 bg-yellow-500/10 text-yellow-300 animate-pulse'
-                       : 'border-red-500/50 bg-red-500/15 text-red-300 animate-pulse'
-                 }`}
-                 title={connectionStatus === 'connected' ? 'السيرفر متصل جاهز للعب' : 'انقر لضبط عنوان السيرفر'}>
-              <span className="w-1.5 h-1.5 rounded-full inline-block"
-                    style={{ backgroundColor: connectionStatus === 'connected' ? '#10b981' : connectionStatus === 'connecting' ? '#eab308' : '#ef4444' }}></span>
-              <span>{connectionStatus === 'connected' ? (lang === 'en' ? 'Online' : 'متصل') : connectionStatus === 'connecting' ? (lang === 'en' ? 'Connecting' : 'اتصال...') : (lang === 'en' ? 'Offline ⚙️' : 'غير متصل ⚙️')}</span>
-            </div>
-
             <div onClick={() => setIsEditingProfile(true)}
-                 className="flex items-center gap-1.5 px-2 py-1 rounded-xl border border-purple-400/30 bg-slate-800/90 cursor-pointer transition hover:bg-slate-700/90 shadow-sm">
+                 className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl border border-purple-400/30 bg-slate-800/90 cursor-pointer transition hover:bg-slate-700/90 shadow-sm">
               <div className="w-6 h-6 rounded-full flex items-center justify-center text-sm border-2 border-purple-400 bg-purple-950/60">
                 {avatar}
               </div>
-              <span className="text-[11px] font-black max-w-[55px] truncate text-purple-200">
+              <span className="text-[11px] font-black max-w-[65px] truncate text-purple-200">
                 {playerName || (lang === 'en' ? 'Player' : 'لاعب')}
               </span>
             </div>
             <button onClick={() => setShowSettingsModal(true)}
-                    className="w-8 h-8 rounded-xl flex items-center justify-center text-sm transition border border-slate-700 bg-slate-800/80 text-slate-300 hover:text-white hover:bg-slate-700/80">
+                    className="w-8 h-8 rounded-xl flex items-center justify-center text-sm transition border border-slate-700 bg-slate-800/80 text-slate-300 hover:text-white hover:bg-slate-700/80"
+                    title={lang === 'en' ? 'Settings' : 'الإعدادات'}>
               ⚙️
             </button>
           </div>

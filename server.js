@@ -3171,9 +3171,20 @@ io.on('connection', (socket) => {
   registerSocketHandlers(socket);
 });
 
-// Godot Native WebSocket Server (Attached to main HTTP server on /ws)
-const wss = new WebSocket.Server({ server, path: '/ws' });
+// Godot Native WebSocket Server (Attached safely to main HTTP server on /ws only)
+const wss = new WebSocket.Server({ noServer: true });
 console.log(`🔌 Godot Native WebSocket Bridge listening on /ws`);
+
+server.on('upgrade', (request, socket, head) => {
+  try {
+    const url = new URL(request.url, `http://${request.headers.host || 'localhost'}`);
+    if (url.pathname === '/ws') {
+      wss.handleUpgrade(request, socket, head, (ws) => {
+        wss.emit('connection', ws, request);
+      });
+    }
+  } catch(e) {}
+});
 
 wss.on('connection', (ws) => {
   const wsId = 'ws_' + Math.random().toString(36).substring(2, 9);
