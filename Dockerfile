@@ -7,9 +7,6 @@ RUN npm install
 
 COPY . .
 
-# Compile JSX frontend bundle
-RUN node build.js
-
 EXPOSE 3000
 
 ENV PORT=3000

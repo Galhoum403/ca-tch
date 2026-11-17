@@ -3153,19 +3153,9 @@ io.on('connection', (socket) => {
   registerSocketHandlers(socket);
 });
 
-// Godot Native WebSocket Server (Cloud & Standalone Resilient)
-let wss;
-try {
-  wss = new WebSocket.Server({ port: WS_PORT }, () => {
-    console.log(`🔌 Godot Native WebSocket Bridge listening on ws://0.0.0.0:${WS_PORT}`);
-  });
-  wss.on('error', (err) => {
-    console.warn(`WebSocket error on port ${WS_PORT} (normal in single-port cloud hosts):`, err.message);
-  });
-} catch(e) {
-  console.warn(`Standalone port ${WS_PORT} unavailable, attaching to main HTTP server:`, e.message);
-  wss = new WebSocket.Server({ server, path: '/ws' });
-}
+// Godot Native WebSocket Server (Attached to main HTTP server on /ws)
+const wss = new WebSocket.Server({ server, path: '/ws' });
+console.log(`🔌 Godot Native WebSocket Bridge listening on /ws`);
 
 wss.on('connection', (ws) => {
   const wsId = 'ws_' + Math.random().toString(36).substring(2, 9);
