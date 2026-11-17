@@ -59,6 +59,26 @@
       "last_login": "2026-10-24 11:47:49",
       "last_daily_claim": "2026-10-24",
       "quest_data": "{}"
+    },
+    {
+      "id": 4,
+      "username": "محمد",
+      "password_hash": "$2b$10$1w8ewEUVqCbwVj947TmK5OlKBYhOo5Vz.n7abG3tSOakcCCsXRDEm",
+      "avatar": "😎",
+      "coins": 500,
+      "gems": 10,
+      "games_played": 0,
+      "games_won": 0,
+      "sets_completed": 0,
+      "vip_rank": "مبتدئ برونزي",
+      "unlocked_avatars": "[\"saeedi\",\"batman\",\"muallem\"]",
+      "unlocked_backs": "[\"classic\"]",
+      "is_banned": 0,
+      "is_admin": 0,
+      "created_at": "2026-11-17 23:20:00",
+      "last_login": "2026-11-17 21:21:04",
+      "last_daily_claim": null,
+      "quest_data": "{}"
     }
   ],
   "sessions": [
@@ -91,6 +111,11 @@
       "token": "tok_c6d6474f9186e5d0d5b271a7f0369ffa4c6859abb467240e7d34723f7e69058c",
       "user_id": 2,
       "created_at": "2026-11-17 20:41:34"
+    },
+    {
+      "token": "tok_44ca19f1104a7e77007df2b8f6eb765ed0af4796e98abdbd4d39020419f33a7a",
+      "user_id": 4,
+      "created_at": "2026-11-17 21:21:04"
     }
   ],
   "balance_logs": [
