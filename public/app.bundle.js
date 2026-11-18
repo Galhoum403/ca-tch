@@ -1549,7 +1549,20 @@ function App() {
   const [authPassword, setAuthPassword] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState('');
-  const [showSessionTerminatedModal, setShowSessionTerminatedModal] = useState(false);
+  const [showSessionTerminatedModal, setShowSessionTerminatedModal] = useState(() => {
+    try {
+      return localStorage.getItem('catch_session_terminated_alert') === 'true';
+    } catch (e) {
+      return false;
+    }
+  });
+  const [sessionTerminatedReason, setSessionTerminatedReason] = useState(() => {
+    try {
+      return localStorage.getItem('catch_session_terminated_msg') || '';
+    } catch (e) {
+      return '';
+    }
+  });
   const [stats, setStats] = useState(() => {
     try {
       const saved = localStorage.getItem('catch_stats');
@@ -2138,16 +2151,21 @@ function App() {
   const handleSessionTerminated = message => {
     soundFx.init();
     soundFx.play('impact');
+    const msg = message || (lang === 'en' ? 'Your account was logged in from another device. For security, this session was closed automatically.' : 'تم تسجيل الدخول بحسابك من جهاز آخر (كمبيوتر / متصفح آخر)، وتم تسجيل خروجك من هذا الجهاز تلقائياً للحفاظ على أمان حسابك.');
 
-    // Wipe all authenticated storage
-    localStorage.removeItem('catch_token');
-    localStorage.removeItem('catch_user_id');
-    localStorage.removeItem('catch_name');
-    localStorage.removeItem('catch_coins');
-    localStorage.removeItem('catch_gems');
-    localStorage.removeItem('catch_avatar');
-    localStorage.removeItem('catch_last_room');
-    localStorage.setItem('catch_is_guest', 'true');
+    // Persist termination alert so even if mobile browser reloads or user revisits, the alert remains visible!
+    try {
+      localStorage.setItem('catch_session_terminated_alert', 'true');
+      localStorage.setItem('catch_session_terminated_msg', msg);
+      localStorage.removeItem('catch_token');
+      localStorage.removeItem('catch_user_id');
+      localStorage.removeItem('catch_name');
+      localStorage.removeItem('catch_coins');
+      localStorage.removeItem('catch_gems');
+      localStorage.removeItem('catch_avatar');
+      localStorage.removeItem('catch_last_room');
+      localStorage.setItem('catch_is_guest', 'true');
+    } catch (e) {}
     const freshGuestId = 'u_' + Math.random().toString(36).slice(2, 9) + '_' + Date.now().toString(36);
     const freshGuestName = `صياد_${Math.floor(Math.random() * 899 + 100)}`;
     localStorage.setItem('catch_user_id', freshGuestId);
@@ -2168,37 +2186,49 @@ function App() {
         socketRef.current.disconnect();
       } catch (e) {}
     }
+    setSessionTerminatedReason(msg);
     setShowSessionTerminatedModal(true);
-    if (message) setErrorMsg(message);
+    setErrorMsg(msg);
+    showVoiceNotice('⚠️ تم تسجيل الخروج: الحساب مفتوح من جهاز آخر!');
+  };
+  const dismissSessionTerminatedModal = () => {
+    try {
+      localStorage.removeItem('catch_session_terminated_alert');
+      localStorage.removeItem('catch_session_terminated_msg');
+    } catch (e) {}
+    setShowSessionTerminatedModal(false);
+    setSessionTerminatedReason('');
   };
   const renderSessionTerminatedModal = () => {
     if (!showSessionTerminatedModal) return null;
     return /*#__PURE__*/React.createElement("div", {
-      className: "fixed inset-0 z-[9999] bg-black/95 backdrop-blur-md flex items-center justify-center p-4"
+      className: "fixed inset-0 z-[9999] bg-black/95 backdrop-blur-lg flex items-center justify-center p-4"
     }, /*#__PURE__*/React.createElement("div", {
-      className: "w-full max-w-sm bg-gradient-to-b from-slate-900 via-slate-950 to-black border-2 border-red-500/80 rounded-3xl p-6 shadow-2xl text-center space-y-4 font-cairo"
+      className: "w-full max-w-sm bg-gradient-to-b from-slate-900 via-slate-950 to-black border-2 border-red-500 rounded-3xl p-6 shadow-[0_0_50px_rgba(239,68,68,0.5)] text-center space-y-4 font-cairo"
     }, /*#__PURE__*/React.createElement("div", {
-      className: "w-16 h-16 mx-auto rounded-full bg-red-500/20 border-2 border-red-500 flex items-center justify-center text-3xl animate-bounce"
+      className: "w-16 h-16 mx-auto rounded-full bg-red-500/20 border-2 border-red-500 flex items-center justify-center text-3xl animate-bounce shadow-lg shadow-red-500/30"
     }, "⚠️"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", {
       className: "text-lg font-black text-white"
-    }, lang === 'en' ? 'Logged in from another device' : 'تم فتح الحساب من جهاز آخر'), /*#__PURE__*/React.createElement("p", {
-      className: "text-xs text-slate-300 font-medium mt-1.5 leading-relaxed"
-    }, lang === 'en' ? 'Your account was accessed from another device. For security reasons, this session has been terminated automatically.' : 'تم تسجيل الدخول بحسابك على جهاز أو متصفح آخر الآن. للحفاظ على أمان حسابك تم إنهاء هذه الجلسة تلقائياً.')), /*#__PURE__*/React.createElement("div", {
-      className: "space-y-2 pt-2"
+    }, lang === 'en' ? 'Logged in from another device!' : 'تم فتح الحساب من جهاز آخر!'), /*#__PURE__*/React.createElement("p", {
+      className: "text-xs text-slate-300 font-medium mt-2 leading-relaxed bg-black/50 p-3 rounded-2xl border border-red-500/30 text-right"
+    }, sessionTerminatedReason || (lang === 'en' ? 'Your account was accessed from another device. For your security, this session was closed automatically and you are now in Guest mode.' : 'تم تسجيل الدخول بحسابك على جهاز أو متصفح آخر الآن. للحفاظ على أمان حسابك تم إنهاء هذه الجلسة تلقائياً وتحويلك للوضع كزائر.'))), /*#__PURE__*/React.createElement("div", {
+      className: "bg-amber-500/10 border border-amber-500/30 rounded-xl px-3 py-2 text-[11px] text-amber-200 font-bold flex items-center justify-center gap-2"
+    }, /*#__PURE__*/React.createElement("span", null, "👤"), /*#__PURE__*/React.createElement("span", null, lang === 'en' ? 'You are now playing as Guest' : 'أنت الآن تتصفح كزائر مؤقت')), /*#__PURE__*/React.createElement("div", {
+      className: "space-y-2 pt-1"
     }, /*#__PURE__*/React.createElement("button", {
       onClick: () => {
-        setShowSessionTerminatedModal(false);
+        dismissSessionTerminatedModal();
         setShowAuthModal(true);
       },
-      className: "btn-gold w-full py-3 rounded-2xl text-sm font-black shadow-lg"
-    }, lang === 'en' ? '🔑 Log In Again' : '🔐 تسجيل الدخول مجدداً'), /*#__PURE__*/React.createElement("button", {
+      className: "btn-gold w-full py-3 rounded-2xl text-sm font-black shadow-lg flex items-center justify-center gap-2 active:scale-95 transition"
+    }, /*#__PURE__*/React.createElement("span", null, "🔑"), /*#__PURE__*/React.createElement("span", null, lang === 'en' ? 'Log In Again (Switch to this device)' : 'تسجيل الدخول مجدداً (سحب الحساب لهنا)')), /*#__PURE__*/React.createElement("button", {
       onClick: () => {
-        setShowSessionTerminatedModal(false);
+        dismissSessionTerminatedModal();
         handleGuestPlay();
         socketRef.current?.connect();
       },
-      className: "w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl border border-slate-700 transition"
-    }, lang === 'en' ? 'Continue as Guest 👤' : 'المتابعة كزائر 👤'))));
+      className: "w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl border border-slate-700 transition active:scale-95"
+    }, lang === 'en' ? 'Continue as Guest 🎮' : 'فهمت، الاستمرار كزائر 🎮'))));
   };
   const handleGuestPlay = () => {
     localStorage.setItem('catch_is_guest', 'true');
@@ -2251,7 +2281,14 @@ function App() {
         headers: {
           'Authorization': `Bearer ${token}`
         }
-      }).then(res => res.json()).then(data => {
+      }).then(res => {
+        if (res.status === 401) {
+          handleSessionTerminated(lang === 'en' ? '⚠️ Logged in from another device!' : '⚠️ تم فتح هذا الحساب من جهاز آخر! تم تسجيل الخروج تلقائياً.');
+          return null;
+        }
+        return res.json();
+      }).then(data => {
+        if (!data) return;
         if (data && data.user) {
           setCurrentUser(data.user);
           setUserId(data.user.id);
@@ -2312,7 +2349,11 @@ function App() {
         console.warn('Auth check error:', err);
       });
     } else if (!guest) {
-      setShowAuthModal(true);
+      if (localStorage.getItem('catch_session_terminated_alert') === 'true') {
+        setShowSessionTerminatedModal(true);
+      } else {
+        setShowAuthModal(true);
+      }
     }
   }, []);
 
@@ -3333,7 +3374,28 @@ function App() {
       onClick: () => setShowSettingsModal(true),
       className: "w-8 h-8 rounded-xl flex items-center justify-center text-sm transition border border-slate-700 bg-slate-800/80 text-slate-300 hover:text-white hover:bg-slate-700/80",
       title: lang === 'en' ? 'Settings' : 'الإعدادات'
-    }, "⚙️"))), /*#__PURE__*/React.createElement("main", {
+    }, "⚙️"))), sessionTerminatedReason && /*#__PURE__*/React.createElement("div", {
+      className: "mx-3 mt-2 bg-gradient-to-r from-red-950 via-slate-900 to-red-950 border border-red-500/80 rounded-2xl p-2.5 flex items-center justify-between shadow-lg z-30 animate-pulse"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-2 text-right"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-xl"
+    }, "⚠️"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+      className: "text-[11px] font-black text-red-300"
+    }, "تم تسجيل الخروج (جهاز آخر)"), /*#__PURE__*/React.createElement("p", {
+      className: "text-[9px] text-slate-300 font-bold leading-tight"
+    }, "أنت الآن في وضع الزائر لحماية حسابك"))), /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-1.5"
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: () => {
+        dismissSessionTerminatedModal();
+        setShowAuthModal(true);
+      },
+      className: "btn-gold px-2.5 py-1 rounded-xl text-[10px] font-black shadow"
+    }, "دخول 🔑"), /*#__PURE__*/React.createElement("button", {
+      onClick: dismissSessionTerminatedModal,
+      className: "text-white/60 hover:text-white text-xs px-1 font-bold"
+    }, "✕"))), /*#__PURE__*/React.createElement("main", {
       className: "flex-1 w-full overflow-y-auto px-3.5 py-2 flex flex-col justify-between"
     }, activeTab === 'home' && /*#__PURE__*/React.createElement("div", {
       className: "flex-1 flex flex-col justify-between py-1"

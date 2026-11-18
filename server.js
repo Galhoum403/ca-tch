@@ -112,7 +112,7 @@ function kickPreviousUserSession(userId, exceptSocketId = null) {
 
       setTimeout(() => {
         try { s.disconnect(true); } catch(e){}
-      }, 100);
+      }, 1500);
     } catch (e) {
       console.warn(`Error kicking socket ${s?.id}:`, e);
     }
@@ -2528,7 +2528,7 @@ function registerSocketHandlers(socket) {
         reason: 'missing_token',
         message: '⚠️ تم تسجيل الخروج: الجلسة غير صالحة أو تم تسجيل الدخول من جهاز آخر!'
       });
-      setTimeout(() => { try { socket.disconnect(true); } catch(e){} }, 100);
+      setTimeout(() => { try { socket.disconnect(true); } catch(e){} }, 1200);
       return;
     }
 
@@ -2539,7 +2539,7 @@ function registerSocketHandlers(socket) {
         reason: 'invalid_session',
         message: '⚠️ انتهت صلاحية جلستك أو تم تسجيل الدخول من جهاز آخر!'
       });
-      setTimeout(() => { try { socket.disconnect(true); } catch(e){} }, 100);
+      setTimeout(() => { try { socket.disconnect(true); } catch(e){} }, 1200);
       return;
     }
 
