@@ -217,6 +217,104 @@ app.post('/api/claim-quest', (req, res) => {
   }
 });
 
+// --- NEW APIS: WHEEL, STREAK, FRIENDS & LEADERBOARDS ---
+
+app.post('/api/spin-wheel', (req, res) => {
+  const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+  const user = db.getUserByToken(token);
+  if (!user) return res.status(401).json({ success: false, error: 'غير مصرح أو الجلسة منتهية' });
+  try {
+    const result = db.spinLuckyWheel(user.id);
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/streak-info', (req, res) => {
+  const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+  const user = db.getUserByToken(token);
+  if (!user) return res.status(401).json({ success: false, error: 'غير مصرح' });
+  const info = db.getStreakInfo(user.id);
+  res.json({ success: true, info });
+});
+
+app.post('/api/claim-streak', (req, res) => {
+  const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+  const user = db.getUserByToken(token);
+  if (!user) return res.status(401).json({ success: false, error: 'غير مصرح أو الجلسة منتهية' });
+  try {
+    const result = db.claimLoginStreak(user.id);
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/friends', (req, res) => {
+  const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+  const user = db.getUserByToken(token);
+  if (!user) return res.status(401).json({ success: false, error: 'غير مصرح' });
+  const data = db.getFriendsData(user.id);
+  data.friends = (data.friends || []).map(f => {
+    const isOnline = userSockets.has(f.id);
+    return { ...f, isOnline };
+  });
+  res.json({ success: true, ...data });
+});
+
+app.post('/api/friends/request', (req, res) => {
+  const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+  const user = db.getUserByToken(token);
+  if (!user) return res.status(401).json({ success: false, error: 'غير مصرح' });
+  try {
+    const result = db.sendFriendRequest(user.id, req.body.target);
+    if (result.targetId && userSockets.has(result.targetId)) {
+      const targetSocket = userSockets.get(result.targetId);
+      if (targetSocket) {
+        targetSocket.emit('friend_request_received', {
+          fromId: user.id,
+          fromUsername: user.username,
+          fromAvatar: user.avatar
+        });
+      }
+    }
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/friends/respond', (req, res) => {
+  const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+  const user = db.getUserByToken(token);
+  if (!user) return res.status(401).json({ success: false, error: 'غير مصرح' });
+  try {
+    const result = db.respondFriendRequest(user.id, req.body.requesterId, req.body.action);
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/friends/remove', (req, res) => {
+  const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+  const user = db.getUserByToken(token);
+  if (!user) return res.status(401).json({ success: false, error: 'غير مصرح' });
+  try {
+    const result = db.removeFriend(user.id, req.body.friendId);
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/leaderboard', (req, res) => {
+  const sort = req.query.sort === 'coins' ? 'coins' : 'wins';
+  const list = db.getLeaderboard(sort);
+  res.json({ success: true, list });
+});
+
 // --- ADMIN DASHBOARD REST API ---
 
 function checkAdminAuth(req, res, next) {
@@ -530,10 +628,11 @@ function generateRoomCode() {
 const BOT_NAMES = ['الداهية 🤖', 'الصياد 🤖', 'البرنس 🤖', 'الصاروخ 🤖', 'الشبح 🤖', 'القناص 🤖', 'المايسترو 🤖'];
 const BOT_AVATARS = ['🤖', '🦾', '👾', '🕹️', '🕶️', '⚡', '🔥'];
 
-function createRoom(hostSocketId, hostName, hostAvatar, userId = null, sessionToken = null) {
+function createRoom(hostSocketId, hostName, hostAvatar, userId = null, sessionToken = null, tier = 'casual') {
   const code = generateRoomCode();
   const room = {
     code,
+    tier: tier || 'casual',
     hostId: hostSocketId,
     status: 'lobby', // 'lobby' | 'playing' | 'gameover'
     minPlayers: 4,
@@ -1019,6 +1118,13 @@ function finalizeGameOver(room) {
   room.logs.push(`🏆 انتهت اللعبة رسمياً! الفائز: ${room.winner}!`);
   room.lastEvent = { type: 'gameover', winner: room.winner };
 
+  // Calculate table prize tier rewards
+  const tier = room.tier || 'casual';
+  const prizeCoins = tier === 'legend' ? 10000 : tier === 'pro' ? 2000 : 200;
+  const prizeGems = tier === 'legend' ? 10 : tier === 'pro' ? 2 : 1;
+  const participantCoins = tier === 'legend' ? 250 : tier === 'pro' ? 100 : 50;
+  room.winnerPrize = { coins: prizeCoins, gems: prizeGems, tier };
+
   // Persistent Database Stats & Rewards for registered players
   for (const player of room.players) {
     if (!player.isBot && player.userId) {
@@ -1026,8 +1132,8 @@ function finalizeGameOver(room) {
       const setsCount = player.sets ? player.sets.length : 0;
       try {
         db.recordGameStats(player.userId, isWinner, setsCount);
-        const rewardCoins = isWinner ? 100 : 25;
-        const rewardGems = isWinner ? 2 : 0;
+        const rewardCoins = isWinner ? prizeCoins : participantCoins;
+        const rewardGems = isWinner ? prizeGems : 0;
         const updated = db.adjustUserBalance(player.userId, rewardCoins, rewardGems, 'match_reward');
         if (updated) {
           emitToPlayer(player.id, 'balance_updated', updated);
@@ -1046,6 +1152,8 @@ function finalizeGameOver(room) {
 function getPlayerView(room, socketId) {
   return {
     code: room.code,
+    tier: room.tier || 'casual',
+    winnerPrize: room.winnerPrize || null,
     status: room.status,
     minPlayers: room.minPlayers,
     maxPlayers: room.maxPlayers,
@@ -2384,7 +2492,7 @@ function processMatchmakingQueue() {
 function launchMatchmakingRoom(matchedPlayers) {
   if (!matchedPlayers || matchedPlayers.length === 0) return;
   const host = matchedPlayers[0];
-  const room = createRoom(host.socket.id, host.name, host.avatar, host.userId, host.sessionToken);
+  const room = createRoom(host.socket.id, host.name, host.avatar, host.userId, host.sessionToken, host.tier || 'casual');
   room.isPublic = true;
 
   host.socket.join(room.code);
@@ -2553,16 +2661,34 @@ function registerSocketHandlers(socket) {
   });
 
   // Create Room
-  socket.on('create_room', ({ name, avatar, userId, sessionToken } = {}) => {
+  socket.on('create_room', ({ name, avatar, userId, sessionToken, tier } = {}) => {
     if (!checkRateLimit()) return;
     bindUserToSocket(userId);
     const cleanName = sanitizeName(name, 'لاعب VIP');
-    const room = createRoom(socket.id, cleanName, avatar, userId, sessionToken);
+    const room = createRoom(socket.id, cleanName, avatar, userId, sessionToken, tier || 'casual');
     currentRoomCode = room.code;
     socket.currentRoomCode = room.code;
     socket.join(room.code);
     socket.emit('room_created', { code: room.code });
     broadcastRoomState(room);
+  });
+
+  // Invite friend to room
+  socket.on('invite_friend_to_room', ({ friendId, roomCode, tier } = {}) => {
+    if (!checkRateLimit()) return;
+    const fId = Number(friendId);
+    if (!fId) return;
+    const targetSocket = userSockets.get(fId);
+    if (targetSocket && targetSocket.id !== socket.id) {
+      const room = getRoomForSocket(socket);
+      const sender = room?.players?.find(p => p.id === socket.id);
+      targetSocket.emit('table_invite_received', {
+        roomCode: roomCode || room?.code,
+        tier: tier || room?.tier || 'casual',
+        fromName: sender?.name || 'صديقك',
+        fromAvatar: sender?.avatar || '😎'
+      });
+    }
   });
 
   // Create Bot Training Room (Instant 1-Click Game against 3 Bots)
@@ -2600,7 +2726,7 @@ function registerSocketHandlers(socket) {
   });
 
   // Smart Matchmaking Queue: 1-Click Join (Instant Play Now)
-  socket.on('join_matchmaking', ({ name, avatar, userId, sessionToken } = {}) => {
+  socket.on('join_matchmaking', ({ name, avatar, userId, sessionToken, tier } = {}) => {
     if (!checkRateLimit()) return;
     bindUserToSocket(userId);
     const cleanName = sanitizeName(name, 'لاعب VIP');
@@ -2615,6 +2741,7 @@ function registerSocketHandlers(socket) {
       avatar: avatar || '😎',
       userId: userId || null,
       sessionToken: sessionToken || null,
+      tier: tier || 'casual',
       queuedAt: Date.now()
     });
 

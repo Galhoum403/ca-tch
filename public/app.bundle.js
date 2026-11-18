@@ -880,6 +880,75 @@ class SoundFxEngine {
         gain.connect(this.ctx.destination);
         osc.start(t);
         osc.stop(t + 0.022);
+      } else if (name === 'deal') {
+        // Crisp card sliding sound
+        if (this.noiseBuffer) {
+          const noise = this.ctx.createBufferSource();
+          noise.buffer = this.noiseBuffer;
+          const filter = this.ctx.createBiquadFilter();
+          filter.type = 'bandpass';
+          filter.frequency.setValueAtTime(2400, t);
+          filter.Q.setValueAtTime(3.0, t);
+          const gain = this.ctx.createGain();
+          gain.gain.setValueAtTime(0.18, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+          noise.connect(filter);
+          filter.connect(gain);
+          gain.connect(this.ctx.destination);
+          noise.start(t);
+        }
+      } else if (name === 'splat') {
+        // Tomato splat
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(280, t);
+        osc.frequency.exponentialRampToValueAtTime(80, t + 0.12);
+        gain.gain.setValueAtTime(0.25, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.15);
+      } else if (name === 'slap') {
+        // Slipper slap
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(320, t);
+        osc.frequency.exponentialRampToValueAtTime(90, t + 0.08);
+        gain.gain.setValueAtTime(0.35, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.1);
+      } else if (name === 'sip') {
+        // Tea sipping / pouring chime
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(600, t);
+        osc.frequency.linearRampToValueAtTime(1100, t + 0.1);
+        gain.gain.setValueAtTime(0.15, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.18);
+      } else if (name === 'rocket') {
+        // Mini rocket whoosh + blast
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(180, t);
+        osc.frequency.exponentialRampToValueAtTime(650, t + 0.15);
+        gain.gain.setValueAtTime(0.2, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.22);
       }
     } catch (e) {}
   }
@@ -1762,6 +1831,73 @@ function App() {
   const [showPrivateRoomModal, setShowPrivateRoomModal] = useState(false);
   const autoStartBotsRef = useRef(false);
 
+  // Table Prize Tiers ('casual' | 'pro' | 'legend')
+  const [selectedTier, setSelectedTier] = useState('casual');
+  const TABLE_TIERS = [{
+    id: 'casual',
+    name: 'طاولة الحارة الودية',
+    fee: 50,
+    prize: 200,
+    gemsPrize: 0,
+    icon: '☕',
+    desc: 'لعب ودي خفيف ومناسب للمبتدئين بدون مخاطرة'
+  }, {
+    id: 'pro',
+    name: 'طاولة القهوة للحريفة',
+    fee: 500,
+    prize: 2000,
+    gemsPrize: 2,
+    icon: '🏆',
+    desc: 'تحدي قوي بين الحريفة وجائزة 2000 كوينز + جواهر'
+  }, {
+    id: 'legend',
+    name: 'طاولة كبار الكاتش VIP',
+    fee: 2500,
+    prize: 10000,
+    gemsPrize: 10,
+    icon: '👑',
+    desc: 'لأساطير اللعبة وجائزة كبرى 10,000 كوينز + 10 جواهر'
+  }];
+
+  // Daily Lucky Wheel
+  const [showWheelModal, setShowWheelModal] = useState(false);
+  const [isSpinning, setIsSpinning] = useState(false);
+  const [wheelRotation, setWheelRotation] = useState(0);
+  const [wheelReward, setWheelReward] = useState(null);
+  const [hasSpunToday, setHasSpunToday] = useState(false);
+
+  // 7-Day Login Streak
+  const [showStreakModal, setShowStreakModal] = useState(false);
+  const [streakInfo, setStreakInfo] = useState(null);
+  const [streakLoading, setStreakLoading] = useState(false);
+
+  // Table Interactive Throwables
+  const [throwableMenuTarget, setThrowableMenuTarget] = useState(null);
+  const [flyingThrowables, setFlyingThrowables] = useState([]);
+  const [seatSplats, setSeatSplats] = useState({});
+
+  // Friends 2.0 & Real-time Table Invites
+  const [friendsList, setFriendsList] = useState([]);
+  const [friendRequests, setFriendRequests] = useState([]);
+  const [friendInput, setFriendInput] = useState('');
+  const [friendsLoading, setFriendsLoading] = useState(false);
+  const [friendActionMsg, setFriendActionMsg] = useState('');
+  const [pendingTableInvite, setPendingTableInvite] = useState(null);
+
+  // Live Leaderboards
+  const [leaderboardTab, setLeaderboardTab] = useState('wins'); // 'wins' | 'coins' | 'vip'
+  const [leaderboardList, setLeaderboardList] = useState([]);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+  const triggerScreenShake = () => {
+    setScreenShake(true);
+    if (navigator.vibrate) {
+      try {
+        navigator.vibrate([40, 60, 90]);
+      } catch (e) {}
+    }
+    setTimeout(() => setScreenShake(false), 500);
+  };
+
   // Smart 1-Click Matchmaking Queue State
   const [isMatchmaking, setIsMatchmaking] = useState(false);
   const [matchmakingTime, setMatchmakingTime] = useState(0);
@@ -1922,6 +2058,221 @@ function App() {
     return false;
   };
 
+  // Load Streak Info & Check Spin Date on Mount / Login
+  useEffect(() => {
+    if (currentUser?.id) {
+      loadStreak();
+      const today = new Date().toISOString().slice(0, 10);
+      setHasSpunToday(currentUser.last_spin_date === today);
+    }
+  }, [currentUser]);
+
+  // Load Friends & Leaderboards when switching tabs
+  useEffect(() => {
+    if (activeTab === 'friends') {
+      loadFriends();
+    } else if (activeTab === 'leagues') {
+      loadLeaderboard(leaderboardTab);
+    }
+  }, [activeTab, leaderboardTab]);
+  const loadFriends = async () => {
+    if (!currentUser?.id) return;
+    setFriendsLoading(true);
+    try {
+      const res = await fetch(`${getServerBaseUrl()}/api/friends`, {
+        headers: {
+          Authorization: `Bearer ${sessionToken}`
+        }
+      });
+      const data = await res.json();
+      if (data.success) {
+        setFriendsList(data.friends || []);
+        setFriendRequests(data.requests || []);
+      }
+    } catch (e) {
+      console.warn('Friends load error:', e);
+    } finally {
+      setFriendsLoading(false);
+    }
+  };
+  const handleSendFriendRequest = async () => {
+    if (!friendInput.trim()) return;
+    try {
+      const res = await fetch(`${getServerBaseUrl()}/api/friends/request`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${sessionToken}`
+        },
+        body: JSON.stringify({
+          target: friendInput.trim()
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setFriendActionMsg(`✓ ${data.message}`);
+        setFriendInput('');
+        loadFriends();
+      } else {
+        setFriendActionMsg(`⚠️ ${data.error || 'تعذر إرسال الطلب'}`);
+      }
+      setTimeout(() => setFriendActionMsg(''), 4000);
+    } catch (e) {
+      setFriendActionMsg('⚠️ خطأ في الاتصال');
+      setTimeout(() => setFriendActionMsg(''), 4000);
+    }
+  };
+  const handleRespondFriendRequest = async (requesterId, action) => {
+    try {
+      const res = await fetch(`${getServerBaseUrl()}/api/friends/respond`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${sessionToken}`
+        },
+        body: JSON.stringify({
+          requesterId,
+          action
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        loadFriends();
+      }
+    } catch (e) {}
+  };
+  const handleRemoveFriend = async friendId => {
+    try {
+      const res = await fetch(`${getServerBaseUrl()}/api/friends/remove`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${sessionToken}`
+        },
+        body: JSON.stringify({
+          friendId
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        loadFriends();
+      }
+    } catch (e) {}
+  };
+  const handleInviteFriendToRoom = friendId => {
+    if (!roomState?.code) {
+      setErrorMsg('يجب أن تكون داخل غرفة أولاً لدعوة أصدقائك!');
+      setTimeout(() => setErrorMsg(''), 3000);
+      return;
+    }
+    socketRef.current.emit('invite_friend_to_room', {
+      friendId,
+      roomCode: roomState.code,
+      tier: roomState.tier || selectedTier
+    });
+    setFriendActionMsg('✓ تم إرسال الدعوة لصديقك!');
+    setTimeout(() => setFriendActionMsg(''), 3000);
+  };
+  const handleSpinWheel = async () => {
+    if (isSpinning) return;
+    setIsSpinning(true);
+    setWheelReward(null);
+    soundFx.init();
+    const tickInterval = setInterval(() => {
+      soundFx.play('tick');
+    }, 140);
+    try {
+      const res = await fetch(`${getServerBaseUrl()}/api/spin-wheel`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${sessionToken}`
+        }
+      });
+      const data = await res.json();
+      if (!data.success) {
+        clearInterval(tickInterval);
+        setIsSpinning(false);
+        setErrorMsg(data.error || 'تعذر لف العجلة اليوم');
+        setTimeout(() => setErrorMsg(''), 3000);
+        return;
+      }
+      const sliceIdx = data.sliceIndex;
+      const sliceDeg = 45;
+      const targetDeg = 360 * 6 + (360 - (sliceIdx * sliceDeg + sliceDeg / 2));
+      setWheelRotation(prev => prev + targetDeg);
+      setTimeout(() => {
+        clearInterval(tickInterval);
+        setIsSpinning(false);
+        setWheelReward(data.reward);
+        setCoins(data.coins);
+        setGems(data.gems);
+        setHasSpunToday(true);
+        soundFx.play('celebration');
+        triggerScreenShake();
+      }, 4200);
+    } catch (e) {
+      clearInterval(tickInterval);
+      setIsSpinning(false);
+      setErrorMsg('خطأ في الاتصال');
+      setTimeout(() => setErrorMsg(''), 3000);
+    }
+  };
+  const loadStreak = async () => {
+    if (!currentUser?.id) return;
+    try {
+      const res = await fetch(`${getServerBaseUrl()}/api/streak-info`, {
+        headers: {
+          Authorization: `Bearer ${sessionToken}`
+        }
+      });
+      const data = await res.json();
+      if (data.success && data.info) {
+        setStreakInfo(data.info);
+      }
+    } catch (e) {}
+  };
+  const handleClaimStreak = async () => {
+    if (streakLoading) return;
+    setStreakLoading(true);
+    try {
+      const res = await fetch(`${getServerBaseUrl()}/api/claim-streak`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${sessionToken}`
+        }
+      });
+      const data = await res.json();
+      if (data.success) {
+        setCoins(data.coins);
+        setGems(data.gems);
+        soundFx.init();
+        soundFx.play('celebration');
+        triggerScreenShake();
+        loadStreak();
+      } else {
+        setErrorMsg(data.error || 'تعذر استلام المكافأة اليوم');
+        setTimeout(() => setErrorMsg(''), 3000);
+      }
+    } catch (e) {
+      setErrorMsg('خطأ في الاتصال');
+      setTimeout(() => setErrorMsg(''), 3000);
+    } finally {
+      setStreakLoading(false);
+    }
+  };
+  const loadLeaderboard = async (sort = leaderboardTab) => {
+    setLeaderboardLoading(true);
+    try {
+      const res = await fetch(`${getServerBaseUrl()}/api/leaderboard?sort=${sort === 'coins' ? 'coins' : 'wins'}`);
+      const data = await res.json();
+      if (data.success) {
+        setLeaderboardList(data.list || []);
+      }
+    } catch (e) {} finally {
+      setLeaderboardLoading(false);
+    }
+  };
+
   // Instant 1-Click Smart Matchmaking
   const handleStartMatchmaking = () => {
     soundFx.init();
@@ -1940,7 +2291,8 @@ function App() {
         name: finalName,
         avatar,
         userId,
-        sessionToken
+        sessionToken,
+        tier: selectedTier
       });
     };
     if (socketRef.current?.connected) {
@@ -2774,6 +3126,13 @@ function App() {
       showVoiceNotice(lang === 'en' ? 'Match Found! Game Starting... 🚀' : 'تم العثور على طاولة ومنافسين! تبدأ الجولة الآن... 🚀');
     });
     socket.on('room_state', state => {
+      if (state && state.status === 'playing' && roomStateRef.current?.status !== 'playing') {
+        soundFx.init();
+        soundFx.play('deal');
+      }
+      if (state && state.status === 'gameover' && roomStateRef.current?.status !== 'gameover') {
+        triggerScreenShake();
+      }
       setRoomState(state);
       roomStateRef.current = state;
       setHandSorted(false); // Reset hand sort when room changes
@@ -2976,6 +3335,74 @@ function App() {
         ...prev,
         [playerId]: isSpeaking
       }));
+    });
+
+    // Interactive Table Throwables
+    socket.on('item_thrown', ({
+      fromIdx,
+      fromName,
+      targetIdx,
+      targetName,
+      itemType
+    }) => {
+      soundFx.init();
+      if (itemType === 'tea') soundFx.play('sip');else if (itemType === 'tomato') soundFx.play('splat');else if (itemType === 'slipper') soundFx.play('slap');else if (itemType === 'rocket') soundFx.play('rocket');else soundFx.play('celebration');
+      triggerScreenShake();
+      const flyId = Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+      setFlyingThrowables(prev => [...prev, {
+        id: flyId,
+        fromIdx,
+        targetIdx,
+        itemType
+      }]);
+      setTimeout(() => {
+        setFlyingThrowables(prev => prev.filter(f => f.id !== flyId));
+        setSeatSplats(prev => ({
+          ...prev,
+          [targetIdx]: itemType
+        }));
+        setTimeout(() => {
+          setSeatSplats(prev => {
+            const n = {
+              ...prev
+            };
+            delete n[targetIdx];
+            return n;
+          });
+        }, 2200);
+      }, 650);
+    });
+
+    // Real-time Table Invite from Friend
+    socket.on('table_invite_received', ({
+      fromName,
+      fromAvatar,
+      roomCode,
+      tier
+    }) => {
+      soundFx.init();
+      soundFx.play('celebration');
+      setPendingTableInvite({
+        fromName,
+        fromAvatar,
+        roomCode,
+        tier
+      });
+      setTimeout(() => {
+        setPendingTableInvite(prev => prev?.roomCode === roomCode ? null : prev);
+      }, 15000);
+    });
+
+    // Real-time Incoming Friend Request
+    socket.on('friend_request_received', ({
+      fromId,
+      fromUsername,
+      fromAvatar
+    }) => {
+      soundFx.init();
+      soundFx.play('banter');
+      showVoiceNotice(`👋 طلب صداقة جديد من ${fromUsername}!`);
+      loadFriends();
     });
     return () => {
       if (voiceChatRef.current) voiceChatRef.current.stop();
@@ -3482,7 +3909,8 @@ function App() {
       name: finalName,
       avatar,
       userId,
-      sessionToken
+      sessionToken,
+      tier: selectedTier
     });
   };
   const handleJoinRoom = () => {
@@ -3762,35 +4190,101 @@ function App() {
       className: "bg-red-900/60 hover:bg-red-800 text-red-200 px-2 py-1.5 rounded-xl text-xs font-bold",
       title: "إلغاء"
     }, "✕"))), /*#__PURE__*/React.createElement("div", {
-      className: "text-center my-auto py-2 flex flex-col items-center"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "relative mb-3"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "catch-3d-logo text-[72px] sm:text-[88px] leading-none select-none",
-      style: {
-        letterSpacing: '6px'
-      }
-    }, "CATCH")), /*#__PURE__*/React.createElement("div", {
-      className: "w-28 h-0.5 mb-5 bg-gradient-to-r from-transparent via-slate-600 to-transparent rounded-full"
-    })), /*#__PURE__*/React.createElement("div", {
-      className: "w-full space-y-3 pb-2"
+      className: "grid grid-cols-2 gap-2 my-1"
     }, /*#__PURE__*/React.createElement("button", {
-      onClick: handleStartMatchmaking,
-      className: "btn-neon-green w-full py-4 rounded-2xl text-xl font-black flex items-center justify-center gap-3 transition active:scale-95 shadow-xl"
+      onClick: () => {
+        soundFx.init();
+        soundFx.play('snap');
+        setShowWheelModal(true);
+      },
+      className: "bg-gradient-to-r from-amber-600/40 via-yellow-600/30 to-amber-700/40 border border-yellow-400/50 hover:border-yellow-300 rounded-2xl p-2 flex items-center justify-between text-right transition active:scale-95 shadow"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-2"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-2xl animate-spin",
+      style: {
+        animationDuration: '6s'
+      }
+    }, "🎡"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+      className: "text-xs font-black text-yellow-300"
+    }, "عجلة الحظ"), /*#__PURE__*/React.createElement("p", {
+      className: "text-[10px] text-amber-200/80 font-bold"
+    }, hasSpunToday ? 'عد غداً' : 'لفة مجانية ⭐'))), !hasSpunToday && /*#__PURE__*/React.createElement("span", {
+      className: "w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399] animate-ping"
+    })), /*#__PURE__*/React.createElement("button", {
+      onClick: () => {
+        soundFx.init();
+        soundFx.play('snap');
+        setShowStreakModal(true);
+      },
+      className: "bg-gradient-to-r from-purple-900/40 via-indigo-900/30 to-purple-900/40 border border-purple-400/50 hover:border-purple-300 rounded-2xl p-2 flex items-center justify-between text-right transition active:scale-95 shadow"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-2"
     }, /*#__PURE__*/React.createElement("span", {
       className: "text-2xl"
-    }, "⚡"), /*#__PURE__*/React.createElement("span", null, lang === 'en' ? 'Play Now (Quick Match)' : 'العب الآن (بحث فوري)')), /*#__PURE__*/React.createElement("div", {
-      className: "grid grid-cols-2 gap-3"
+    }, "📅"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+      className: "text-xs font-black text-purple-300"
+    }, "مكافأة 7 أيام"), /*#__PURE__*/React.createElement("p", {
+      className: "text-[10px] text-purple-200/80 font-bold"
+    }, "اليوم ", streakInfo?.streak || 1, "/7"))), streakInfo?.canClaimToday && /*#__PURE__*/React.createElement("span", {
+      className: "w-2.5 h-2.5 rounded-full bg-yellow-400 shadow-[0_0_8px_#facc15] animate-ping"
+    }))), /*#__PURE__*/React.createElement("div", {
+      className: "bg-black/50 border border-amber-500/30 rounded-2xl p-2 my-1 space-y-1.5"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center justify-between px-1 text-[11px] font-black text-amber-300"
+    }, /*#__PURE__*/React.createElement("span", null, "🏆 اختر فئة الطاولة وجائزة الفوز:"), /*#__PURE__*/React.createElement("span", {
+      className: "text-[10px] text-amber-200/70 font-bold"
+    }, "4 لاعبين")), /*#__PURE__*/React.createElement("div", {
+      className: "grid grid-cols-3 gap-1.5"
+    }, TABLE_TIERS.map(tier => {
+      const isSelected = selectedTier === tier.id;
+      return /*#__PURE__*/React.createElement("div", {
+        key: tier.id,
+        onClick: () => {
+          soundFx.init();
+          soundFx.play('snap');
+          setSelectedTier(tier.id);
+        },
+        className: `cursor-pointer rounded-xl p-2 text-center border transition flex flex-col items-center justify-between ${isSelected ? 'bg-gradient-to-b from-yellow-500/30 to-amber-600/30 border-yellow-400 shadow-md scale-[1.02]' : 'bg-black/40 border-white/10 hover:border-white/20'}`
+      }, /*#__PURE__*/React.createElement("span", {
+        className: "text-lg"
+      }, tier.icon), /*#__PURE__*/React.createElement("p", {
+        className: `text-[11px] font-black mt-0.5 leading-tight ${isSelected ? 'text-yellow-300' : 'text-white'}`
+      }, tier.id === 'casual' ? 'الحارة' : tier.id === 'pro' ? 'القهوة' : 'كبار الكاتش'), /*#__PURE__*/React.createElement("span", {
+        className: "text-[10px] font-bold text-emerald-400 mt-0.5"
+      }, "فوز ", tier.prize >= 1000 ? `${tier.prize / 1000}k` : tier.prize, " ⭐"), /*#__PURE__*/React.createElement("span", {
+        className: "text-[9px] text-amber-200/60 font-semibold"
+      }, "دخول ", tier.fee, " ⭐"));
+    }))), /*#__PURE__*/React.createElement("div", {
+      className: "text-center my-auto py-1 flex flex-col items-center"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "relative mb-2"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "catch-3d-logo text-[60px] sm:text-[76px] leading-none select-none",
+      style: {
+        letterSpacing: '5px'
+      }
+    }, "CATCH")), /*#__PURE__*/React.createElement("div", {
+      className: "w-24 h-0.5 mb-3 bg-gradient-to-r from-transparent via-slate-600 to-transparent rounded-full"
+    })), /*#__PURE__*/React.createElement("div", {
+      className: "w-full space-y-2.5 pb-2"
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: handleStartMatchmaking,
+      className: "btn-neon-green w-full py-3.5 rounded-2xl text-base sm:text-lg font-black flex items-center justify-center gap-2 transition active:scale-95 shadow-xl"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-xl"
+    }, "⚡"), /*#__PURE__*/React.createElement("span", null, "العب الآن [", selectedTier === 'legend' ? 'كبار الكاتش 👑' : selectedTier === 'pro' ? 'القهوة 🏆' : 'الحارة ☕', "]")), /*#__PURE__*/React.createElement("div", {
+      className: "grid grid-cols-2 gap-2.5"
     }, /*#__PURE__*/React.createElement("button", {
       onClick: () => setShowPrivateRoomModal(true),
-      className: "btn-neon-purple py-3 rounded-2xl text-sm font-black flex items-center justify-center gap-1.5 transition active:scale-95"
+      className: "btn-neon-purple py-3 rounded-2xl text-xs sm:text-sm font-black flex items-center justify-center gap-1.5 transition active:scale-95"
     }, /*#__PURE__*/React.createElement("span", null, "🔒"), /*#__PURE__*/React.createElement("span", null, t('privateTable'))), /*#__PURE__*/React.createElement("button", {
       onClick: handleStartBotTraining,
-      className: "btn-neon-blue py-3 rounded-2xl text-sm font-black flex items-center justify-center gap-1.5 transition active:scale-95"
+      className: "btn-neon-blue py-3 rounded-2xl text-xs sm:text-sm font-black flex items-center justify-center gap-1.5 transition active:scale-95"
     }, /*#__PURE__*/React.createElement("span", null, "🤖"), /*#__PURE__*/React.createElement("span", null, t('training')))), !window.Capacitor?.isNativePlatform?.() && /*#__PURE__*/React.createElement("a", {
       href: "/catch.apk",
       download: "CATCH.apk",
-      className: "w-full py-2.5 px-4 rounded-xl text-xs font-bold text-amber-300/90 hover:text-amber-200 bg-white/5 hover:bg-white/10 border border-amber-400/20 flex items-center justify-center gap-2 transition active:scale-95 shadow-sm"
+      className: "w-full py-2 px-3 rounded-xl text-xs font-bold text-amber-300/90 hover:text-amber-200 bg-white/5 hover:bg-white/10 border border-amber-400/20 flex items-center justify-center gap-2 transition active:scale-95 shadow-sm"
     }, /*#__PURE__*/React.createElement("span", null, "📲"), /*#__PURE__*/React.createElement("span", null, lang === 'en' ? 'Download Android App (APK)' : 'تحميل تطبيق الأندرويد (APK مباشر)')))), activeTab === 'shop' && /*#__PURE__*/React.createElement("div", {
       className: "flex-1 flex flex-col bg-black/60 rounded-3xl p-3 border border-amber-400/30 overflow-hidden"
     }, /*#__PURE__*/React.createElement("h3", {
@@ -3957,41 +4451,61 @@ function App() {
         className: "text-xs font-black text-cyan-300 bg-cyan-950/60 border border-cyan-400 px-3 py-1 rounded-xl"
       }, "شراء ", cb.cost, " 💎")));
     })))), activeTab === 'leagues' && /*#__PURE__*/React.createElement("div", {
-      className: "flex-1 flex flex-col bg-black/60 rounded-3xl p-3 border border-amber-400/30 overflow-hidden"
+      className: "flex-1 flex flex-col bg-black/60 rounded-3xl p-3 border border-amber-400/30 overflow-hidden text-right"
     }, /*#__PURE__*/React.createElement("h3", {
       className: "text-base font-black text-yellow-300 text-center pb-1"
-    }, "🏆 دوري المستويات الملكية"), /*#__PURE__*/React.createElement("p", {
-      className: "text-[11px] text-amber-200/70 text-center pb-2 border-b border-amber-500/20"
-    }, "احنا هنا بنعمل إيه؟ سلم الصعود للقمة!"), /*#__PURE__*/React.createElement("div", {
-      className: "flex-1 overflow-y-auto space-y-2 py-1 pr-1"
+    }, "🏆 لوحة الشرف والدوريات الملكية"), /*#__PURE__*/React.createElement("div", {
+      className: "flex gap-1 my-2 bg-black/40 p-1 rounded-2xl border border-white/10 shrink-0"
     }, [{
+      id: 'wins',
+      label: 'أبطال الانتصارات 🥇'
+    }, {
+      id: 'coins',
+      label: 'أثرياء الكوينز ⭐'
+    }, {
+      id: 'vip',
+      label: 'مستويات VIP 👑'
+    }].map(st => /*#__PURE__*/React.createElement("button", {
+      key: st.id,
+      onClick: () => {
+        soundFx.init();
+        soundFx.play('snap');
+        setLeaderboardTab(st.id);
+        if (st.id !== 'vip') loadLeaderboard(st.id);
+      },
+      className: `flex-1 py-1.5 rounded-xl text-xs font-black transition ${leaderboardTab === st.id ? 'bg-amber-500 text-black shadow' : 'text-white/70 hover:text-white'}`
+    }, st.label))), /*#__PURE__*/React.createElement("div", {
+      className: "flex-1 overflow-y-auto space-y-2 py-1 pr-1"
+    }, leaderboardTab === 'vip' ?
+    // Royal VIP tiers overview
+    [{
       tier: '🥉 لاعب هاوي',
       req: '0 فوز',
-      prize: 'دخول 100 عملة',
-      perk: 'طاولات المبتدئين الودية',
+      prize: 'طاولة الحارة الودية',
+      perk: 'لعب خفيف ومبتدئ بدون مخاطرة',
       active: vipRank.badge.includes('برونزي')
     }, {
       tier: '🥈 صائد فضي',
       req: '3 انتصارات',
-      prize: 'فوز +500 عملة',
+      prize: 'طاولة القهوة للحريفة',
       perk: 'أولوية التحديات والريماتش',
       active: vipRank.badge.includes('فضي')
     }, {
       tier: '🥇 كابتن ذهبي',
       req: '6 انتصارات',
-      prize: 'فوز +1500 عملة + 10 💎',
+      prize: 'جائزة فوز 2000 عملة',
       perk: 'مضاعفة نقاط الكروت الخاصة',
       active: vipRank.badge.includes('ذهبي')
     }, {
       tier: '💎 دايموند VIP',
       req: '12 انتصاراً',
-      prize: 'فوز +3000 عملة + 25 💎',
+      prize: 'طاولة كبار الكاتش',
       perk: 'خلفية ذهبية حصرية للطاولة',
       active: vipRank.badge.includes('دايموند')
     }, {
       tier: '👑 أسطورة كاتش الكبرى',
       req: '25 انتصاراً',
-      prize: 'فوز +10,000 عملة + 100 💎',
+      prize: 'جائزة 10,000 عملة + 10 💎',
       perk: 'لقب أسطورة دائم وتاج مذهب',
       active: vipRank.badge.includes('أسطورة')
     }].map((l, i) => /*#__PURE__*/React.createElement("div", {
@@ -4005,46 +4519,169 @@ function App() {
       className: "text-[10px] text-amber-200 font-bold bg-black/40 px-2 py-0.5 rounded-full border border-white/10"
     }, l.req)), /*#__PURE__*/React.createElement("div", {
       className: "flex items-center justify-between text-[11px] text-white/90"
-    }, /*#__PURE__*/React.createElement("span", null, "الجائزة: ", /*#__PURE__*/React.createElement("b", {
+    }, /*#__PURE__*/React.createElement("span", null, "المستوى: ", /*#__PURE__*/React.createElement("b", {
       className: "text-emerald-400"
     }, l.prize)), l.active && /*#__PURE__*/React.createElement("span", {
       className: "text-[10px] font-black bg-yellow-400 text-black px-2 py-0.5 rounded-full"
     }, "مستواك الحالي 👑")), /*#__PURE__*/React.createElement("p", {
       className: "text-[10px] text-amber-200/60 mt-1 font-semibold"
-    }, "الميزة: ", l.perk))))), activeTab === 'friends' && /*#__PURE__*/React.createElement("div", {
-      className: "flex-1 flex flex-col bg-black/60 rounded-3xl p-3 border border-amber-400/30 overflow-hidden text-center"
-    }, /*#__PURE__*/React.createElement("h3", {
-      className: "text-base font-black text-yellow-300 pb-1"
-    }, "👥 أصدقاء الطاولة والمشاركة"), /*#__PURE__*/React.createElement("p", {
-      className: "text-[11px] text-amber-200/70 pb-2 border-b border-amber-500/20"
-    }, "ادعُ شلتك والعبوا أونلاين بصوتكم في ثواني!"), /*#__PURE__*/React.createElement("div", {
-      className: "flex-1 overflow-y-auto space-y-3 py-2"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "bg-emerald-950/40 border border-emerald-500/40 rounded-2xl p-3 text-right"
+    }, "الميزة: ", l.perk))) :
+    // Live Leaderboard List
+    leaderboardLoading ? /*#__PURE__*/React.createElement("div", {
+      className: "text-center py-8 text-amber-200/70 text-xs"
     }, /*#__PURE__*/React.createElement("span", {
-      className: "text-xl block mb-1"
-    }, "💬"), /*#__PURE__*/React.createElement("h4", {
-      className: "text-xs font-black text-emerald-300"
-    }, lang === 'en' ? 'Quick Invite via Apps' : 'دعوة سريعة عبر واتساب والتطبيقات'), /*#__PURE__*/React.createElement("p", {
-      className: "text-[11px] text-amber-100/80 mt-1 leading-relaxed"
-    }, lang === 'en' ? 'Share link directly with friends to join your table instantly.' : 'شارك الرابط مع أصحابك ليدخلوا فوراً على نفس الطاولة بدون أي تعقيد.'), /*#__PURE__*/React.createElement("button", {
-      onClick: () => handleShareInvite(''),
-      className: "btn-emerald w-full py-2.5 rounded-xl text-xs font-black mt-2 flex items-center justify-center gap-1.5 shadow"
-    }, /*#__PURE__*/React.createElement("span", null, "💬"), /*#__PURE__*/React.createElement("span", null, t('shareViaApps')))), /*#__PURE__*/React.createElement("div", {
-      className: "bg-black/50 border border-white/10 rounded-2xl p-3 text-right"
-    }, /*#__PURE__*/React.createElement("h4", {
-      className: "text-xs font-black text-amber-300"
-    }, "📋 ", t('copyLink')), /*#__PURE__*/React.createElement("button", {
+      className: "text-2xl block animate-spin mb-2"
+    }, "⏳"), "جاري تحديث لوحة الشرف...") : leaderboardList.length === 0 ? /*#__PURE__*/React.createElement("div", {
+      className: "text-center py-8 text-amber-200/60 text-xs"
+    }, "لا يوجد لاعبين في القائمة حالياً. العب الآن وتصدر القمة!") : leaderboardList.map(player => {
+      const isMe = player.id === currentUser?.id;
+      return /*#__PURE__*/React.createElement("div", {
+        key: player.id,
+        className: `p-2.5 rounded-2xl border flex items-center justify-between transition ${player.rank === 1 ? 'bg-gradient-to-r from-yellow-500/35 via-amber-600/30 to-yellow-500/35 border-yellow-400 shadow-lg' : player.rank === 2 ? 'bg-gradient-to-r from-slate-400/25 to-slate-600/25 border-slate-300' : player.rank === 3 ? 'bg-gradient-to-r from-amber-700/25 to-yellow-800/25 border-amber-600' : isMe ? 'bg-purple-950/40 border-purple-400' : 'bg-black/50 border-white/10'}`
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "flex items-center gap-2 text-right"
+      }, /*#__PURE__*/React.createElement("span", {
+        className: "w-6 text-center text-sm font-black"
+      }, player.rank === 1 ? '🥇' : player.rank === 2 ? '🥈' : player.rank === 3 ? '🥉' : `#${player.rank}`), /*#__PURE__*/React.createElement("div", {
+        className: "w-9 h-9 rounded-full bg-slate-800 border border-white/20 flex items-center justify-center text-lg"
+      }, player.avatar), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+        className: "text-xs font-black text-white flex items-center gap-1"
+      }, /*#__PURE__*/React.createElement("span", null, player.username), isMe && /*#__PURE__*/React.createElement("span", {
+        className: "text-[9px] bg-yellow-400 text-black px-1.5 py-0.2 rounded-full font-black"
+      }, "أنت")), /*#__PURE__*/React.createElement("span", {
+        className: "text-[10px] text-amber-200/70 font-semibold"
+      }, player.vip_rank))), /*#__PURE__*/React.createElement("div", {
+        className: "text-left"
+      }, /*#__PURE__*/React.createElement("span", {
+        className: "text-xs font-black text-yellow-300 block"
+      }, leaderboardTab === 'coins' ? `${player.coins.toLocaleString()} ⭐` : `${player.games_won} فوز 🏆`), /*#__PURE__*/React.createElement("span", {
+        className: "text-[9px] text-white/50"
+      }, player.games_played, " جولة لعب")));
+    }))), activeTab === 'friends' && /*#__PURE__*/React.createElement("div", {
+      className: "flex-1 flex flex-col bg-black/60 rounded-3xl p-3 border border-amber-400/30 overflow-hidden text-right"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "text-center pb-2 border-b border-amber-500/20"
+    }, /*#__PURE__*/React.createElement("h3", {
+      className: "text-base font-black text-yellow-300"
+    }, "👥 أصدقاء الطاولة والمنافسة"), /*#__PURE__*/React.createElement("p", {
+      className: "text-[11px] text-amber-200/70"
+    }, "أضف أصحابك برقم الحساب، وشوفهم متصلين، وادعهم لطاولتك في ثانية!")), /*#__PURE__*/React.createElement("div", {
+      className: "bg-gradient-to-r from-indigo-950/70 via-purple-950/70 to-indigo-950/70 border border-purple-400/50 rounded-2xl p-2.5 my-2 flex items-center justify-between shadow"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-2"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "w-10 h-10 rounded-full bg-purple-900 border border-purple-300 flex items-center justify-center text-xl"
+    }, avatar), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+      className: "text-[10px] text-purple-200 block font-bold"
+    }, "كود حسابك للمشاركة مع الأصدقاء:"), /*#__PURE__*/React.createElement("span", {
+      className: "text-xs font-black text-yellow-300 tracking-wider"
+    }, "#CATCH-", currentUser?.id || userId))), /*#__PURE__*/React.createElement("button", {
       onClick: async () => {
-        const shareUrl = `${getServerBaseUrl()}/`;
+        const tag = `#CATCH-${currentUser?.id || userId}`;
         try {
-          await navigator.clipboard.writeText(shareUrl);
-          setErrorMsg(t('linkCopied'));
+          await navigator.clipboard.writeText(tag);
         } catch (e) {}
-        setTimeout(() => setErrorMsg(''), 2500);
+        setFriendActionMsg('✓ تم نسخ كود حسابك بنجاح!');
+        setTimeout(() => setFriendActionMsg(''), 3000);
       },
-      className: "btn-gold w-full py-2.5 rounded-xl text-xs font-black mt-2"
-    }, t('copyLink')))))), /*#__PURE__*/React.createElement("nav", {
+      className: "btn-gold px-3 py-1.5 rounded-xl text-xs font-black shadow"
+    }, "نسخ 📋")), /*#__PURE__*/React.createElement("div", {
+      className: "bg-black/50 border border-white/10 rounded-2xl p-2.5 mb-2"
+    }, /*#__PURE__*/React.createElement("label", {
+      className: "text-[11px] font-black text-amber-300 block mb-1"
+    }, "➕ إضافة صديق جديد (بالـ ID أو اسم المستخدم):"), /*#__PURE__*/React.createElement("div", {
+      className: "flex gap-1.5"
+    }, /*#__PURE__*/React.createElement("input", {
+      type: "text",
+      value: friendInput,
+      onChange: e => setFriendInput(e.target.value),
+      placeholder: "مثال: #CATCH-5 أو اسم المستخدم",
+      className: "flex-1 bg-black/60 border border-white/20 rounded-xl px-2.5 py-1.5 text-xs text-white placeholder-white/30 focus:outline-none focus:border-amber-400"
+    }), /*#__PURE__*/React.createElement("button", {
+      onClick: handleSendFriendRequest,
+      className: "btn-emerald px-3 py-1.5 rounded-xl text-xs font-black shrink-0 shadow"
+    }, "إرسال طلب 🚀")), friendActionMsg && /*#__PURE__*/React.createElement("p", {
+      className: "text-[11px] font-bold mt-1 text-yellow-300"
+    }, friendActionMsg)), /*#__PURE__*/React.createElement("div", {
+      className: "flex-1 overflow-y-auto space-y-2.5 py-1 pr-1"
+    }, friendRequests.length > 0 && /*#__PURE__*/React.createElement("div", {
+      className: "bg-amber-950/40 border border-yellow-500/40 rounded-2xl p-2.5 space-y-2"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-[11px] font-black text-yellow-300 block"
+    }, "📬 طلبات صداقة واردة في انتظار ردك:"), friendRequests.map(req => /*#__PURE__*/React.createElement("div", {
+      key: req.id,
+      className: "flex items-center justify-between bg-black/60 p-2 rounded-xl border border-white/10"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-2"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-xl"
+    }, req.avatar), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+      className: "text-xs font-black text-white"
+    }, req.username), /*#__PURE__*/React.createElement("span", {
+      className: "text-[9px] text-amber-200/70"
+    }, req.vip_rank))), /*#__PURE__*/React.createElement("div", {
+      className: "flex gap-1"
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: () => handleRespondFriendRequest(req.id, 'accept'),
+      className: "bg-emerald-600 hover:bg-emerald-500 text-white px-2 py-1 rounded-lg text-xs font-black"
+    }, "قبول ✓"), /*#__PURE__*/React.createElement("button", {
+      onClick: () => handleRespondFriendRequest(req.id, 'reject'),
+      className: "bg-red-900/60 hover:bg-red-800 text-red-200 px-2 py-1 rounded-lg text-xs font-black"
+    }, "رفض ✕"))))), /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center justify-between px-1"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-xs font-black text-amber-300"
+    }, "قائمة الأصدقاء (", friendsList.length, "):"), friendsLoading && /*#__PURE__*/React.createElement("span", {
+      className: "text-[10px] text-white/50 animate-pulse"
+    }, "جاري التحديث...")), friendsList.length === 0 ? /*#__PURE__*/React.createElement("div", {
+      className: "bg-black/40 border border-white/10 rounded-2xl p-5 text-center text-xs text-amber-200/60 space-y-1"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-3xl block mb-1"
+    }, "🤝"), /*#__PURE__*/React.createElement("p", {
+      className: "font-bold text-white"
+    }, "ليس لديك أصدقاء بعد"), /*#__PURE__*/React.createElement("p", {
+      className: "text-[10px]"
+    }, "شارك كود حسابك أو ابحث عن أصدقائك وادعهم للعب سوياً!")) : friendsList.map(friend => /*#__PURE__*/React.createElement("div", {
+      key: friend.id,
+      className: "bg-black/50 border border-white/10 rounded-2xl p-2.5 flex items-center justify-between shadow-sm"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-2"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "relative"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "w-10 h-10 rounded-full bg-slate-800 border border-white/20 flex items-center justify-center text-xl"
+    }, friend.avatar), /*#__PURE__*/React.createElement("span", {
+      className: `absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-black ${friend.isOnline ? 'bg-emerald-400 shadow-[0_0_8px_#34d399]' : 'bg-slate-500'}`,
+      title: friend.isOnline ? 'متصل الآن' : 'غير متصل'
+    })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+      className: "text-xs font-black text-white flex items-center gap-1.5"
+    }, /*#__PURE__*/React.createElement("span", null, friend.username), /*#__PURE__*/React.createElement("span", {
+      className: `text-[9px] px-1.5 py-0.2 rounded-full font-bold ${friend.isOnline ? 'bg-emerald-950 text-emerald-300 border border-emerald-500/40' : 'bg-slate-800 text-slate-400'}`
+    }, friend.isOnline ? 'أونلاين 🟢' : 'أوفلاين ⚪')), /*#__PURE__*/React.createElement("span", {
+      className: "text-[10px] text-amber-200/70 font-semibold"
+    }, friend.vip_rank, " • ", friend.games_won, " فوز"))), /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-1"
+    }, friend.isOnline && /*#__PURE__*/React.createElement("button", {
+      onClick: () => handleInviteFriendToRoom(friend.id),
+      className: "btn-gold px-2.5 py-1.5 rounded-xl text-xs font-black shadow flex items-center gap-1"
+    }, /*#__PURE__*/React.createElement("span", null, "🚀"), /*#__PURE__*/React.createElement("span", null, "دعوة")), /*#__PURE__*/React.createElement("button", {
+      onClick: () => handleRemoveFriend(friend.id),
+      className: "bg-black/60 hover:bg-red-950/60 text-white/50 hover:text-red-400 p-1.5 rounded-xl border border-white/10 transition",
+      title: "حذف من الأصدقاء"
+    }, "🗑️")))), /*#__PURE__*/React.createElement("div", {
+      className: "bg-emerald-950/30 border border-emerald-500/30 rounded-2xl p-2.5 mt-2 flex items-center justify-between"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-2"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-2xl"
+    }, "💬"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+      className: "text-xs font-black text-emerald-300"
+    }, "مشاركة الرابط المباشر"), /*#__PURE__*/React.createElement("p", {
+      className: "text-[10px] text-amber-100/70"
+    }, "ادعُ شلتك عبر واتساب وتيليجرام"))), /*#__PURE__*/React.createElement("button", {
+      onClick: () => handleShareInvite(''),
+      className: "btn-emerald px-3 py-1.5 rounded-xl text-xs font-black shadow"
+    }, "مشاركة 💬"))))), /*#__PURE__*/React.createElement("nav", {
       className: "w-full shrink-0 bg-[#160424] border-t-2 border-amber-500/40 shadow-2xl flex items-center justify-around px-1 py-1 z-30 relative",
       style: {
         paddingBottom: 'max(6px, env(safe-area-inset-bottom))'
@@ -4104,7 +4741,212 @@ function App() {
       className: "text-lg leading-none"
     }, "🏆"), /*#__PURE__*/React.createElement("span", {
       className: "text-[10px] mt-0.5"
-    }, t('leagues')))), showPlayModal && /*#__PURE__*/React.createElement("div", {
+    }, t('leagues')))), pendingTableInvite && /*#__PURE__*/React.createElement("div", {
+      className: "fixed top-3 inset-x-3 sm:max-w-md sm:mx-auto z-[9999] bg-gradient-to-r from-yellow-500 via-amber-400 to-yellow-500 text-black border-2 border-white rounded-3xl p-3 shadow-2xl flex items-center justify-between animate-bounce"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-2 text-right"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-3xl"
+    }, pendingTableInvite.fromAvatar || '👑'), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+      className: "text-xs font-black"
+    }, pendingTableInvite.fromName, " يدعوك للانضمام!"), /*#__PURE__*/React.createElement("p", {
+      className: "text-[10px] font-bold text-amber-950"
+    }, "طاولة #", pendingTableInvite.roomCode, " [", pendingTableInvite.tier === 'legend' ? 'كبار الكاتش' : pendingTableInvite.tier === 'pro' ? 'القهوة' : 'الحارة', "]"))), /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-1.5"
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: () => {
+        soundFx.init();
+        soundFx.play('snap');
+        const code = pendingTableInvite.roomCode;
+        setPendingTableInvite(null);
+        if (!ensureConnected()) return;
+        const finalName = playerName.trim() || 'لاعب VIP';
+        socketRef.current.emit('join_room', {
+          code,
+          name: finalName,
+          avatar,
+          userId,
+          sessionToken
+        });
+      },
+      className: "bg-black hover:bg-slate-900 text-yellow-300 font-black px-3 py-1.5 rounded-xl text-xs shadow"
+    }, "انضمام 🚀"), /*#__PURE__*/React.createElement("button", {
+      onClick: () => setPendingTableInvite(null),
+      className: "text-black/60 hover:text-black font-black text-sm px-1.5"
+    }, "✕"))), showWheelModal && /*#__PURE__*/React.createElement("div", {
+      className: "fixed inset-0 z-[360] bg-black/85 backdrop-blur-md flex items-center justify-center p-4"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "bg-gradient-to-b from-[#1b0a2a] via-[#12041d] to-[#0a0210] border-2 border-amber-400 rounded-3xl p-5 w-full max-w-sm shadow-2xl text-center space-y-3"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center justify-between pb-2 border-b border-amber-500/30"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-1.5 text-base font-black text-yellow-300"
+    }, /*#__PURE__*/React.createElement("span", null, "🎡"), /*#__PURE__*/React.createElement("span", null, "عجلة الحظ اليومية")), /*#__PURE__*/React.createElement("button", {
+      onClick: () => {
+        if (!isSpinning) setShowWheelModal(false);
+      },
+      className: "text-white/70 hover:text-white text-xl"
+    }, "✕")), /*#__PURE__*/React.createElement("p", {
+      className: "text-[11px] text-amber-200/80"
+    }, "لف العجلة كل 24 ساعة واكسب عملات وجواهر مجانية!"), /*#__PURE__*/React.createElement("div", {
+      className: "relative w-64 h-64 mx-auto my-1 flex items-center justify-center"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "absolute -top-1 left-1/2 -translate-x-1/2 z-30 drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)] pointer-events-none"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-t-[22px] border-t-yellow-400"
+    })), /*#__PURE__*/React.createElement("div", {
+      className: "w-full h-full rounded-full border-4 border-yellow-400 shadow-[0_0_35px_rgba(250,204,21,0.5)] overflow-hidden",
+      style: {
+        transform: `rotate(${wheelRotation}deg)`,
+        transition: isSpinning ? 'transform 4s cubic-bezier(0.12, 0.8, 0.2, 1)' : 'none'
+      }
+    }, /*#__PURE__*/React.createElement("svg", {
+      viewBox: "0 0 300 300",
+      className: "w-full h-full"
+    }, [{
+      label: '100 ⭐',
+      bg: '#d97706'
+    }, {
+      label: '300 ⭐',
+      bg: '#059669'
+    }, {
+      label: '5 💎',
+      bg: '#0284c7'
+    }, {
+      label: '500 ⭐',
+      bg: '#7c3aed'
+    }, {
+      label: '15 💎',
+      bg: '#db2777'
+    }, {
+      label: '1000 ⭐',
+      bg: '#ea580c'
+    }, {
+      label: '50 ⭐',
+      bg: '#475569'
+    }, {
+      label: '2500 👑',
+      bg: '#eab308'
+    }].map((s, i) => {
+      const a1 = (i * 45 - 90) * Math.PI / 180;
+      const a2 = ((i + 1) * 45 - 90) * Math.PI / 180;
+      const x1 = 150 + 150 * Math.cos(a1);
+      const y1 = 150 + 150 * Math.sin(a1);
+      const x2 = 150 + 150 * Math.cos(a2);
+      const y2 = 150 + 150 * Math.sin(a2);
+      const amid = (i * 45 + 22.5 - 90) * Math.PI / 180;
+      const tx = 150 + 95 * Math.cos(amid);
+      const ty = 150 + 95 * Math.sin(amid);
+      const rot = i * 45 + 22.5;
+      return /*#__PURE__*/React.createElement("g", {
+        key: i
+      }, /*#__PURE__*/React.createElement("path", {
+        d: `M 150 150 L ${x1} ${y1} A 150 150 0 0 1 ${x2} ${y2} Z`,
+        fill: s.bg,
+        stroke: "#1b0a2a",
+        strokeWidth: "2"
+      }), /*#__PURE__*/React.createElement("text", {
+        x: tx,
+        y: ty,
+        fill: "#ffffff",
+        fontSize: "13",
+        fontWeight: "900",
+        textAnchor: "middle",
+        dominantBaseline: "middle",
+        transform: `rotate(${rot}, ${tx}, ${ty})`
+      }, s.label));
+    }), /*#__PURE__*/React.createElement("circle", {
+      cx: "150",
+      cy: "150",
+      r: "30",
+      fill: "#facc15",
+      stroke: "#78350f",
+      strokeWidth: "3"
+    }), /*#__PURE__*/React.createElement("text", {
+      x: "150",
+      y: "152",
+      fill: "#000000",
+      fontSize: "10",
+      fontWeight: "900",
+      textAnchor: "middle",
+      dominantBaseline: "middle"
+    }, "CATCH")))), wheelReward && /*#__PURE__*/React.createElement("div", {
+      className: "bg-gradient-to-r from-amber-500 via-yellow-300 to-amber-500 text-black p-2.5 rounded-2xl font-black text-xs shadow-lg animate-bounce"
+    }, "🎉 مبروك! كسبت ", wheelReward.label || wheelReward.amount, " بنجاح!"), /*#__PURE__*/React.createElement("button", {
+      onClick: handleSpinWheel,
+      disabled: isSpinning || hasSpunToday,
+      className: `w-full py-3 rounded-2xl text-base font-black shadow-lg transition active:scale-95 ${hasSpunToday ? 'bg-slate-800 text-slate-400 border border-slate-700 cursor-not-allowed' : isSpinning ? 'bg-amber-600 text-yellow-200 border border-yellow-400 animate-pulse' : 'btn-gold shadow-[0_0_20px_rgba(250,204,21,0.6)] animate-pulse'}`
+    }, isSpinning ? 'جاري اللف... 🎡' : hasSpunToday ? 'عد غداً للحصول على لفة جديدة ✓' : 'لف العجلة الآن مجاناً 🚀'))), showStreakModal && /*#__PURE__*/React.createElement("div", {
+      className: "fixed inset-0 z-[360] bg-black/85 backdrop-blur-md flex items-center justify-center p-4"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "bg-gradient-to-b from-[#1b0a2a] via-[#12041d] to-[#0a0210] border-2 border-amber-400 rounded-3xl p-5 w-full max-w-sm shadow-2xl text-center space-y-3"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center justify-between pb-2 border-b border-amber-500/30"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-1.5 text-base font-black text-yellow-300"
+    }, /*#__PURE__*/React.createElement("span", null, "📅"), /*#__PURE__*/React.createElement("span", null, "سلسلة تسجيل الدخول اليومي")), /*#__PURE__*/React.createElement("button", {
+      onClick: () => setShowStreakModal(false),
+      className: "text-white/70 hover:text-white text-xl"
+    }, "✕")), /*#__PURE__*/React.createElement("p", {
+      className: "text-[11px] text-amber-200/80"
+    }, "سجل دخولك كل يوم لتحصل على مكافآت متزايدة وجواهر كبرى في اليوم السابع!"), /*#__PURE__*/React.createElement("div", {
+      className: "grid grid-cols-4 gap-2 my-2"
+    }, [{
+      day: 1,
+      text: '150 عملة',
+      icon: '⭐'
+    }, {
+      day: 2,
+      text: '300 عملة',
+      icon: '⭐'
+    }, {
+      day: 3,
+      text: '5 جواهر',
+      icon: '💎'
+    }, {
+      day: 4,
+      text: '750 عملة',
+      icon: '⭐'
+    }, {
+      day: 5,
+      text: '1,500 عملة',
+      icon: '⭐'
+    }, {
+      day: 6,
+      text: '15 جوهرة',
+      icon: '💎'
+    }, {
+      day: 7,
+      text: '3,000 + 25 💎',
+      icon: '👑',
+      colSpan: true
+    }].map(item => {
+      const currentStreak = streakInfo?.streak || 1;
+      const isPast = item.day < currentStreak || item.day === currentStreak && !streakInfo?.canClaimToday;
+      const isCurrent = item.day === currentStreak && streakInfo?.canClaimToday;
+      return /*#__PURE__*/React.createElement("div", {
+        key: item.day,
+        className: `p-2 rounded-2xl border text-center flex flex-col items-center justify-between transition ${item.colSpan ? 'col-span-2 bg-gradient-to-r from-yellow-500/30 via-amber-600/30 to-yellow-500/30 border-yellow-400' : isCurrent ? 'bg-yellow-500/25 border-yellow-400 shadow-lg scale-105 animate-pulse' : isPast ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300' : 'bg-black/50 border-white/10 opacity-70'}`
+      }, /*#__PURE__*/React.createElement("span", {
+        className: "text-[10px] font-black text-amber-200"
+      }, "يوم ", item.day), /*#__PURE__*/React.createElement("span", {
+        className: "text-xl my-1"
+      }, item.icon), /*#__PURE__*/React.createElement("span", {
+        className: "text-[10px] font-black text-white"
+      }, item.text), /*#__PURE__*/React.createElement("div", {
+        className: "mt-1"
+      }, isPast ? /*#__PURE__*/React.createElement("span", {
+        className: "text-[9px] font-black text-emerald-400 bg-emerald-950 px-1.5 py-0.2 rounded-md"
+      }, "تم ✓") : isCurrent ? /*#__PURE__*/React.createElement("span", {
+        className: "text-[9px] font-black text-yellow-300 bg-black/60 px-1.5 py-0.2 rounded-md"
+      }, "متاح 🎁") : /*#__PURE__*/React.createElement("span", {
+        className: "text-[9px] text-white/40"
+      }, "🔒")));
+    })), /*#__PURE__*/React.createElement("button", {
+      onClick: handleClaimStreak,
+      disabled: streakLoading || !streakInfo?.canClaimToday,
+      className: `w-full py-3 rounded-2xl text-sm font-black shadow-lg transition active:scale-95 ${streakInfo?.canClaimToday ? 'btn-gold animate-pulse' : 'bg-slate-800 text-slate-400 border border-slate-700 cursor-not-allowed'}`
+    }, streakLoading ? 'جاري الاستلام...' : streakInfo?.canClaimToday ? 'استلام مكافأة اليوم 🎁' : 'تم استلام مكافأة اليوم بنجاح ✓ عد غداً'))), showPlayModal && /*#__PURE__*/React.createElement("div", {
       className: "fixed inset-0 z-[350] bg-black/85 backdrop-blur-md flex items-center justify-center p-4"
     }, /*#__PURE__*/React.createElement("div", {
       className: "bg-gradient-to-b from-[#1b0a2a] to-[#0d0315] border-2 border-amber-400 rounded-3xl p-5 w-full max-w-sm shadow-2xl text-center space-y-3.5"
@@ -4694,7 +5536,15 @@ function App() {
       strokeDasharray: circumference,
       strokeDashoffset: circumference * (1 - timerPct)
     })), /*#__PURE__*/React.createElement("div", {
-      className: `w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-xl sm:text-2xl neon-avatar-ring transition ${isTurn ? 'is-turn' : ''} ${speakingPlayers[p.id] ? 'speaking-pulse ring-4 ring-emerald-400' : ''}`
+      onClick: e => {
+        if (!isTargetable) {
+          e.stopPropagation();
+          soundFx.init();
+          soundFx.play('snap');
+          setThrowableMenuTarget(throwableMenuTarget === pRealIdx ? null : pRealIdx);
+        }
+      },
+      className: `w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-xl sm:text-2xl neon-avatar-ring transition cursor-pointer ${isTurn ? 'is-turn' : ''} ${speakingPlayers[p.id] ? 'speaking-pulse ring-4 ring-emerald-400' : ''}`
     }, p.avatar, speakingPlayers[p.id] && /*#__PURE__*/React.createElement("span", {
       className: "absolute -top-1.5 text-[8px] font-black px-1 rounded-full bg-emerald-500 text-white shadow-sm z-30"
     }, "🎙️"), !p.connected && /*#__PURE__*/React.createElement("span", {
@@ -4703,7 +5553,47 @@ function App() {
       className: "absolute -top-1 -right-1 text-xs drop-shadow"
     }, "🛡️"), p.skipNext && /*#__PURE__*/React.createElement("span", {
       className: "absolute -top-1 -left-1 text-xs drop-shadow"
-    }, "🙈")), isTargetable && /*#__PURE__*/React.createElement("span", {
+    }, "🙈"), seatSplats[pRealIdx] && /*#__PURE__*/React.createElement("div", {
+      className: "splat-impact absolute inset-0 flex items-center justify-center text-2xl drop-shadow-xl pointer-events-none z-40"
+    }, seatSplats[pRealIdx] === 'tomato' ? '🍅' : seatSplats[pRealIdx] === 'tea' ? '☕' : seatSplats[pRealIdx] === 'slipper' ? '🩴' : seatSplats[pRealIdx] === 'rocket' ? '🚀' : '🌹')), throwableMenuTarget === pRealIdx && /*#__PURE__*/React.createElement("div", {
+      className: "absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-900/95 border-2 border-amber-400 rounded-full px-2 py-1 flex items-center gap-1.5 shadow-2xl z-50 animate-bounce",
+      onClick: e => e.stopPropagation()
+    }, [{
+      type: 'tea',
+      icon: '☕',
+      name: 'شاي'
+    }, {
+      type: 'tomato',
+      icon: '🍅',
+      name: 'طماطم'
+    }, {
+      type: 'slipper',
+      icon: '🩴',
+      name: 'شبشب'
+    }, {
+      type: 'rocket',
+      icon: '🚀',
+      name: 'صاروخ'
+    }, {
+      type: 'rose',
+      icon: '🌹',
+      name: 'وردة'
+    }].map(item => /*#__PURE__*/React.createElement("button", {
+      key: item.type,
+      onClick: e => {
+        e.stopPropagation();
+        socketRef.current?.emit('throw_item', {
+          targetIdx: pRealIdx,
+          itemType: item.type
+        });
+        setThrowableMenuTarget(null);
+      },
+      className: "hover:scale-125 transition-transform text-base sm:text-lg active:scale-95",
+      title: item.name
+    }, item.icon)), /*#__PURE__*/React.createElement("button", {
+      onClick: () => setThrowableMenuTarget(null),
+      className: "text-[10px] text-white/50 hover:text-white ml-0.5"
+    }, "✕")), isTargetable && /*#__PURE__*/React.createElement("span", {
       className: "absolute -bottom-2 bg-emerald-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full border border-white shadow-lg animate-bounce z-30"
     }, "اطلب 🎯")), /*#__PURE__*/React.createElement("p", {
       className: `text-[10px] sm:text-xs font-black mt-0.5 max-w-[70px] truncate text-center ${isTurn ? 'text-yellow-300' : 'text-white/90'}`
@@ -4787,7 +5677,7 @@ function App() {
     return 'translate(-80px, -240px) scale(0.35) rotate(-10deg)';
   };
   return /*#__PURE__*/React.createElement("div", {
-    className: "w-full h-[100dvh] max-w-[480px] mx-auto portrait-game-bg text-white font-cairo flex flex-col justify-between relative overflow-hidden select-none shadow-2xl",
+    className: `w-full h-[100dvh] max-w-[480px] mx-auto portrait-game-bg text-white font-cairo flex flex-col justify-between relative overflow-hidden select-none shadow-2xl ${screenShake ? 'screen-shake-anim' : ''}`,
     onMouseMove: handleDragMove,
     onMouseUp: handleDragEnd,
     onTouchMove: handleDragMove,
@@ -4807,7 +5697,9 @@ function App() {
     className: "text-amber-200/90 hover:text-white flex items-center gap-1.5 text-xs font-black transition px-2 py-1 rounded-xl bg-red-950/40 hover:bg-red-950/80 border border-red-500/30 active:scale-95 shadow-sm"
   }, /*#__PURE__*/React.createElement("span", {
     className: "text-red-400 font-bold"
-  }, "✕"), /*#__PURE__*/React.createElement("span", null, "خروج")), renderSignalBars(ping, connectionStatus)), /*#__PURE__*/React.createElement("div", {
+  }, "✕"), /*#__PURE__*/React.createElement("span", null, "خروج")), renderSignalBars(ping, connectionStatus), /*#__PURE__*/React.createElement("span", {
+    className: "hidden xs:inline-block text-[10px] font-black px-2 py-0.5 rounded-lg bg-amber-500/20 text-yellow-300 border border-amber-400/40 shadow-sm"
+  }, roomState.tier === 'legend' ? '👑 كبار الكاتش' : roomState.tier === 'pro' ? '🏆 القهوة' : '☕ الحارة')), /*#__PURE__*/React.createElement("div", {
     className: `flex flex-col items-center px-2.5 py-0.5 rounded-xl transition-all duration-300 ${turnTimer <= 10 ? 'bg-red-950/85 border border-red-500 shadow-[0_0_18px_rgba(239,68,68,0.9)] animate-pulse' : ''}`
   }, /*#__PURE__*/React.createElement("span", {
     className: `text-xs font-black leading-tight ${turnTimer <= 10 ? 'text-red-300' : 'text-amber-200'}`
@@ -4844,7 +5736,16 @@ function App() {
     className: "w-7 h-7 rounded-xl flex items-center justify-center text-xs border border-white/10 bg-black/30 text-white/70"
   }, "🗣️")))), /*#__PURE__*/React.createElement("main", {
     className: "flex-1 relative w-full flex flex-col items-center justify-center px-2 py-0.5 overflow-hidden"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, flyingThrowables.map(ft => /*#__PURE__*/React.createElement("div", {
+    key: ft.id,
+    className: "throwable-flying text-4xl",
+    style: {
+      '--startX': `${ft.fromIdx % 2 === 0 ? 25 : 75}vw`,
+      '--startY': `${ft.fromIdx === 0 ? 78 : 32}vh`,
+      '--endX': `${ft.targetIdx % 2 === 0 ? 28 : 72}vw`,
+      '--endY': `${ft.targetIdx === 0 ? 78 : 32}vh`
+    }
+  }, ft.itemType === 'tea' ? '☕' : ft.itemType === 'tomato' ? '🍅' : ft.itemType === 'slipper' ? '🩴' : ft.itemType === 'rocket' ? '🚀' : '🌹')), /*#__PURE__*/React.createElement("div", {
     className: "relative w-full max-w-[420px] h-[98%] max-h-[390px] sm:max-h-[430px] rounded-[48px] sm:rounded-[56px] border-2 border-sky-400/30 shadow-[0_12px_40px_rgba(0,0,0,0.7),inset_0_0_60px_rgba(0,0,0,0.65)] flex flex-col justify-between items-center p-2.5 overflow-hidden",
     style: {
       background: 'radial-gradient(ellipse at 50% 45%, #1e293b 0%, #0f172a 60%, #070b14 100%)'
@@ -5255,8 +6156,11 @@ function App() {
     };
     return /*#__PURE__*/React.createElement("div", {
       key: card.id,
-      className: `hand-fan-card ${!canPlay ? 'disabled opacity-45' : ''} ${isSelected ? 'selected-fan' : ''} ${isAnyTime && !isMyTurn ? 'anytime-fan' : ''}`,
-      style: fanStyle,
+      className: `hand-fan-card card-deal-anim ${!canPlay ? 'disabled opacity-45' : ''} ${isSelected ? 'selected-fan' : ''} ${isAnyTime && !isMyTurn ? 'anytime-fan' : ''}`,
+      style: {
+        ...fanStyle,
+        animationDelay: `${i * 60}ms`
+      },
       onClick: () => handleCardClick(card),
       onTouchStart: e => handleCardDragStart(e, card),
       onMouseDown: e => handleCardDragStart(e, card)
@@ -5577,7 +6481,13 @@ function App() {
       className: "text-xs text-gray-500 font-bold mt-0.5"
     }, "لعبة كاتش الرسمية • طاولة #", roomState.code), first && /*#__PURE__*/React.createElement("div", {
       className: "text-sm font-black text-emerald-700 mt-2 bg-emerald-50 py-1.5 px-2 rounded-xl border border-emerald-200 shadow-sm"
-    }, "🏆 البطل المتوج: ", first.name, " ", first.avatar)), /*#__PURE__*/React.createElement("div", {
+    }, "🏆 البطل المتوج: ", first.name, " ", first.avatar), roomState.winnerPrize && /*#__PURE__*/React.createElement("div", {
+      className: "text-xs font-black text-amber-900 mt-2 bg-gradient-to-r from-yellow-200 via-amber-100 to-yellow-200 py-1.5 px-3 rounded-xl border border-yellow-400 shadow-sm flex items-center justify-between"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "flex items-center gap-1"
+    }, /*#__PURE__*/React.createElement("span", null, "🏆"), /*#__PURE__*/React.createElement("span", null, "جائزة ", roomState.winnerPrize.tier === 'legend' ? 'طاولة كبار الكاتش' : roomState.winnerPrize.tier === 'pro' ? 'طاولة القهوة' : 'طاولة الحارة', ":")), /*#__PURE__*/React.createElement("span", {
+      className: "text-emerald-700 font-black"
+    }, "+", roomState.winnerPrize.coins, " ⭐ ", roomState.winnerPrize.gems > 0 ? `+${roomState.winnerPrize.gems} 💎` : ''))), /*#__PURE__*/React.createElement("div", {
       className: "space-y-1.5 mb-3.5"
     }, /*#__PURE__*/React.createElement("div", {
       className: "grid grid-cols-4 text-[11px] font-black text-gray-400 border-b pb-1 px-1"

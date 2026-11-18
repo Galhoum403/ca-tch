@@ -662,6 +662,75 @@ class SoundFxEngine {
         gain.connect(this.ctx.destination);
         osc.start(t);
         osc.stop(t + 0.022);
+      } else if (name === 'deal') {
+        // Crisp card sliding sound
+        if (this.noiseBuffer) {
+          const noise = this.ctx.createBufferSource();
+          noise.buffer = this.noiseBuffer;
+          const filter = this.ctx.createBiquadFilter();
+          filter.type = 'bandpass';
+          filter.frequency.setValueAtTime(2400, t);
+          filter.Q.setValueAtTime(3.0, t);
+          const gain = this.ctx.createGain();
+          gain.gain.setValueAtTime(0.18, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+          noise.connect(filter);
+          filter.connect(gain);
+          gain.connect(this.ctx.destination);
+          noise.start(t);
+        }
+      } else if (name === 'splat') {
+        // Tomato splat
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(280, t);
+        osc.frequency.exponentialRampToValueAtTime(80, t + 0.12);
+        gain.gain.setValueAtTime(0.25, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.15);
+      } else if (name === 'slap') {
+        // Slipper slap
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(320, t);
+        osc.frequency.exponentialRampToValueAtTime(90, t + 0.08);
+        gain.gain.setValueAtTime(0.35, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.1);
+      } else if (name === 'sip') {
+        // Tea sipping / pouring chime
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(600, t);
+        osc.frequency.linearRampToValueAtTime(1100, t + 0.1);
+        gain.gain.setValueAtTime(0.15, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.18);
+      } else if (name === 'rocket') {
+        // Mini rocket whoosh + blast
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(180, t);
+        osc.frequency.exponentialRampToValueAtTime(650, t + 0.15);
+        gain.gain.setValueAtTime(0.2, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.22);
       }
     } catch(e){}
   }
@@ -1496,6 +1565,52 @@ function App() {
   const [showPrivateRoomModal, setShowPrivateRoomModal] = useState(false);
   const autoStartBotsRef = useRef(false);
 
+  // Table Prize Tiers ('casual' | 'pro' | 'legend')
+  const [selectedTier, setSelectedTier] = useState('casual');
+  const TABLE_TIERS = [
+    { id: 'casual', name: 'طاولة الحارة الودية', fee: 50, prize: 200, gemsPrize: 0, icon: '☕', desc: 'لعب ودي خفيف ومناسب للمبتدئين بدون مخاطرة' },
+    { id: 'pro', name: 'طاولة القهوة للحريفة', fee: 500, prize: 2000, gemsPrize: 2, icon: '🏆', desc: 'تحدي قوي بين الحريفة وجائزة 2000 كوينز + جواهر' },
+    { id: 'legend', name: 'طاولة كبار الكاتش VIP', fee: 2500, prize: 10000, gemsPrize: 10, icon: '👑', desc: 'لأساطير اللعبة وجائزة كبرى 10,000 كوينز + 10 جواهر' }
+  ];
+
+  // Daily Lucky Wheel
+  const [showWheelModal, setShowWheelModal] = useState(false);
+  const [isSpinning, setIsSpinning] = useState(false);
+  const [wheelRotation, setWheelRotation] = useState(0);
+  const [wheelReward, setWheelReward] = useState(null);
+  const [hasSpunToday, setHasSpunToday] = useState(false);
+
+  // 7-Day Login Streak
+  const [showStreakModal, setShowStreakModal] = useState(false);
+  const [streakInfo, setStreakInfo] = useState(null);
+  const [streakLoading, setStreakLoading] = useState(false);
+
+  // Table Interactive Throwables
+  const [throwableMenuTarget, setThrowableMenuTarget] = useState(null);
+  const [flyingThrowables, setFlyingThrowables] = useState([]);
+  const [seatSplats, setSeatSplats] = useState({});
+
+  // Friends 2.0 & Real-time Table Invites
+  const [friendsList, setFriendsList] = useState([]);
+  const [friendRequests, setFriendRequests] = useState([]);
+  const [friendInput, setFriendInput] = useState('');
+  const [friendsLoading, setFriendsLoading] = useState(false);
+  const [friendActionMsg, setFriendActionMsg] = useState('');
+  const [pendingTableInvite, setPendingTableInvite] = useState(null);
+
+  // Live Leaderboards
+  const [leaderboardTab, setLeaderboardTab] = useState('wins'); // 'wins' | 'coins' | 'vip'
+  const [leaderboardList, setLeaderboardList] = useState([]);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+
+  const triggerScreenShake = () => {
+    setScreenShake(true);
+    if (navigator.vibrate) {
+      try { navigator.vibrate([40, 60, 90]); } catch(e){}
+    }
+    setTimeout(() => setScreenShake(false), 500);
+  };
+
   // Smart 1-Click Matchmaking Queue State
   const [isMatchmaking, setIsMatchmaking] = useState(false);
   const [matchmakingTime, setMatchmakingTime] = useState(0);
@@ -1648,6 +1763,211 @@ function App() {
     return false;
   };
 
+  // Load Streak Info & Check Spin Date on Mount / Login
+  useEffect(() => {
+    if (currentUser?.id) {
+      loadStreak();
+      const today = new Date().toISOString().slice(0, 10);
+      setHasSpunToday(currentUser.last_spin_date === today);
+    }
+  }, [currentUser]);
+
+  // Load Friends & Leaderboards when switching tabs
+  useEffect(() => {
+    if (activeTab === 'friends') {
+      loadFriends();
+    } else if (activeTab === 'leagues') {
+      loadLeaderboard(leaderboardTab);
+    }
+  }, [activeTab, leaderboardTab]);
+
+  const loadFriends = async () => {
+    if (!currentUser?.id) return;
+    setFriendsLoading(true);
+    try {
+      const res = await fetch(`${getServerBaseUrl()}/api/friends`, {
+        headers: { Authorization: `Bearer ${sessionToken}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        setFriendsList(data.friends || []);
+        setFriendRequests(data.requests || []);
+      }
+    } catch(e) {
+      console.warn('Friends load error:', e);
+    } finally {
+      setFriendsLoading(false);
+    }
+  };
+
+  const handleSendFriendRequest = async () => {
+    if (!friendInput.trim()) return;
+    try {
+      const res = await fetch(`${getServerBaseUrl()}/api/friends/request`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sessionToken}` },
+        body: JSON.stringify({ target: friendInput.trim() })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setFriendActionMsg(`✓ ${data.message}`);
+        setFriendInput('');
+        loadFriends();
+      } else {
+        setFriendActionMsg(`⚠️ ${data.error || 'تعذر إرسال الطلب'}`);
+      }
+      setTimeout(() => setFriendActionMsg(''), 4000);
+    } catch(e) {
+      setFriendActionMsg('⚠️ خطأ في الاتصال');
+      setTimeout(() => setFriendActionMsg(''), 4000);
+    }
+  };
+
+  const handleRespondFriendRequest = async (requesterId, action) => {
+    try {
+      const res = await fetch(`${getServerBaseUrl()}/api/friends/respond`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sessionToken}` },
+        body: JSON.stringify({ requesterId, action })
+      });
+      const data = await res.json();
+      if (data.success) {
+        loadFriends();
+      }
+    } catch(e){}
+  };
+
+  const handleRemoveFriend = async (friendId) => {
+    try {
+      const res = await fetch(`${getServerBaseUrl()}/api/friends/remove`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sessionToken}` },
+        body: JSON.stringify({ friendId })
+      });
+      const data = await res.json();
+      if (data.success) {
+        loadFriends();
+      }
+    } catch(e){}
+  };
+
+  const handleInviteFriendToRoom = (friendId) => {
+    if (!roomState?.code) {
+      setErrorMsg('يجب أن تكون داخل غرفة أولاً لدعوة أصدقائك!');
+      setTimeout(() => setErrorMsg(''), 3000);
+      return;
+    }
+    socketRef.current.emit('invite_friend_to_room', {
+      friendId,
+      roomCode: roomState.code,
+      tier: roomState.tier || selectedTier
+    });
+    setFriendActionMsg('✓ تم إرسال الدعوة لصديقك!');
+    setTimeout(() => setFriendActionMsg(''), 3000);
+  };
+
+  const handleSpinWheel = async () => {
+    if (isSpinning) return;
+    setIsSpinning(true);
+    setWheelReward(null);
+    soundFx.init();
+
+    const tickInterval = setInterval(() => {
+      soundFx.play('tick');
+    }, 140);
+
+    try {
+      const res = await fetch(`${getServerBaseUrl()}/api/spin-wheel`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${sessionToken}` }
+      });
+      const data = await res.json();
+      if (!data.success) {
+        clearInterval(tickInterval);
+        setIsSpinning(false);
+        setErrorMsg(data.error || 'تعذر لف العجلة اليوم');
+        setTimeout(() => setErrorMsg(''), 3000);
+        return;
+      }
+
+      const sliceIdx = data.sliceIndex;
+      const sliceDeg = 45;
+      const targetDeg = (360 * 6) + (360 - (sliceIdx * sliceDeg + sliceDeg / 2));
+      setWheelRotation(prev => prev + targetDeg);
+
+      setTimeout(() => {
+        clearInterval(tickInterval);
+        setIsSpinning(false);
+        setWheelReward(data.reward);
+        setCoins(data.coins);
+        setGems(data.gems);
+        setHasSpunToday(true);
+        soundFx.play('celebration');
+        triggerScreenShake();
+      }, 4200);
+    } catch(e) {
+      clearInterval(tickInterval);
+      setIsSpinning(false);
+      setErrorMsg('خطأ في الاتصال');
+      setTimeout(() => setErrorMsg(''), 3000);
+    }
+  };
+
+  const loadStreak = async () => {
+    if (!currentUser?.id) return;
+    try {
+      const res = await fetch(`${getServerBaseUrl()}/api/streak-info`, {
+        headers: { Authorization: `Bearer ${sessionToken}` }
+      });
+      const data = await res.json();
+      if (data.success && data.info) {
+        setStreakInfo(data.info);
+      }
+    } catch(e){}
+  };
+
+  const handleClaimStreak = async () => {
+    if (streakLoading) return;
+    setStreakLoading(true);
+    try {
+      const res = await fetch(`${getServerBaseUrl()}/api/claim-streak`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${sessionToken}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        setCoins(data.coins);
+        setGems(data.gems);
+        soundFx.init();
+        soundFx.play('celebration');
+        triggerScreenShake();
+        loadStreak();
+      } else {
+        setErrorMsg(data.error || 'تعذر استلام المكافأة اليوم');
+        setTimeout(() => setErrorMsg(''), 3000);
+      }
+    } catch(e) {
+      setErrorMsg('خطأ في الاتصال');
+      setTimeout(() => setErrorMsg(''), 3000);
+    } finally {
+      setStreakLoading(false);
+    }
+  };
+
+  const loadLeaderboard = async (sort = leaderboardTab) => {
+    setLeaderboardLoading(true);
+    try {
+      const res = await fetch(`${getServerBaseUrl()}/api/leaderboard?sort=${sort === 'coins' ? 'coins' : 'wins'}`);
+      const data = await res.json();
+      if (data.success) {
+        setLeaderboardList(data.list || []);
+      }
+    } catch(e){}
+    finally {
+      setLeaderboardLoading(false);
+    }
+  };
+
   // Instant 1-Click Smart Matchmaking
   const handleStartMatchmaking = () => {
     soundFx.init();
@@ -1663,7 +1983,7 @@ function App() {
     setMatchmakingTime(0);
 
     const emitJoin = () => {
-      socketRef.current?.emit('join_matchmaking', { name: finalName, avatar, userId, sessionToken });
+      socketRef.current?.emit('join_matchmaking', { name: finalName, avatar, userId, sessionToken, tier: selectedTier });
     };
 
     if (socketRef.current?.connected) {
@@ -2510,6 +2830,13 @@ function App() {
     });
 
     socket.on('room_state', (state) => {
+      if (state && state.status === 'playing' && roomStateRef.current?.status !== 'playing') {
+        soundFx.init();
+        soundFx.play('deal');
+      }
+      if (state && state.status === 'gameover' && roomStateRef.current?.status !== 'gameover') {
+        triggerScreenShake();
+      }
       setRoomState(state);
       roomStateRef.current = state;
       setHandSorted(false); // Reset hand sort when room changes
@@ -2674,6 +3001,50 @@ function App() {
 
     socket.on('webrtc_voice_state', ({ playerId, isSpeaking }) => {
       setSpeakingPlayers(prev => ({ ...prev, [playerId]: isSpeaking }));
+    });
+
+    // Interactive Table Throwables
+    socket.on('item_thrown', ({ fromIdx, fromName, targetIdx, targetName, itemType }) => {
+      soundFx.init();
+      if (itemType === 'tea') soundFx.play('sip');
+      else if (itemType === 'tomato') soundFx.play('splat');
+      else if (itemType === 'slipper') soundFx.play('slap');
+      else if (itemType === 'rocket') soundFx.play('rocket');
+      else soundFx.play('celebration');
+
+      triggerScreenShake();
+
+      const flyId = Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+      setFlyingThrowables(prev => [...prev, { id: flyId, fromIdx, targetIdx, itemType }]);
+      setTimeout(() => {
+        setFlyingThrowables(prev => prev.filter(f => f.id !== flyId));
+        setSeatSplats(prev => ({ ...prev, [targetIdx]: itemType }));
+        setTimeout(() => {
+          setSeatSplats(prev => {
+            const n = { ...prev };
+            delete n[targetIdx];
+            return n;
+          });
+        }, 2200);
+      }, 650);
+    });
+
+    // Real-time Table Invite from Friend
+    socket.on('table_invite_received', ({ fromName, fromAvatar, roomCode, tier }) => {
+      soundFx.init();
+      soundFx.play('celebration');
+      setPendingTableInvite({ fromName, fromAvatar, roomCode, tier });
+      setTimeout(() => {
+        setPendingTableInvite(prev => prev?.roomCode === roomCode ? null : prev);
+      }, 15000);
+    });
+
+    // Real-time Incoming Friend Request
+    socket.on('friend_request_received', ({ fromId, fromUsername, fromAvatar }) => {
+      soundFx.init();
+      soundFx.play('banter');
+      showVoiceNotice(`👋 طلب صداقة جديد من ${fromUsername}!`);
+      loadFriends();
     });
 
     return () => {
@@ -3170,7 +3541,7 @@ function App() {
     setPlayerName(finalName);
     localStorage.setItem('catch_name', finalName);
     localStorage.setItem('catch_avatar', avatar);
-    socketRef.current.emit('create_room', { name: finalName, avatar, userId, sessionToken });
+    socketRef.current.emit('create_room', { name: finalName, avatar, userId, sessionToken, tier: selectedTier });
   };
 
   const handleJoinRoom = () => {
@@ -3450,40 +3821,111 @@ function App() {
                 </div>
               )}
 
+              {/* Daily Retention & Rewards Bar */}
+              <div className="grid grid-cols-2 gap-2 my-1">
+                <button 
+                  onClick={() => { soundFx.init(); soundFx.play('snap'); setShowWheelModal(true); }}
+                  className="bg-gradient-to-r from-amber-600/40 via-yellow-600/30 to-amber-700/40 border border-yellow-400/50 hover:border-yellow-300 rounded-2xl p-2 flex items-center justify-between text-right transition active:scale-95 shadow">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl animate-spin" style={{ animationDuration: '6s' }}>🎡</span>
+                    <div>
+                      <p className="text-xs font-black text-yellow-300">عجلة الحظ</p>
+                      <p className="text-[10px] text-amber-200/80 font-bold">{hasSpunToday ? 'عد غداً' : 'لفة مجانية ⭐'}</p>
+                    </div>
+                  </div>
+                  {!hasSpunToday && (
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399] animate-ping" />
+                  )}
+                </button>
+
+                <button 
+                  onClick={() => { soundFx.init(); soundFx.play('snap'); setShowStreakModal(true); }}
+                  className="bg-gradient-to-r from-purple-900/40 via-indigo-900/30 to-purple-900/40 border border-purple-400/50 hover:border-purple-300 rounded-2xl p-2 flex items-center justify-between text-right transition active:scale-95 shadow">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">📅</span>
+                    <div>
+                      <p className="text-xs font-black text-purple-300">مكافأة 7 أيام</p>
+                      <p className="text-[10px] text-purple-200/80 font-bold">اليوم {streakInfo?.streak || 1}/7</p>
+                    </div>
+                  </div>
+                  {streakInfo?.canClaimToday && (
+                    <span className="w-2.5 h-2.5 rounded-full bg-yellow-400 shadow-[0_0_8px_#facc15] animate-ping" />
+                  )}
+                </button>
+              </div>
+
+              {/* Challenge Table Prize Tiers */}
+              <div className="bg-black/50 border border-amber-500/30 rounded-2xl p-2 my-1 space-y-1.5">
+                <div className="flex items-center justify-between px-1 text-[11px] font-black text-amber-300">
+                  <span>🏆 اختر فئة الطاولة وجائزة الفوز:</span>
+                  <span className="text-[10px] text-amber-200/70 font-bold">4 لاعبين</span>
+                </div>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {TABLE_TIERS.map(tier => {
+                    const isSelected = selectedTier === tier.id;
+                    return (
+                      <div 
+                        key={tier.id}
+                        onClick={() => { soundFx.init(); soundFx.play('snap'); setSelectedTier(tier.id); }}
+                        className={`cursor-pointer rounded-xl p-2 text-center border transition flex flex-col items-center justify-between ${
+                          isSelected 
+                            ? 'bg-gradient-to-b from-yellow-500/30 to-amber-600/30 border-yellow-400 shadow-md scale-[1.02]' 
+                            : 'bg-black/40 border-white/10 hover:border-white/20'
+                        }`}>
+                        <span className="text-lg">{tier.icon}</span>
+                        <p className={`text-[11px] font-black mt-0.5 leading-tight ${isSelected ? 'text-yellow-300' : 'text-white'}`}>
+                          {tier.id === 'casual' ? 'الحارة' : tier.id === 'pro' ? 'القهوة' : 'كبار الكاتش'}
+                        </p>
+                        <span className="text-[10px] font-bold text-emerald-400 mt-0.5">
+                          فوز {tier.prize >= 1000 ? `${tier.prize / 1000}k` : tier.prize} ⭐
+                        </span>
+                        <span className="text-[9px] text-amber-200/60 font-semibold">
+                          دخول {tier.fee} ⭐
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* BRANDING LOGO */}
-              <div className="text-center my-auto py-2 flex flex-col items-center">
-                <div className="relative mb-3">
-                  <div className="catch-3d-logo text-[72px] sm:text-[88px] leading-none select-none" style={{letterSpacing: '6px'}}>
+              <div className="text-center my-auto py-1 flex flex-col items-center">
+                <div className="relative mb-2">
+                  <div className="catch-3d-logo text-[60px] sm:text-[76px] leading-none select-none" style={{letterSpacing: '5px'}}>
                     CATCH
                   </div>
                 </div>
 
                 {/* Subtle divider */}
-                <div className="w-28 h-0.5 mb-5 bg-gradient-to-r from-transparent via-slate-600 to-transparent rounded-full" />
+                <div className="w-24 h-0.5 mb-3 bg-gradient-to-r from-transparent via-slate-600 to-transparent rounded-full" />
               </div>
 
               {/* Main CTA Buttons */}
-              <div className="w-full space-y-3 pb-2">
+              <div className="w-full space-y-2.5 pb-2">
                 <button onClick={handleStartMatchmaking}
-                  className="btn-neon-green w-full py-4 rounded-2xl text-xl font-black flex items-center justify-center gap-3 transition active:scale-95 shadow-xl">
-                  <span className="text-2xl">⚡</span>
-                  <span>{lang === 'en' ? 'Play Now (Quick Match)' : 'العب الآن (بحث فوري)'}</span>
+                  className="btn-neon-green w-full py-3.5 rounded-2xl text-base sm:text-lg font-black flex items-center justify-center gap-2 transition active:scale-95 shadow-xl">
+                  <span className="text-xl">⚡</span>
+                  <span>
+                    العب الآن [
+                    {selectedTier === 'legend' ? 'كبار الكاتش 👑' : selectedTier === 'pro' ? 'القهوة 🏆' : 'الحارة ☕'}
+                    ]
+                  </span>
                 </button>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2.5">
                   <button onClick={() => setShowPrivateRoomModal(true)}
-                    className="btn-neon-purple py-3 rounded-2xl text-sm font-black flex items-center justify-center gap-1.5 transition active:scale-95">
+                    className="btn-neon-purple py-3 rounded-2xl text-xs sm:text-sm font-black flex items-center justify-center gap-1.5 transition active:scale-95">
                     <span>🔒</span><span>{t('privateTable')}</span>
                   </button>
                   <button onClick={handleStartBotTraining}
-                    className="btn-neon-blue py-3 rounded-2xl text-sm font-black flex items-center justify-center gap-1.5 transition active:scale-95">
+                    className="btn-neon-blue py-3 rounded-2xl text-xs sm:text-sm font-black flex items-center justify-center gap-1.5 transition active:scale-95">
                     <span>🤖</span><span>{t('training')}</span>
                   </button>
                 </div>
 
                 {!window.Capacitor?.isNativePlatform?.() && (
                   <a href="/catch.apk" download="CATCH.apk"
-                    className="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-amber-300/90 hover:text-amber-200 bg-white/5 hover:bg-white/10 border border-amber-400/20 flex items-center justify-center gap-2 transition active:scale-95 shadow-sm">
+                    className="w-full py-2 px-3 rounded-xl text-xs font-bold text-amber-300/90 hover:text-amber-200 bg-white/5 hover:bg-white/10 border border-amber-400/20 flex items-center justify-center gap-2 transition active:scale-95 shadow-sm">
                     <span>📲</span>
                     <span>{lang === 'en' ? 'Download Android App (APK)' : 'تحميل تطبيق الأندرويد (APK مباشر)'}</span>
                   </a>
@@ -3680,67 +4122,252 @@ function App() {
             </div>
           )}
 
-          {/* TAB 4: LEAGUES & LEVELS (المستويات - Plan Image 3) */}
+          {/* TAB 4: LEAGUES & LEADERBOARDS (المستويات والليدربورد) */}
           {activeTab === 'leagues' && (
-            <div className="flex-1 flex flex-col bg-black/60 rounded-3xl p-3 border border-amber-400/30 overflow-hidden">
-              <h3 className="text-base font-black text-yellow-300 text-center pb-1">🏆 دوري المستويات الملكية</h3>
-              <p className="text-[11px] text-amber-200/70 text-center pb-2 border-b border-amber-500/20">احنا هنا بنعمل إيه؟ سلم الصعود للقمة!</p>
+            <div className="flex-1 flex flex-col bg-black/60 rounded-3xl p-3 border border-amber-400/30 overflow-hidden text-right">
+              <h3 className="text-base font-black text-yellow-300 text-center pb-1">🏆 لوحة الشرف والدوريات الملكية</h3>
               
-              <div className="flex-1 overflow-y-auto space-y-2 py-1 pr-1">
+              {/* Subtabs: Wins | Coins | VIP */}
+              <div className="flex gap-1 my-2 bg-black/40 p-1 rounded-2xl border border-white/10 shrink-0">
                 {[
-                  { tier: '🥉 لاعب هاوي', req: '0 فوز', prize: 'دخول 100 عملة', perk: 'طاولات المبتدئين الودية', active: vipRank.badge.includes('برونزي') },
-                  { tier: '🥈 صائد فضي', req: '3 انتصارات', prize: 'فوز +500 عملة', perk: 'أولوية التحديات والريماتش', active: vipRank.badge.includes('فضي') },
-                  { tier: '🥇 كابتن ذهبي', req: '6 انتصارات', prize: 'فوز +1500 عملة + 10 💎', perk: 'مضاعفة نقاط الكروت الخاصة', active: vipRank.badge.includes('ذهبي') },
-                  { tier: '💎 دايموند VIP', req: '12 انتصاراً', prize: 'فوز +3000 عملة + 25 💎', perk: 'خلفية ذهبية حصرية للطاولة', active: vipRank.badge.includes('دايموند') },
-                  { tier: '👑 أسطورة كاتش الكبرى', req: '25 انتصاراً', prize: 'فوز +10,000 عملة + 100 💎', perk: 'لقب أسطورة دائم وتاج مذهب', active: vipRank.badge.includes('أسطورة') },
-                ].map((l, i) => (
-                  <div key={i} className={`p-3 rounded-2xl border transition ${l.active ? 'bg-gradient-to-r from-yellow-500/30 to-amber-600/30 border-yellow-400 shadow-md' : 'bg-black/50 border-white/10'}`}>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-black text-yellow-300">{l.tier}</span>
-                      <span className="text-[10px] text-amber-200 font-bold bg-black/40 px-2 py-0.5 rounded-full border border-white/10">{l.req}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-[11px] text-white/90">
-                      <span>الجائزة: <b className="text-emerald-400">{l.prize}</b></span>
-                      {l.active && <span className="text-[10px] font-black bg-yellow-400 text-black px-2 py-0.5 rounded-full">مستواك الحالي 👑</span>}
-                    </div>
-                    <p className="text-[10px] text-amber-200/60 mt-1 font-semibold">الميزة: {l.perk}</p>
-                  </div>
+                  { id: 'wins', label: 'أبطال الانتصارات 🥇' },
+                  { id: 'coins', label: 'أثرياء الكوينز ⭐' },
+                  { id: 'vip', label: 'مستويات VIP 👑' }
+                ].map(st => (
+                  <button key={st.id} 
+                    onClick={() => {
+                      soundFx.init(); soundFx.play('snap');
+                      setLeaderboardTab(st.id);
+                      if (st.id !== 'vip') loadLeaderboard(st.id);
+                    }}
+                    className={`flex-1 py-1.5 rounded-xl text-xs font-black transition ${
+                      leaderboardTab === st.id ? 'bg-amber-500 text-black shadow' : 'text-white/70 hover:text-white'
+                    }`}>
+                    {st.label}
+                  </button>
                 ))}
+              </div>
+
+              {/* Subtab Content */}
+              <div className="flex-1 overflow-y-auto space-y-2 py-1 pr-1">
+                {leaderboardTab === 'vip' ? (
+                  // Royal VIP tiers overview
+                  [
+                    { tier: '🥉 لاعب هاوي', req: '0 فوز', prize: 'طاولة الحارة الودية', perk: 'لعب خفيف ومبتدئ بدون مخاطرة', active: vipRank.badge.includes('برونزي') },
+                    { tier: '🥈 صائد فضي', req: '3 انتصارات', prize: 'طاولة القهوة للحريفة', perk: 'أولوية التحديات والريماتش', active: vipRank.badge.includes('فضي') },
+                    { tier: '🥇 كابتن ذهبي', req: '6 انتصارات', prize: 'جائزة فوز 2000 عملة', perk: 'مضاعفة نقاط الكروت الخاصة', active: vipRank.badge.includes('ذهبي') },
+                    { tier: '💎 دايموند VIP', req: '12 انتصاراً', prize: 'طاولة كبار الكاتش', perk: 'خلفية ذهبية حصرية للطاولة', active: vipRank.badge.includes('دايموند') },
+                    { tier: '👑 أسطورة كاتش الكبرى', req: '25 انتصاراً', prize: 'جائزة 10,000 عملة + 10 💎', perk: 'لقب أسطورة دائم وتاج مذهب', active: vipRank.badge.includes('أسطورة') },
+                  ].map((l, i) => (
+                    <div key={i} className={`p-3 rounded-2xl border transition ${l.active ? 'bg-gradient-to-r from-yellow-500/30 to-amber-600/30 border-yellow-400 shadow-md' : 'bg-black/50 border-white/10'}`}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-black text-yellow-300">{l.tier}</span>
+                        <span className="text-[10px] text-amber-200 font-bold bg-black/40 px-2 py-0.5 rounded-full border border-white/10">{l.req}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] text-white/90">
+                        <span>المستوى: <b className="text-emerald-400">{l.prize}</b></span>
+                        {l.active && <span className="text-[10px] font-black bg-yellow-400 text-black px-2 py-0.5 rounded-full">مستواك الحالي 👑</span>}
+                      </div>
+                      <p className="text-[10px] text-amber-200/60 mt-1 font-semibold">الميزة: {l.perk}</p>
+                    </div>
+                  ))
+                ) : (
+                  // Live Leaderboard List
+                  leaderboardLoading ? (
+                    <div className="text-center py-8 text-amber-200/70 text-xs">
+                      <span className="text-2xl block animate-spin mb-2">⏳</span>
+                      جاري تحديث لوحة الشرف...
+                    </div>
+                  ) : leaderboardList.length === 0 ? (
+                    <div className="text-center py-8 text-amber-200/60 text-xs">
+                      لا يوجد لاعبين في القائمة حالياً. العب الآن وتصدر القمة!
+                    </div>
+                  ) : (
+                    leaderboardList.map((player) => {
+                      const isMe = player.id === currentUser?.id;
+                      return (
+                        <div key={player.id} className={`p-2.5 rounded-2xl border flex items-center justify-between transition ${
+                          player.rank === 1 ? 'bg-gradient-to-r from-yellow-500/35 via-amber-600/30 to-yellow-500/35 border-yellow-400 shadow-lg' :
+                          player.rank === 2 ? 'bg-gradient-to-r from-slate-400/25 to-slate-600/25 border-slate-300' :
+                          player.rank === 3 ? 'bg-gradient-to-r from-amber-700/25 to-yellow-800/25 border-amber-600' :
+                          isMe ? 'bg-purple-950/40 border-purple-400' : 'bg-black/50 border-white/10'
+                        }`}>
+                          <div className="flex items-center gap-2 text-right">
+                            <span className="w-6 text-center text-sm font-black">
+                              {player.rank === 1 ? '🥇' : player.rank === 2 ? '🥈' : player.rank === 3 ? '🥉' : `#${player.rank}`}
+                            </span>
+                            <div className="w-9 h-9 rounded-full bg-slate-800 border border-white/20 flex items-center justify-center text-lg">
+                              {player.avatar}
+                            </div>
+                            <div>
+                              <p className="text-xs font-black text-white flex items-center gap-1">
+                                <span>{player.username}</span>
+                                {isMe && <span className="text-[9px] bg-yellow-400 text-black px-1.5 py-0.2 rounded-full font-black">أنت</span>}
+                              </p>
+                              <span className="text-[10px] text-amber-200/70 font-semibold">{player.vip_rank}</span>
+                            </div>
+                          </div>
+                          <div className="text-left">
+                            <span className="text-xs font-black text-yellow-300 block">
+                              {leaderboardTab === 'coins' ? `${player.coins.toLocaleString()} ⭐` : `${player.games_won} فوز 🏆`}
+                            </span>
+                            <span className="text-[9px] text-white/50">{player.games_played} جولة لعب</span>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )
+                )}
               </div>
             </div>
           )}
 
-          {/* TAB 5: FRIENDS (الأصدقاء) */}
+          {/* TAB 5: FRIENDS 2.0 (نظام الأصدقاء الحقيقي والدعوة الفورية) */}
           {activeTab === 'friends' && (
-            <div className="flex-1 flex flex-col bg-black/60 rounded-3xl p-3 border border-amber-400/30 overflow-hidden text-center">
-              <h3 className="text-base font-black text-yellow-300 pb-1">👥 أصدقاء الطاولة والمشاركة</h3>
-              <p className="text-[11px] text-amber-200/70 pb-2 border-b border-amber-500/20">ادعُ شلتك والعبوا أونلاين بصوتكم في ثواني!</p>
+            <div className="flex-1 flex flex-col bg-black/60 rounded-3xl p-3 border border-amber-400/30 overflow-hidden text-right">
+              <div className="text-center pb-2 border-b border-amber-500/20">
+                <h3 className="text-base font-black text-yellow-300">👥 أصدقاء الطاولة والمنافسة</h3>
+                <p className="text-[11px] text-amber-200/70">أضف أصحابك برقم الحساب، وشوفهم متصلين، وادعهم لطاولتك في ثانية!</p>
+              </div>
 
-              <div className="flex-1 overflow-y-auto space-y-3 py-2">
-                <div className="bg-emerald-950/40 border border-emerald-500/40 rounded-2xl p-3 text-right">
-                  <span className="text-xl block mb-1">💬</span>
-                  <h4 className="text-xs font-black text-emerald-300">{lang === 'en' ? 'Quick Invite via Apps' : 'دعوة سريعة عبر واتساب والتطبيقات'}</h4>
-                  <p className="text-[11px] text-amber-100/80 mt-1 leading-relaxed">
-                    {lang === 'en' ? 'Share link directly with friends to join your table instantly.' : 'شارك الرابط مع أصحابك ليدخلوا فوراً على نفس الطاولة بدون أي تعقيد.'}
-                  </p>
-                  <button onClick={() => handleShareInvite('')}
-                     className="btn-emerald w-full py-2.5 rounded-xl text-xs font-black mt-2 flex items-center justify-center gap-1.5 shadow">
-                    <span>💬</span>
-                    <span>{t('shareViaApps')}</span>
+              {/* My Player Tag ID Card */}
+              <div className="bg-gradient-to-r from-indigo-950/70 via-purple-950/70 to-indigo-950/70 border border-purple-400/50 rounded-2xl p-2.5 my-2 flex items-center justify-between shadow">
+                <div className="flex items-center gap-2">
+                  <div className="w-10 h-10 rounded-full bg-purple-900 border border-purple-300 flex items-center justify-center text-xl">
+                    {avatar}
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-purple-200 block font-bold">كود حسابك للمشاركة مع الأصدقاء:</span>
+                    <span className="text-xs font-black text-yellow-300 tracking-wider">#CATCH-{currentUser?.id || userId}</span>
+                  </div>
+                </div>
+                <button 
+                  onClick={async () => {
+                    const tag = `#CATCH-${currentUser?.id || userId}`;
+                    try { await navigator.clipboard.writeText(tag); } catch(e){}
+                    setFriendActionMsg('✓ تم نسخ كود حسابك بنجاح!');
+                    setTimeout(() => setFriendActionMsg(''), 3000);
+                  }}
+                  className="btn-gold px-3 py-1.5 rounded-xl text-xs font-black shadow">
+                  نسخ 📋
+                </button>
+              </div>
+
+              {/* Add Friend Input */}
+              <div className="bg-black/50 border border-white/10 rounded-2xl p-2.5 mb-2">
+                <label className="text-[11px] font-black text-amber-300 block mb-1">➕ إضافة صديق جديد (بالـ ID أو اسم المستخدم):</label>
+                <div className="flex gap-1.5">
+                  <input 
+                    type="text" 
+                    value={friendInput}
+                    onChange={(e) => setFriendInput(e.target.value)}
+                    placeholder="مثال: #CATCH-5 أو اسم المستخدم"
+                    className="flex-1 bg-black/60 border border-white/20 rounded-xl px-2.5 py-1.5 text-xs text-white placeholder-white/30 focus:outline-none focus:border-amber-400"
+                  />
+                  <button 
+                    onClick={handleSendFriendRequest}
+                    className="btn-emerald px-3 py-1.5 rounded-xl text-xs font-black shrink-0 shadow">
+                    إرسال طلب 🚀
                   </button>
                 </div>
+                {friendActionMsg && (
+                  <p className="text-[11px] font-bold mt-1 text-yellow-300">{friendActionMsg}</p>
+                )}
+              </div>
 
-                <div className="bg-black/50 border border-white/10 rounded-2xl p-3 text-right">
-                  <h4 className="text-xs font-black text-amber-300">📋 {t('copyLink')}</h4>
-                  <button onClick={async () => {
-                    const shareUrl = `${getServerBaseUrl()}/`;
-                    try {
-                      await navigator.clipboard.writeText(shareUrl);
-                      setErrorMsg(t('linkCopied'));
-                    } catch(e) {}
-                    setTimeout(() => setErrorMsg(''), 2500);
-                  }} className="btn-gold w-full py-2.5 rounded-xl text-xs font-black mt-2">
-                    {t('copyLink')}
+              {/* Scrollable Friends & Requests Content */}
+              <div className="flex-1 overflow-y-auto space-y-2.5 py-1 pr-1">
+                {/* Incoming Pending Friend Requests */}
+                {friendRequests.length > 0 && (
+                  <div className="bg-amber-950/40 border border-yellow-500/40 rounded-2xl p-2.5 space-y-2">
+                    <span className="text-[11px] font-black text-yellow-300 block">📬 طلبات صداقة واردة في انتظار ردك:</span>
+                    {friendRequests.map(req => (
+                      <div key={req.id} className="flex items-center justify-between bg-black/60 p-2 rounded-xl border border-white/10">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xl">{req.avatar}</span>
+                          <div>
+                            <p className="text-xs font-black text-white">{req.username}</p>
+                            <span className="text-[9px] text-amber-200/70">{req.vip_rank}</span>
+                          </div>
+                        </div>
+                        <div className="flex gap-1">
+                          <button onClick={() => handleRespondFriendRequest(req.id, 'accept')} className="bg-emerald-600 hover:bg-emerald-500 text-white px-2 py-1 rounded-lg text-xs font-black">
+                            قبول ✓
+                          </button>
+                          <button onClick={() => handleRespondFriendRequest(req.id, 'reject')} className="bg-red-900/60 hover:bg-red-800 text-red-200 px-2 py-1 rounded-lg text-xs font-black">
+                            رفض ✕
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Friends List Header */}
+                <div className="flex items-center justify-between px-1">
+                  <span className="text-xs font-black text-amber-300">قائمة الأصدقاء ({friendsList.length}):</span>
+                  {friendsLoading && <span className="text-[10px] text-white/50 animate-pulse">جاري التحديث...</span>}
+                </div>
+
+                {friendsList.length === 0 ? (
+                  <div className="bg-black/40 border border-white/10 rounded-2xl p-5 text-center text-xs text-amber-200/60 space-y-1">
+                    <span className="text-3xl block mb-1">🤝</span>
+                    <p className="font-bold text-white">ليس لديك أصدقاء بعد</p>
+                    <p className="text-[10px]">شارك كود حسابك أو ابحث عن أصدقائك وادعهم للعب سوياً!</p>
+                  </div>
+                ) : (
+                  friendsList.map(friend => (
+                    <div key={friend.id} className="bg-black/50 border border-white/10 rounded-2xl p-2.5 flex items-center justify-between shadow-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="relative">
+                          <div className="w-10 h-10 rounded-full bg-slate-800 border border-white/20 flex items-center justify-center text-xl">
+                            {friend.avatar}
+                          </div>
+                          <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-black ${friend.isOnline ? 'bg-emerald-400 shadow-[0_0_8px_#34d399]' : 'bg-slate-500'}`} 
+                                title={friend.isOnline ? 'متصل الآن' : 'غير متصل'} />
+                        </div>
+                        <div>
+                          <p className="text-xs font-black text-white flex items-center gap-1.5">
+                            <span>{friend.username}</span>
+                            <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold ${friend.isOnline ? 'bg-emerald-950 text-emerald-300 border border-emerald-500/40' : 'bg-slate-800 text-slate-400'}`}>
+                              {friend.isOnline ? 'أونلاين 🟢' : 'أوفلاين ⚪'}
+                            </span>
+                          </p>
+                          <span className="text-[10px] text-amber-200/70 font-semibold">{friend.vip_rank} • {friend.games_won} فوز</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        {friend.isOnline && (
+                          <button 
+                            onClick={() => handleInviteFriendToRoom(friend.id)}
+                            className="btn-gold px-2.5 py-1.5 rounded-xl text-xs font-black shadow flex items-center gap-1">
+                            <span>🚀</span>
+                            <span>دعوة</span>
+                          </button>
+                        )}
+                        <button 
+                          onClick={() => handleRemoveFriend(friend.id)}
+                          className="bg-black/60 hover:bg-red-950/60 text-white/50 hover:text-red-400 p-1.5 rounded-xl border border-white/10 transition"
+                          title="حذف من الأصدقاء">
+                          🗑️
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+
+                {/* Quick Share via WhatsApp */}
+                <div className="bg-emerald-950/30 border border-emerald-500/30 rounded-2xl p-2.5 mt-2 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">💬</span>
+                    <div>
+                      <p className="text-xs font-black text-emerald-300">مشاركة الرابط المباشر</p>
+                      <p className="text-[10px] text-amber-100/70">ادعُ شلتك عبر واتساب وتيليجرام</p>
+                    </div>
+                  </div>
+                  <button onClick={() => handleShareInvite('')} className="btn-emerald px-3 py-1.5 rounded-xl text-xs font-black shadow">
+                    مشاركة 💬
                   </button>
                 </div>
               </div>
@@ -3794,6 +4421,198 @@ function App() {
             <span className="text-[10px] mt-0.5">{t('leagues')}</span>
           </button>
         </nav>
+
+        {/* FLOATING TABLE INVITE BANNER (إشعار دعوة الطاولة الفوري) */}
+        {pendingTableInvite && (
+          <div className="fixed top-3 inset-x-3 sm:max-w-md sm:mx-auto z-[9999] bg-gradient-to-r from-yellow-500 via-amber-400 to-yellow-500 text-black border-2 border-white rounded-3xl p-3 shadow-2xl flex items-center justify-between animate-bounce">
+            <div className="flex items-center gap-2 text-right">
+              <span className="text-3xl">{pendingTableInvite.fromAvatar || '👑'}</span>
+              <div>
+                <p className="text-xs font-black">{pendingTableInvite.fromName} يدعوك للانضمام!</p>
+                <p className="text-[10px] font-bold text-amber-950">طاولة #{pendingTableInvite.roomCode} [{pendingTableInvite.tier === 'legend' ? 'كبار الكاتش' : pendingTableInvite.tier === 'pro' ? 'القهوة' : 'الحارة'}]</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <button 
+                onClick={() => {
+                  soundFx.init(); soundFx.play('snap');
+                  const code = pendingTableInvite.roomCode;
+                  setPendingTableInvite(null);
+                  if (!ensureConnected()) return;
+                  const finalName = playerName.trim() || 'لاعب VIP';
+                  socketRef.current.emit('join_room', { code, name: finalName, avatar, userId, sessionToken });
+                }}
+                className="bg-black hover:bg-slate-900 text-yellow-300 font-black px-3 py-1.5 rounded-xl text-xs shadow">
+                انضمام 🚀
+              </button>
+              <button 
+                onClick={() => setPendingTableInvite(null)}
+                className="text-black/60 hover:text-black font-black text-sm px-1.5">
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL: LUCKY WHEEL (عجلة الحظ اليومية) */}
+        {showWheelModal && (
+          <div className="fixed inset-0 z-[360] bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+            <div className="bg-gradient-to-b from-[#1b0a2a] via-[#12041d] to-[#0a0210] border-2 border-amber-400 rounded-3xl p-5 w-full max-w-sm shadow-2xl text-center space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-amber-500/30">
+                <div className="flex items-center gap-1.5 text-base font-black text-yellow-300">
+                  <span>🎡</span>
+                  <span>عجلة الحظ اليومية</span>
+                </div>
+                <button onClick={() => { if (!isSpinning) setShowWheelModal(false); }} className="text-white/70 hover:text-white text-xl">✕</button>
+              </div>
+
+              <p className="text-[11px] text-amber-200/80">لف العجلة كل 24 ساعة واكسب عملات وجواهر مجانية!</p>
+
+              {/* The SVG Wheel Container */}
+              <div className="relative w-64 h-64 mx-auto my-1 flex items-center justify-center">
+                {/* Pointer Arrow on Top (pointing DOWN into the wheel) */}
+                <div className="absolute -top-1 left-1/2 -translate-x-1/2 z-30 drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)] pointer-events-none">
+                  <div className="w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-t-[22px] border-t-yellow-400" />
+                </div>
+
+                {/* Rotating Wheel */}
+                <div 
+                  className="w-full h-full rounded-full border-4 border-yellow-400 shadow-[0_0_35px_rgba(250,204,21,0.5)] overflow-hidden"
+                  style={{
+                    transform: `rotate(${wheelRotation}deg)`,
+                    transition: isSpinning ? 'transform 4s cubic-bezier(0.12, 0.8, 0.2, 1)' : 'none'
+                  }}>
+                  <svg viewBox="0 0 300 300" className="w-full h-full">
+                    {[
+                      { label: '100 ⭐', bg: '#d97706' },
+                      { label: '300 ⭐', bg: '#059669' },
+                      { label: '5 💎',   bg: '#0284c7' },
+                      { label: '500 ⭐', bg: '#7c3aed' },
+                      { label: '15 💎',  bg: '#db2777' },
+                      { label: '1000 ⭐',bg: '#ea580c' },
+                      { label: '50 ⭐',  bg: '#475569' },
+                      { label: '2500 👑',bg: '#eab308' },
+                    ].map((s, i) => {
+                      const a1 = (i * 45 - 90) * Math.PI / 180;
+                      const a2 = ((i + 1) * 45 - 90) * Math.PI / 180;
+                      const x1 = 150 + 150 * Math.cos(a1);
+                      const y1 = 150 + 150 * Math.sin(a1);
+                      const x2 = 150 + 150 * Math.cos(a2);
+                      const y2 = 150 + 150 * Math.sin(a2);
+                      const amid = (i * 45 + 22.5 - 90) * Math.PI / 180;
+                      const tx = 150 + 95 * Math.cos(amid);
+                      const ty = 150 + 95 * Math.sin(amid);
+                      const rot = i * 45 + 22.5;
+                      return (
+                        <g key={i}>
+                          <path d={`M 150 150 L ${x1} ${y1} A 150 150 0 0 1 ${x2} ${y2} Z`} fill={s.bg} stroke="#1b0a2a" strokeWidth="2" />
+                          <text x={tx} y={ty} fill="#ffffff" fontSize="13" fontWeight="900" textAnchor="middle" dominantBaseline="middle" transform={`rotate(${rot}, ${tx}, ${ty})`}>
+                            {s.label}
+                          </text>
+                        </g>
+                      );
+                    })}
+                    {/* Center Hub */}
+                    <circle cx="150" cy="150" r="30" fill="#facc15" stroke="#78350f" strokeWidth="3" />
+                    <text x="150" y="152" fill="#000000" fontSize="10" fontWeight="900" textAnchor="middle" dominantBaseline="middle">
+                      CATCH
+                    </text>
+                  </svg>
+                </div>
+              </div>
+
+              {/* Reward Announcement if spun */}
+              {wheelReward && (
+                <div className="bg-gradient-to-r from-amber-500 via-yellow-300 to-amber-500 text-black p-2.5 rounded-2xl font-black text-xs shadow-lg animate-bounce">
+                  🎉 مبروك! كسبت {wheelReward.label || wheelReward.amount} بنجاح!
+                </div>
+              )}
+
+              {/* Spin Button */}
+              <button 
+                onClick={handleSpinWheel}
+                disabled={isSpinning || hasSpunToday}
+                className={`w-full py-3 rounded-2xl text-base font-black shadow-lg transition active:scale-95 ${
+                  hasSpunToday 
+                    ? 'bg-slate-800 text-slate-400 border border-slate-700 cursor-not-allowed'
+                    : isSpinning
+                      ? 'bg-amber-600 text-yellow-200 border border-yellow-400 animate-pulse'
+                      : 'btn-gold shadow-[0_0_20px_rgba(250,204,21,0.6)] animate-pulse'
+                }`}>
+                {isSpinning ? 'جاري اللف... 🎡' : hasSpunToday ? 'عد غداً للحصول على لفة جديدة ✓' : 'لف العجلة الآن مجاناً 🚀'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL: 7-DAY LOGIN STREAK (سلسلة الدخول اليومي) */}
+        {showStreakModal && (
+          <div className="fixed inset-0 z-[360] bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+            <div className="bg-gradient-to-b from-[#1b0a2a] via-[#12041d] to-[#0a0210] border-2 border-amber-400 rounded-3xl p-5 w-full max-w-sm shadow-2xl text-center space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-amber-500/30">
+                <div className="flex items-center gap-1.5 text-base font-black text-yellow-300">
+                  <span>📅</span>
+                  <span>سلسلة تسجيل الدخول اليومي</span>
+                </div>
+                <button onClick={() => setShowStreakModal(false)} className="text-white/70 hover:text-white text-xl">✕</button>
+              </div>
+
+              <p className="text-[11px] text-amber-200/80">سجل دخولك كل يوم لتحصل على مكافآت متزايدة وجواهر كبرى في اليوم السابع!</p>
+
+              {/* 7 Days Grid */}
+              <div className="grid grid-cols-4 gap-2 my-2">
+                {[
+                  { day: 1, text: '150 عملة', icon: '⭐' },
+                  { day: 2, text: '300 عملة', icon: '⭐' },
+                  { day: 3, text: '5 جواهر', icon: '💎' },
+                  { day: 4, text: '750 عملة', icon: '⭐' },
+                  { day: 5, text: '1,500 عملة', icon: '⭐' },
+                  { day: 6, text: '15 جوهرة', icon: '💎' },
+                  { day: 7, text: '3,000 + 25 💎', icon: '👑', colSpan: true },
+                ].map((item) => {
+                  const currentStreak = streakInfo?.streak || 1;
+                  const isPast = item.day < currentStreak || (item.day === currentStreak && !streakInfo?.canClaimToday);
+                  const isCurrent = item.day === currentStreak && streakInfo?.canClaimToday;
+                  return (
+                    <div 
+                      key={item.day}
+                      className={`p-2 rounded-2xl border text-center flex flex-col items-center justify-between transition ${
+                        item.colSpan ? 'col-span-2 bg-gradient-to-r from-yellow-500/30 via-amber-600/30 to-yellow-500/30 border-yellow-400' :
+                        isCurrent ? 'bg-yellow-500/25 border-yellow-400 shadow-lg scale-105 animate-pulse' :
+                        isPast ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300' :
+                        'bg-black/50 border-white/10 opacity-70'
+                      }`}>
+                      <span className="text-[10px] font-black text-amber-200">يوم {item.day}</span>
+                      <span className="text-xl my-1">{item.icon}</span>
+                      <span className="text-[10px] font-black text-white">{item.text}</span>
+                      <div className="mt-1">
+                        {isPast ? (
+                          <span className="text-[9px] font-black text-emerald-400 bg-emerald-950 px-1.5 py-0.2 rounded-md">تم ✓</span>
+                        ) : isCurrent ? (
+                          <span className="text-[9px] font-black text-yellow-300 bg-black/60 px-1.5 py-0.2 rounded-md">متاح 🎁</span>
+                        ) : (
+                          <span className="text-[9px] text-white/40">🔒</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Claim Button */}
+              <button 
+                onClick={handleClaimStreak}
+                disabled={streakLoading || !streakInfo?.canClaimToday}
+                className={`w-full py-3 rounded-2xl text-sm font-black shadow-lg transition active:scale-95 ${
+                  streakInfo?.canClaimToday 
+                    ? 'btn-gold animate-pulse' 
+                    : 'bg-slate-800 text-slate-400 border border-slate-700 cursor-not-allowed'
+                }`}>
+                {streakLoading ? 'جاري الاستلام...' : streakInfo?.canClaimToday ? 'استلام مكافأة اليوم 🎁' : 'تم استلام مكافأة اليوم بنجاح ✓ عد غداً'}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* MODAL 1: MODE PICKER / QUICK PLAY DIALOG */}
         {showPlayModal && (
@@ -4491,7 +5310,15 @@ function App() {
           </svg>
 
       {/* Avatar Inner Core */}
-          <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-xl sm:text-2xl neon-avatar-ring transition ${isTurn ? 'is-turn' : ''} ${speakingPlayers[p.id] ? 'speaking-pulse ring-4 ring-emerald-400' : ''}`}>
+          <div 
+            onClick={(e) => {
+              if (!isTargetable) {
+                e.stopPropagation();
+                soundFx.init(); soundFx.play('snap');
+                setThrowableMenuTarget(throwableMenuTarget === pRealIdx ? null : pRealIdx);
+              }
+            }}
+            className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-xl sm:text-2xl neon-avatar-ring transition cursor-pointer ${isTurn ? 'is-turn' : ''} ${speakingPlayers[p.id] ? 'speaking-pulse ring-4 ring-emerald-400' : ''}`}>
             {p.avatar}
             {speakingPlayers[p.id] && (
               <span className="absolute -top-1.5 text-[8px] font-black px-1 rounded-full bg-emerald-500 text-white shadow-sm z-30">🎙️</span>
@@ -4501,7 +5328,41 @@ function App() {
             )}
             {p.immune && <span className="absolute -top-1 -right-1 text-xs drop-shadow">🛡️</span>}
             {p.skipNext && <span className="absolute -top-1 -left-1 text-xs drop-shadow">🙈</span>}
+
+            {/* Splat Impact Pop */}
+            {seatSplats[pRealIdx] && (
+              <div className="splat-impact absolute inset-0 flex items-center justify-center text-2xl drop-shadow-xl pointer-events-none z-40">
+                {seatSplats[pRealIdx] === 'tomato' ? '🍅' : seatSplats[pRealIdx] === 'tea' ? '☕' : seatSplats[pRealIdx] === 'slipper' ? '🩴' : seatSplats[pRealIdx] === 'rocket' ? '🚀' : '🌹'}
+              </div>
+            )}
           </div>
+
+          {/* Floating Throwables Picker */}
+          {throwableMenuTarget === pRealIdx && (
+            <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-900/95 border-2 border-amber-400 rounded-full px-2 py-1 flex items-center gap-1.5 shadow-2xl z-50 animate-bounce"
+                 onClick={(e) => e.stopPropagation()}>
+              {[
+                { type: 'tea', icon: '☕', name: 'شاي' },
+                { type: 'tomato', icon: '🍅', name: 'طماطم' },
+                { type: 'slipper', icon: '🩴', name: 'شبشب' },
+                { type: 'rocket', icon: '🚀', name: 'صاروخ' },
+                { type: 'rose', icon: '🌹', name: 'وردة' }
+              ].map(item => (
+                <button 
+                  key={item.type} 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    socketRef.current?.emit('throw_item', { targetIdx: pRealIdx, itemType: item.type });
+                    setThrowableMenuTarget(null);
+                  }}
+                  className="hover:scale-125 transition-transform text-base sm:text-lg active:scale-95"
+                  title={item.name}>
+                  {item.icon}
+                </button>
+              ))}
+              <button onClick={() => setThrowableMenuTarget(null)} className="text-[10px] text-white/50 hover:text-white ml-0.5">✕</button>
+            </div>
+          )}
 
           {isTargetable && (
             <span className="absolute -bottom-2 bg-emerald-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full border border-white shadow-lg animate-bounce z-30">
@@ -4598,7 +5459,7 @@ function App() {
   };
 
   return (
-    <div className="w-full h-[100dvh] max-w-[480px] mx-auto portrait-game-bg text-white font-cairo flex flex-col justify-between relative overflow-hidden select-none shadow-2xl"
+    <div className={`w-full h-[100dvh] max-w-[480px] mx-auto portrait-game-bg text-white font-cairo flex flex-col justify-between relative overflow-hidden select-none shadow-2xl ${screenShake ? 'screen-shake-anim' : ''}`}
          onMouseMove={handleDragMove} onMouseUp={handleDragEnd}
          onTouchMove={handleDragMove} onTouchEnd={handleDragEnd}>
 
@@ -4615,6 +5476,10 @@ function App() {
               <span>خروج</span>
             </button>
             {renderSignalBars(ping, connectionStatus)}
+            {/* Table Tier Badge */}
+            <span className="hidden xs:inline-block text-[10px] font-black px-2 py-0.5 rounded-lg bg-amber-500/20 text-yellow-300 border border-amber-400/40 shadow-sm">
+              {roomState.tier === 'legend' ? '👑 كبار الكاتش' : roomState.tier === 'pro' ? '🏆 القهوة' : '☕ الحارة'}
+            </span>
           </div>
 
           {/* Turn / Player Name & Countdown Timer (Mockup style with Danger Pulse FX) */}
@@ -4675,6 +5540,18 @@ function App() {
 
       {/* Main Oval Table Area (Matching Generated Mockup) */}
       <main className="flex-1 relative w-full flex flex-col items-center justify-center px-2 py-0.5 overflow-hidden">
+
+        {/* Animated Flying Throwables Overlay */}
+        {flyingThrowables.map(ft => (
+          <div key={ft.id} className="throwable-flying text-4xl" style={{
+            '--startX': `${(ft.fromIdx % 2 === 0 ? 25 : 75)}vw`,
+            '--startY': `${ft.fromIdx === 0 ? 78 : 32}vh`,
+            '--endX': `${(ft.targetIdx % 2 === 0 ? 28 : 72)}vw`,
+            '--endY': `${ft.targetIdx === 0 ? 78 : 32}vh`,
+          }}>
+            {ft.itemType === 'tea' ? '☕' : ft.itemType === 'tomato' ? '🍅' : ft.itemType === 'slipper' ? '🩴' : ft.itemType === 'rocket' ? '🚀' : '🌹'}
+          </div>
+        ))}
         
         {/* Modern Clean Playmat — 100% Friendly Card Game Table */}
         <div className="relative w-full max-w-[420px] h-[98%] max-h-[390px] sm:max-h-[430px] rounded-[48px] sm:rounded-[56px] border-2 border-sky-400/30 shadow-[0_12px_40px_rgba(0,0,0,0.7),inset_0_0_60px_rgba(0,0,0,0.65)] flex flex-col justify-between items-center p-2.5 overflow-hidden"
@@ -5178,8 +6055,11 @@ function App() {
               
               return (
                 <div key={card.id}
-                  className={`hand-fan-card ${!canPlay ? 'disabled opacity-45' : ''} ${isSelected ? 'selected-fan' : ''} ${isAnyTime && !isMyTurn ? 'anytime-fan' : ''}`}
-                  style={fanStyle}
+                  className={`hand-fan-card card-deal-anim ${!canPlay ? 'disabled opacity-45' : ''} ${isSelected ? 'selected-fan' : ''} ${isAnyTime && !isMyTurn ? 'anytime-fan' : ''}`}
+                  style={{
+                    ...fanStyle,
+                    animationDelay: `${i * 60}ms`
+                  }}
                   onClick={() => handleCardClick(card)}
                   onTouchStart={(e) => handleCardDragStart(e, card)}
                   onMouseDown={(e) => handleCardDragStart(e, card)}>
@@ -5599,6 +6479,17 @@ function App() {
                 {first && (
                   <div className="text-sm font-black text-emerald-700 mt-2 bg-emerald-50 py-1.5 px-2 rounded-xl border border-emerald-200 shadow-sm">
                     🏆 البطل المتوج: {first.name} {first.avatar}
+                  </div>
+                )}
+                {roomState.winnerPrize && (
+                  <div className="text-xs font-black text-amber-900 mt-2 bg-gradient-to-r from-yellow-200 via-amber-100 to-yellow-200 py-1.5 px-3 rounded-xl border border-yellow-400 shadow-sm flex items-center justify-between">
+                    <span className="flex items-center gap-1">
+                      <span>🏆</span>
+                      <span>جائزة {roomState.winnerPrize.tier === 'legend' ? 'طاولة كبار الكاتش' : roomState.winnerPrize.tier === 'pro' ? 'طاولة القهوة' : 'طاولة الحارة'}:</span>
+                    </span>
+                    <span className="text-emerald-700 font-black">
+                      +{roomState.winnerPrize.coins} ⭐ {roomState.winnerPrize.gems > 0 ? `+${roomState.winnerPrize.gems} 💎` : ''}
+                    </span>
                   </div>
                 )}
               </div>

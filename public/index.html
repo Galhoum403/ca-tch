@@ -430,6 +430,47 @@
   ::-webkit-scrollbar-track { background:transparent; }
   ::-webkit-scrollbar-thumb { background:rgba(0,212,255,.3); border-radius:3px; }
 
+  /* ===== SCREEN SHAKE & TACTILE JUICINESS ===== */
+  @keyframes screenShake {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    15% { transform: translate(-4px, 3px) rotate(-1deg); }
+    30% { transform: translate(4px, -3px) rotate(1deg); }
+    45% { transform: translate(-3px, -2px) rotate(-0.5deg); }
+    60% { transform: translate(3px, 2px) rotate(0.5deg); }
+    75% { transform: translate(-1px, 1px) rotate(0deg); }
+  }
+  .screen-shake-anim { animation: screenShake 0.45s ease-in-out; }
+
+  /* Deal Card Slide In */
+  @keyframes cardDealSlide {
+    0% { transform: translateY(80px) scale(0.6) rotate(10deg); opacity: 0; }
+    70% { transform: translateY(-8px) scale(1.05) rotate(-2deg); opacity: 1; }
+    100% { transform: translateY(0) scale(1) rotate(0deg); opacity: 1; }
+  }
+  .card-deal-anim { animation: cardDealSlide 0.4s cubic-bezier(0.2, 0.9, 0.3, 1) backwards; }
+
+  /* Throwable Flying Item */
+  @keyframes throwableFlight {
+    0% { transform: translate(var(--startX, 0px), var(--startY, 0px)) scale(0.6) rotate(0deg); opacity: 0.9; }
+    50% { transform: translate(calc((var(--startX, 0px) + var(--endX, 0px)) / 2), calc((var(--startY, 0px) + var(--endY, 0px)) / 2 - 80px)) scale(1.35) rotate(180deg); opacity: 1; }
+    100% { transform: translate(var(--endX, 0px), var(--endY, 0px)) scale(1.1) rotate(360deg); opacity: 1; }
+  }
+  .throwable-flying {
+    position: fixed;
+    animation: throwableFlight 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    pointer-events: none;
+    z-index: 99999;
+  }
+
+  /* Splat Impact Pop */
+  @keyframes splatPop {
+    0% { transform: scale(0.2) rotate(-15deg); opacity: 0; }
+    40% { transform: scale(1.3) rotate(10deg); opacity: 1; }
+    75% { transform: scale(1.0) rotate(0deg); opacity: 1; }
+    100% { transform: scale(0.85) rotate(0deg); opacity: 0; }
+  }
+  .splat-impact { animation: splatPop 2.2s ease-out forwards; pointer-events: none; z-index: 50; }
+
   /* ===== MATCHMAKING TIP FADE ===== */
   @keyframes fadeIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
 </style>
@@ -451,6 +492,6 @@
     <div style="font-size:22px;font-weight:900;letter-spacing:2px;text-shadow:0 0 20px #00d4ff;">CATCH جاري التحميل...</div>
   </div>
 </div>
-<script src="./app.bundle.js?v=2.2.0"></script>
+<script src="./app.bundle.js?v=2.3.0"></script>
 </body>
 </html>
