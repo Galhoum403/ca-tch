@@ -1658,8 +1658,9 @@ function App() {
   const [lang, setLang] = useState(() => localStorage.getItem('catch_lang') || 'ar');
   const t = key => TRANSLATIONS[lang]?.[key] || TRANSLATIONS['ar']?.[key] || key;
 
-  // Realtime Connection State
+  // Realtime Connection State & Live Accurate Ping (ms)
   const [connectionStatus, setConnectionStatus] = useState('connecting'); // 'connected' | 'disconnected' | 'connecting'
+  const [ping, setPing] = useState(null);
 
   // Economy States (Coins & Gems with clean starting defaults: 500 Coins, 10 Gems)
   const [coins, setCoins] = useState(() => {
@@ -1882,7 +1883,11 @@ function App() {
     }
     soundFx.init();
     soundFx.play('impact');
-    setErrorMsg(lang === 'en' ? 'Connecting to game server... Please try again in a moment' : 'جاري الاتصال بسيرفر اللعبة... يرجى إعادة المحاولة بعد ثانية');
+    const msg = lang === 'en' ? 'Connecting to game server... Please try again in a moment' : 'جاري الاتصال بسيرفر اللعبة... يرجى إعادة المحاولة بعد ثوانٍ';
+    setErrorMsg(msg);
+    setTimeout(() => {
+      setErrorMsg(prev => prev === msg ? '' : prev);
+    }, 3500);
     try {
       socketRef.current?.connect?.();
     } catch (e) {}
@@ -2230,6 +2235,195 @@ function App() {
       className: "w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl border border-slate-700 transition active:scale-95"
     }, lang === 'en' ? 'Continue as Guest 🎮' : 'فهمت، الاستمرار كزائر 🎮'))));
   };
+  const handleTestPing = () => {
+    if (!socketRef.current?.connected) {
+      showVoiceNotice(lang === 'en' ? '⚠️ Not connected to server' : '⚠️ غير متصل بالسيرفر حالياً');
+      return;
+    }
+    soundFx.init();
+    soundFx.play('tick');
+    socketRef.current.emit('ping_check', Date.now());
+    showVoiceNotice(lang === 'en' ? '⚡ Measuring server ping...' : '⚡ جاري قياس سرعة الاتصال بالسيرفر...');
+  };
+  const renderSignalBars = (p, status, showText = true, className = '') => {
+    const isConn = status === 'connected' && p !== null;
+    let barsCount = 0;
+    let barColor = 'bg-slate-600';
+    let textBadge = '...';
+    let textColor = 'text-slate-400';
+    if (!isConn) {
+      barsCount = 0;
+      barColor = 'bg-red-500';
+      textBadge = lang === 'en' ? 'Offline' : 'منقطع';
+      textColor = 'text-red-400';
+    } else if (p < 90) {
+      barsCount = 4;
+      barColor = 'bg-emerald-400';
+      textBadge = `${p}ms`;
+      textColor = 'text-emerald-400';
+    } else if (p < 160) {
+      barsCount = 3;
+      barColor = 'bg-emerald-400';
+      textBadge = `${p}ms`;
+      textColor = 'text-emerald-300';
+    } else if (p < 280) {
+      barsCount = 2;
+      barColor = 'bg-yellow-400';
+      textBadge = `${p}ms`;
+      textColor = 'text-yellow-400';
+    } else {
+      barsCount = 1;
+      barColor = 'bg-red-500';
+      textBadge = `${p}ms`;
+      textColor = 'text-red-400';
+    }
+    return /*#__PURE__*/React.createElement("div", {
+      onClick: () => setShowSettingsModal(true),
+      className: `flex items-center gap-1.5 px-2 py-1 rounded-xl bg-black/50 hover:bg-black/70 border border-white/10 cursor-pointer transition select-none shadow-sm active:scale-95 ${className}`,
+      title: `البينج: ${p !== null ? p + 'ms' : 'غير متصل'} (اضغط لعرض مقياس الاتصال في الإعدادات)`
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-end gap-[2px] h-3.5 w-3.5 pb-0.5 justify-center"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: `w-[2px] h-1 rounded-sm transition-all duration-300 ${barsCount >= 1 ? barColor : 'bg-white/20'}`
+    }), /*#__PURE__*/React.createElement("div", {
+      className: `w-[2px] h-1.5 rounded-sm transition-all duration-300 ${barsCount >= 2 ? barColor : 'bg-white/20'}`
+    }), /*#__PURE__*/React.createElement("div", {
+      className: `w-[2px] h-2.5 rounded-sm transition-all duration-300 ${barsCount >= 3 ? barColor : 'bg-white/20'}`
+    }), /*#__PURE__*/React.createElement("div", {
+      className: `w-[2px] h-3.5 rounded-sm transition-all duration-300 ${barsCount >= 4 ? barColor : 'bg-white/20'}`
+    })), showText && /*#__PURE__*/React.createElement("span", {
+      className: `text-[10px] font-black font-mono leading-none ${textColor}`
+    }, textBadge));
+  };
+  const renderPingMeterCard = () => {
+    const isConn = connectionStatus === 'connected' && ping !== null;
+    let barsCount = 0;
+    let barColor = 'bg-slate-600';
+    let pingColor = 'text-slate-400';
+    let qualityText = lang === 'en' ? 'Checking network...' : 'جاري فحص الاتصال...';
+    let qualityTextColor = 'text-slate-400';
+    let meterPercentage = 0;
+    let meterBarColor = 'bg-slate-600';
+    let statusBadge = lang === 'en' ? 'Connecting...' : 'جاري الاتصال...';
+    let statusBadgeClass = 'bg-slate-800 text-slate-300 border-white/10';
+    if (!isConn) {
+      barsCount = 0;
+      barColor = 'bg-red-500';
+      pingColor = 'text-red-400';
+      qualityText = lang === 'en' ? 'Disconnected from game server' : 'غير متصل بسيرفر اللعبة ❌';
+      qualityTextColor = 'text-red-400';
+      meterPercentage = 100;
+      meterBarColor = 'bg-red-500';
+      statusBadge = lang === 'en' ? 'Offline' : 'منقطع 🔴';
+      statusBadgeClass = 'bg-red-950/60 text-red-300 border-red-500/40';
+    } else if (ping < 90) {
+      barsCount = 4;
+      barColor = 'bg-emerald-400';
+      pingColor = 'text-emerald-400';
+      qualityText = lang === 'en' ? 'Ultra fast & stable connection 🚀' : 'اتصال فائق السرعة ومثالي 🚀';
+      qualityTextColor = 'text-emerald-400';
+      meterPercentage = Math.min(100, Math.max(12, ping / 350 * 100));
+      meterBarColor = 'bg-gradient-to-r from-emerald-500 to-emerald-400';
+      statusBadge = lang === 'en' ? 'Active ✓' : 'ممتاز ✓';
+      statusBadgeClass = 'bg-emerald-950/60 text-emerald-300 border-emerald-500/40';
+    } else if (ping < 160) {
+      barsCount = 3;
+      barColor = 'bg-emerald-400';
+      pingColor = 'text-emerald-300';
+      qualityText = lang === 'en' ? 'Good & reliable connection ✅' : 'سرعة ممتازة ومستقرة ✅';
+      qualityTextColor = 'text-emerald-300';
+      meterPercentage = Math.min(100, ping / 350 * 100);
+      meterBarColor = 'bg-gradient-to-r from-emerald-500 to-teal-400';
+      statusBadge = lang === 'en' ? 'Good ✓' : 'مستقر ✓';
+      statusBadgeClass = 'bg-emerald-950/60 text-emerald-300 border-emerald-500/40';
+    } else if (ping < 280) {
+      barsCount = 2;
+      barColor = 'bg-yellow-400';
+      pingColor = 'text-yellow-400';
+      qualityText = lang === 'en' ? 'Medium latency (slight delay) ⚠️' : 'سرعة متوسطة (قد تلاحظ تأخيراً طفيفاً) ⚠️';
+      qualityTextColor = 'text-yellow-400';
+      meterPercentage = Math.min(100, ping / 350 * 100);
+      meterBarColor = 'bg-gradient-to-r from-yellow-500 to-amber-400';
+      statusBadge = lang === 'en' ? 'Medium' : 'متوسط ⚠️';
+      statusBadgeClass = 'bg-yellow-950/60 text-yellow-300 border-yellow-500/40';
+    } else {
+      barsCount = 1;
+      barColor = 'bg-red-500';
+      pingColor = 'text-red-400';
+      qualityText = lang === 'en' ? 'Weak network / High latency 🔴' : 'شبكة ضعيفة أو بطيئة 🔴';
+      qualityTextColor = 'text-red-400';
+      meterPercentage = Math.min(100, ping / 350 * 100);
+      meterBarColor = 'bg-gradient-to-r from-orange-500 to-red-500';
+      statusBadge = lang === 'en' ? 'Weak' : 'ضعيف 🔴';
+      statusBadgeClass = 'bg-red-950/60 text-red-300 border-red-500/40';
+    }
+    return /*#__PURE__*/React.createElement("div", {
+      className: "bg-black/60 p-3 rounded-2xl border border-amber-500/30 space-y-2.5"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center justify-between pb-1.5 border-b border-white/10"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-1.5"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-base"
+    }, "📶"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+      className: "font-bold text-xs text-amber-200"
+    }, lang === 'en' ? 'Network Latency & Ping' : 'مقياس الاتصال والسرعة (Ping)'), /*#__PURE__*/React.createElement("p", {
+      className: "text-[9px] text-white/50 font-mono"
+    }, "WebSocket Round-Trip Time"))), /*#__PURE__*/React.createElement("button", {
+      onClick: handleTestPing,
+      className: "px-2.5 py-1 rounded-xl text-[10px] font-black bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-400/40 transition active:scale-95 flex items-center gap-1 shadow-sm",
+      title: "اختبار فوري للبينج"
+    }, /*#__PURE__*/React.createElement("span", null, "⚡"), /*#__PURE__*/React.createElement("span", null, lang === 'en' ? 'Test Ping' : 'فحص فوري'))), /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center justify-between bg-black/40 px-3 py-2 rounded-xl border border-white/5"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-2.5"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-end gap-[3px] h-6 w-6 pb-0.5 justify-center bg-black/60 p-1 rounded-lg border border-white/10"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: `w-[3px] h-1.5 rounded-sm transition-all duration-300 ${barsCount >= 1 ? barColor : 'bg-white/20'}`
+    }), /*#__PURE__*/React.createElement("div", {
+      className: `w-[3px] h-2.5 rounded-sm transition-all duration-300 ${barsCount >= 2 ? barColor : 'bg-white/20'}`
+    }), /*#__PURE__*/React.createElement("div", {
+      className: `w-[3px] h-3.5 rounded-sm transition-all duration-300 ${barsCount >= 3 ? barColor : 'bg-white/20'}`
+    }), /*#__PURE__*/React.createElement("div", {
+      className: `w-[3px] h-4.5 rounded-sm transition-all duration-300 ${barsCount >= 4 ? barColor : 'bg-white/20'}`
+    })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-baseline gap-1"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: `text-base font-black font-mono leading-none ${pingColor}`
+    }, isConn ? ping : '---'), /*#__PURE__*/React.createElement("span", {
+      className: "text-[10px] font-bold text-white/60"
+    }, "ms")), /*#__PURE__*/React.createElement("p", {
+      className: `text-[10px] font-bold mt-0.5 ${qualityTextColor}`
+    }, qualityText))), /*#__PURE__*/React.createElement("div", {
+      className: "text-left"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: `inline-block px-2 py-0.5 rounded-full text-[9px] font-black border ${statusBadgeClass}`
+    }, statusBadge))), /*#__PURE__*/React.createElement("div", {
+      className: "space-y-1"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "w-full bg-slate-800/80 rounded-full h-2 overflow-hidden border border-white/10 p-[1px]"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: `h-full rounded-full transition-all duration-500 ${meterBarColor}`,
+      style: {
+        width: `${meterPercentage}%`
+      }
+    })), /*#__PURE__*/React.createElement("div", {
+      className: "flex justify-between text-[8px] text-white/40 font-mono"
+    }, /*#__PURE__*/React.createElement("span", null, "0ms (", lang === 'en' ? 'Fast' : 'فائق', ")"), /*#__PURE__*/React.createElement("span", null, "150ms (", lang === 'en' ? 'Good' : 'جيد', ")"), /*#__PURE__*/React.createElement("span", null, "280ms (", lang === 'en' ? 'Med' : 'متوسط', ")"), /*#__PURE__*/React.createElement("span", null, "400ms+ (", lang === 'en' ? 'Slow' : 'ضعيف', ")"))));
+  };
+  const renderErrorToast = (customClass = 'bottom-14 left-4 right-4') => {
+    if (!errorMsg) return null;
+    return /*#__PURE__*/React.createElement("div", {
+      className: `fixed ${customClass} bg-red-600/95 backdrop-blur-md text-white px-4 py-2.5 rounded-2xl font-bold shadow-2xl z-[500] text-xs flex items-center justify-between gap-2 border border-red-400/40 animate-in fade-in slide-in-from-bottom-2`
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "flex-1 text-center font-cairo leading-relaxed"
+    }, errorMsg), /*#__PURE__*/React.createElement("button", {
+      onClick: () => setErrorMsg(''),
+      className: "w-6 h-6 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center text-sm font-black transition shrink-0 active:scale-90",
+      title: lang === 'en' ? 'Close' : 'إغلاق'
+    }, "✕"));
+  };
   const handleGuestPlay = () => {
     localStorage.setItem('catch_is_guest', 'true');
     setIsGuest(true);
@@ -2404,6 +2598,7 @@ function App() {
     // Realtime connection tracking
     socket.on('connect', () => {
       setConnectionStatus('connected');
+      socket.emit('ping_check', Date.now());
       const storedToken = localStorage.getItem('catch_token');
       const storedUid = localStorage.getItem('catch_user_id') || userId;
       if (storedToken && storedUid && !String(storedUid).startsWith('u_')) {
@@ -2425,6 +2620,14 @@ function App() {
       }
     });
 
+    // Realtime accurate ping measurement response
+    socket.on('pong_check', clientTs => {
+      if (typeof clientTs === 'number') {
+        const rtt = Math.max(1, Date.now() - clientTs);
+        setPing(rtt);
+      }
+    });
+
     // Single-device session termination (kick when logged in elsewhere)
     socket.on('session_terminated', ({
       message,
@@ -2434,9 +2637,11 @@ function App() {
     });
     socket.on('disconnect', () => {
       setConnectionStatus('disconnected');
+      setPing(null);
     });
     socket.on('connect_error', err => {
       setConnectionStatus('disconnected');
+      setPing(null);
       console.warn('Socket connect_error:', err?.message || err);
     });
 
@@ -2703,6 +2908,31 @@ function App() {
       socket.disconnect();
     };
   }, []);
+
+  // Recurring Live Ping Measurement (every 3.5s)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (socketRef.current?.connected) {
+        socketRef.current.emit('ping_check', Date.now());
+      } else {
+        setPing(null);
+      }
+    }, 3500);
+    if (socketRef.current?.connected) {
+      socketRef.current.emit('ping_check', Date.now());
+    }
+    return () => clearInterval(timer);
+  }, [connectionStatus]);
+
+  // Auto-dismiss stuck error messages after 4.5 seconds
+  useEffect(() => {
+    if (errorMsg) {
+      const timer = setTimeout(() => {
+        setErrorMsg('');
+      }, 4500);
+      return () => clearTimeout(timer);
+    }
+  }, [errorMsg]);
 
   // Real-time Active Session Heartbeat: checks /api/me every 6s and on app focus/visibility
   // Instantly kicks previous device even when WebSocket is idle, backgrounded, or asleep
@@ -3363,7 +3593,7 @@ function App() {
       className: "text-[10px] opacity-70 font-bold"
     }, "+"))), /*#__PURE__*/React.createElement("div", {
       className: "flex items-center gap-1.5"
-    }, /*#__PURE__*/React.createElement("div", {
+    }, renderSignalBars(ping, connectionStatus), /*#__PURE__*/React.createElement("div", {
       onClick: () => setIsEditingProfile(true),
       className: "flex items-center gap-1.5 px-2.5 py-1 rounded-xl border border-purple-400/30 bg-slate-800/90 cursor-pointer transition hover:bg-slate-700/90 shadow-sm"
     }, /*#__PURE__*/React.createElement("div", {
@@ -3929,7 +4159,7 @@ function App() {
         setShowRulesModal(true);
       },
       className: "btn-emerald px-3 py-1 rounded-lg text-xs font-black"
-    }, t('readRules'))), currentUser ? /*#__PURE__*/React.createElement("div", {
+    }, t('readRules'))), renderPingMeterCard(), currentUser ? /*#__PURE__*/React.createElement("div", {
       className: "bg-gradient-to-r from-purple-950/70 to-black/70 p-3 rounded-2xl border border-purple-500/40 space-y-2"
     }, /*#__PURE__*/React.createElement("div", {
       className: "flex items-center justify-between"
@@ -4134,9 +4364,7 @@ function App() {
       className: "w-full py-2.5 rounded-2xl text-xs font-black bg-emerald-700/40 hover:bg-emerald-600/60 text-emerald-200 border border-emerald-400/50 transition flex items-center justify-center gap-2 shadow-md hover:scale-[1.01] active:scale-95"
     }, /*#__PURE__*/React.createElement("span", null, "⚡"), /*#__PURE__*/React.createElement("span", null, lang === 'en' ? 'Quick Play as Guest' : 'دخول سريع كزائر (بدون كلمة سر)')), /*#__PURE__*/React.createElement("p", {
       className: "text-[10px] text-amber-200/60 text-center font-bold leading-tight"
-    }, "💡 التسجيل بيحفظ لِمّاتك ورتبتك وكوينزاتك دايماً!"))), errorMsg && /*#__PURE__*/React.createElement("div", {
-      className: "fixed bottom-14 left-4 right-4 bg-red-600 text-white px-4 py-2 rounded-2xl font-bold shadow-2xl z-50 text-xs text-center"
-    }, errorMsg), renderSessionTerminatedModal(), isMatchmaking && /*#__PURE__*/React.createElement(MatchmakingScreen, {
+    }, "💡 التسجيل بيحفظ لِمّاتك ورتبتك وكوينزاتك دايماً!"))), renderErrorToast('bottom-14 left-4 right-4'), renderSessionTerminatedModal(), isMatchmaking && /*#__PURE__*/React.createElement(MatchmakingScreen, {
       matchmakingTime: matchmakingTime,
       matchmakingPlayers: matchmakingPlayers,
       onCancel: handleCancelMatchmaking,
@@ -4158,9 +4386,11 @@ function App() {
     }, /*#__PURE__*/React.createElement("button", {
       onClick: requestLeaveRoom,
       className: "btn-ruby text-white px-2.5 py-1 rounded-xl text-xs font-black active:scale-95 transition"
-    }, t('leaveTable')), /*#__PURE__*/React.createElement("span", {
+    }, t('leaveTable')), /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-1.5"
+    }, /*#__PURE__*/React.createElement("span", {
       className: "text-xs font-black text-amber-300"
-    }, t('tableNumber'), " [", roomState.code, "]"), /*#__PURE__*/React.createElement("button", {
+    }, t('tableNumber'), " [", roomState.code, "]"), renderSignalBars(ping, connectionStatus)), /*#__PURE__*/React.createElement("button", {
       onClick: handleToggleVoiceChat,
       className: `px-2.5 py-1 rounded-xl text-xs font-bold border transition ${voiceChatActive ? 'bg-emerald-600 border-emerald-400 text-white animate-pulse' : 'bg-white/10 text-white border-white/20'}`
     }, voiceChatActive ? t('micOn') : t('liveMic'))), /*#__PURE__*/React.createElement("div", {
@@ -4277,9 +4507,7 @@ function App() {
       className: `btn-3d-green w-full py-3.5 rounded-2xl text-lg font-black transition ${roomState.players.length < roomState.minPlayers ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.02]'}`
     }, lang === 'en' ? '🚀 Start Game Now!' : '🚀 ابدأ اللعبة الآن!')) : /*#__PURE__*/React.createElement("div", {
       className: "text-center text-amber-200 text-xs font-bold bg-black/50 py-3 rounded-2xl border border-amber-500/20 animate-pulse"
-    }, lang === 'en' ? '⏳ Waiting for host to start the game...' : '⏳ في انتظار المضيف لبدء اللعبة...')), errorMsg && /*#__PURE__*/React.createElement("div", {
-      className: "fixed bottom-6 bg-red-600 text-white px-6 py-2 rounded-2xl font-bold shadow-2xl z-50 text-xs"
-    }, errorMsg), renderSessionTerminatedModal(), isMatchmaking && /*#__PURE__*/React.createElement(MatchmakingScreen, {
+    }, lang === 'en' ? '⏳ Waiting for host to start the game...' : '⏳ في انتظار المضيف لبدء اللعبة...')), renderErrorToast('bottom-6 left-4 right-4'), renderSessionTerminatedModal(), isMatchmaking && /*#__PURE__*/React.createElement(MatchmakingScreen, {
       matchmakingTime: matchmakingTime,
       matchmakingPlayers: matchmakingPlayers,
       matchmakingTotal: matchmakingTotal,
@@ -4500,12 +4728,14 @@ function App() {
     }
   }, /*#__PURE__*/React.createElement("div", {
     className: "w-full bg-[#1e0407]/90 backdrop-blur-md border border-amber-500/40 rounded-2xl px-3 py-1 flex items-center justify-between shadow-lg"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-1.5"
   }, /*#__PURE__*/React.createElement("button", {
     onClick: requestLeaveRoom,
     className: "text-amber-200/90 hover:text-white flex items-center gap-1.5 text-xs font-black transition px-2 py-1 rounded-xl bg-red-950/40 hover:bg-red-950/80 border border-red-500/30 active:scale-95 shadow-sm"
   }, /*#__PURE__*/React.createElement("span", {
     className: "text-red-400 font-bold"
-  }, "✕"), /*#__PURE__*/React.createElement("span", null, "خروج")), /*#__PURE__*/React.createElement("div", {
+  }, "✕"), /*#__PURE__*/React.createElement("span", null, "خروج")), renderSignalBars(ping, connectionStatus)), /*#__PURE__*/React.createElement("div", {
     className: `flex flex-col items-center px-2.5 py-0.5 rounded-xl transition-all duration-300 ${turnTimer <= 10 ? 'bg-red-950/85 border border-red-500 shadow-[0_0_18px_rgba(239,68,68,0.9)] animate-pulse' : ''}`
   }, /*#__PURE__*/React.createElement("span", {
     className: `text-xs font-black leading-tight ${turnTimer <= 10 ? 'text-red-300' : 'text-amber-200'}`
@@ -5991,9 +6221,7 @@ function App() {
     onConfirm: handleLeaveRoom,
     isPlaying: roomState.status === 'playing' || roomState.status === 'joker_showdown',
     lang: lang
-  }), errorMsg && /*#__PURE__*/React.createElement("div", {
-    className: "fixed bottom-24 left-1/2 -translate-x-1/2 bg-red-600 text-white px-6 py-2.5 rounded-2xl font-bold shadow-2xl z-50 text-sm"
-  }, errorMsg));
+  }), renderErrorToast('bottom-24 left-4 right-4 max-w-sm mx-auto'));
 }
 class ErrorBoundary extends React.Component {
   constructor(props) {

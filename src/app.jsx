@@ -1398,8 +1398,9 @@ function App() {
   const [lang, setLang] = useState(() => localStorage.getItem('catch_lang') || 'ar');
   const t = (key) => TRANSLATIONS[lang]?.[key] || TRANSLATIONS['ar']?.[key] || key;
 
-  // Realtime Connection State
+  // Realtime Connection State & Live Accurate Ping (ms)
   const [connectionStatus, setConnectionStatus] = useState('connecting'); // 'connected' | 'disconnected' | 'connecting'
+  const [ping, setPing] = useState(null);
 
   // Economy States (Coins & Gems with clean starting defaults: 500 Coins, 10 Gems)
   const [coins, setCoins] = useState(() => {
@@ -1609,7 +1610,11 @@ function App() {
     }
     soundFx.init();
     soundFx.play('impact');
-    setErrorMsg(lang === 'en' ? 'Connecting to game server... Please try again in a moment' : 'جاري الاتصال بسيرفر اللعبة... يرجى إعادة المحاولة بعد ثانية');
+    const msg = lang === 'en' ? 'Connecting to game server... Please try again in a moment' : 'جاري الاتصال بسيرفر اللعبة... يرجى إعادة المحاولة بعد ثوانٍ';
+    setErrorMsg(msg);
+    setTimeout(() => {
+      setErrorMsg(prev => prev === msg ? '' : prev);
+    }, 3500);
     try { socketRef.current?.connect?.(); } catch(e){}
     return false;
   };
@@ -1959,6 +1964,223 @@ function App() {
     );
   };
 
+  const handleTestPing = () => {
+    if (!socketRef.current?.connected) {
+      showVoiceNotice(lang === 'en' ? '⚠️ Not connected to server' : '⚠️ غير متصل بالسيرفر حالياً');
+      return;
+    }
+    soundFx.init();
+    soundFx.play('tick');
+    socketRef.current.emit('ping_check', Date.now());
+    showVoiceNotice(lang === 'en' ? '⚡ Measuring server ping...' : '⚡ جاري قياس سرعة الاتصال بالسيرفر...');
+  };
+
+  const renderSignalBars = (p, status, showText = true, className = '') => {
+    const isConn = status === 'connected' && p !== null;
+    let barsCount = 0;
+    let barColor = 'bg-slate-600';
+    let textBadge = '...';
+    let textColor = 'text-slate-400';
+
+    if (!isConn) {
+      barsCount = 0;
+      barColor = 'bg-red-500';
+      textBadge = lang === 'en' ? 'Offline' : 'منقطع';
+      textColor = 'text-red-400';
+    } else if (p < 90) {
+      barsCount = 4;
+      barColor = 'bg-emerald-400';
+      textBadge = `${p}ms`;
+      textColor = 'text-emerald-400';
+    } else if (p < 160) {
+      barsCount = 3;
+      barColor = 'bg-emerald-400';
+      textBadge = `${p}ms`;
+      textColor = 'text-emerald-300';
+    } else if (p < 280) {
+      barsCount = 2;
+      barColor = 'bg-yellow-400';
+      textBadge = `${p}ms`;
+      textColor = 'text-yellow-400';
+    } else {
+      barsCount = 1;
+      barColor = 'bg-red-500';
+      textBadge = `${p}ms`;
+      textColor = 'text-red-400';
+    }
+
+    return (
+      <div 
+        onClick={() => setShowSettingsModal(true)}
+        className={`flex items-center gap-1.5 px-2 py-1 rounded-xl bg-black/50 hover:bg-black/70 border border-white/10 cursor-pointer transition select-none shadow-sm active:scale-95 ${className}`}
+        title={`البينج: ${p !== null ? p + 'ms' : 'غير متصل'} (اضغط لعرض مقياس الاتصال في الإعدادات)`}
+      >
+        {/* 4 Signal Bars Graphic */}
+        <div className="flex items-end gap-[2px] h-3.5 w-3.5 pb-0.5 justify-center">
+          <div className={`w-[2px] h-1 rounded-sm transition-all duration-300 ${barsCount >= 1 ? barColor : 'bg-white/20'}`} />
+          <div className={`w-[2px] h-1.5 rounded-sm transition-all duration-300 ${barsCount >= 2 ? barColor : 'bg-white/20'}`} />
+          <div className={`w-[2px] h-2.5 rounded-sm transition-all duration-300 ${barsCount >= 3 ? barColor : 'bg-white/20'}`} />
+          <div className={`w-[2px] h-3.5 rounded-sm transition-all duration-300 ${barsCount >= 4 ? barColor : 'bg-white/20'}`} />
+        </div>
+        {showText && (
+          <span className={`text-[10px] font-black font-mono leading-none ${textColor}`}>
+            {textBadge}
+          </span>
+        )}
+      </div>
+    );
+  };
+
+  const renderPingMeterCard = () => {
+    const isConn = connectionStatus === 'connected' && ping !== null;
+    let barsCount = 0;
+    let barColor = 'bg-slate-600';
+    let pingColor = 'text-slate-400';
+    let qualityText = lang === 'en' ? 'Checking network...' : 'جاري فحص الاتصال...';
+    let qualityTextColor = 'text-slate-400';
+    let meterPercentage = 0;
+    let meterBarColor = 'bg-slate-600';
+    let statusBadge = lang === 'en' ? 'Connecting...' : 'جاري الاتصال...';
+    let statusBadgeClass = 'bg-slate-800 text-slate-300 border-white/10';
+
+    if (!isConn) {
+      barsCount = 0;
+      barColor = 'bg-red-500';
+      pingColor = 'text-red-400';
+      qualityText = lang === 'en' ? 'Disconnected from game server' : 'غير متصل بسيرفر اللعبة ❌';
+      qualityTextColor = 'text-red-400';
+      meterPercentage = 100;
+      meterBarColor = 'bg-red-500';
+      statusBadge = lang === 'en' ? 'Offline' : 'منقطع 🔴';
+      statusBadgeClass = 'bg-red-950/60 text-red-300 border-red-500/40';
+    } else if (ping < 90) {
+      barsCount = 4;
+      barColor = 'bg-emerald-400';
+      pingColor = 'text-emerald-400';
+      qualityText = lang === 'en' ? 'Ultra fast & stable connection 🚀' : 'اتصال فائق السرعة ومثالي 🚀';
+      qualityTextColor = 'text-emerald-400';
+      meterPercentage = Math.min(100, Math.max(12, (ping / 350) * 100));
+      meterBarColor = 'bg-gradient-to-r from-emerald-500 to-emerald-400';
+      statusBadge = lang === 'en' ? 'Active ✓' : 'ممتاز ✓';
+      statusBadgeClass = 'bg-emerald-950/60 text-emerald-300 border-emerald-500/40';
+    } else if (ping < 160) {
+      barsCount = 3;
+      barColor = 'bg-emerald-400';
+      pingColor = 'text-emerald-300';
+      qualityText = lang === 'en' ? 'Good & reliable connection ✅' : 'سرعة ممتازة ومستقرة ✅';
+      qualityTextColor = 'text-emerald-300';
+      meterPercentage = Math.min(100, (ping / 350) * 100);
+      meterBarColor = 'bg-gradient-to-r from-emerald-500 to-teal-400';
+      statusBadge = lang === 'en' ? 'Good ✓' : 'مستقر ✓';
+      statusBadgeClass = 'bg-emerald-950/60 text-emerald-300 border-emerald-500/40';
+    } else if (ping < 280) {
+      barsCount = 2;
+      barColor = 'bg-yellow-400';
+      pingColor = 'text-yellow-400';
+      qualityText = lang === 'en' ? 'Medium latency (slight delay) ⚠️' : 'سرعة متوسطة (قد تلاحظ تأخيراً طفيفاً) ⚠️';
+      qualityTextColor = 'text-yellow-400';
+      meterPercentage = Math.min(100, (ping / 350) * 100);
+      meterBarColor = 'bg-gradient-to-r from-yellow-500 to-amber-400';
+      statusBadge = lang === 'en' ? 'Medium' : 'متوسط ⚠️';
+      statusBadgeClass = 'bg-yellow-950/60 text-yellow-300 border-yellow-500/40';
+    } else {
+      barsCount = 1;
+      barColor = 'bg-red-500';
+      pingColor = 'text-red-400';
+      qualityText = lang === 'en' ? 'Weak network / High latency 🔴' : 'شبكة ضعيفة أو بطيئة 🔴';
+      qualityTextColor = 'text-red-400';
+      meterPercentage = Math.min(100, (ping / 350) * 100);
+      meterBarColor = 'bg-gradient-to-r from-orange-500 to-red-500';
+      statusBadge = lang === 'en' ? 'Weak' : 'ضعيف 🔴';
+      statusBadgeClass = 'bg-red-950/60 text-red-300 border-red-500/40';
+    }
+
+    return (
+      <div className="bg-black/60 p-3 rounded-2xl border border-amber-500/30 space-y-2.5">
+        <div className="flex items-center justify-between pb-1.5 border-b border-white/10">
+          <div className="flex items-center gap-1.5">
+            <span className="text-base">📶</span>
+            <div>
+              <span className="font-bold text-xs text-amber-200">
+                {lang === 'en' ? 'Network Latency & Ping' : 'مقياس الاتصال والسرعة (Ping)'}
+              </span>
+              <p className="text-[9px] text-white/50 font-mono">WebSocket Round-Trip Time</p>
+            </div>
+          </div>
+          <button 
+            onClick={handleTestPing}
+            className="px-2.5 py-1 rounded-xl text-[10px] font-black bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-400/40 transition active:scale-95 flex items-center gap-1 shadow-sm"
+            title="اختبار فوري للبينج"
+          >
+            <span>⚡</span>
+            <span>{lang === 'en' ? 'Test Ping' : 'فحص فوري'}</span>
+          </button>
+        </div>
+
+        <div className="flex items-center justify-between bg-black/40 px-3 py-2 rounded-xl border border-white/5">
+          <div className="flex items-center gap-2.5">
+            {/* 4-bar indicator graphic */}
+            <div className="flex items-end gap-[3px] h-6 w-6 pb-0.5 justify-center bg-black/60 p-1 rounded-lg border border-white/10">
+              <div className={`w-[3px] h-1.5 rounded-sm transition-all duration-300 ${barsCount >= 1 ? barColor : 'bg-white/20'}`} />
+              <div className={`w-[3px] h-2.5 rounded-sm transition-all duration-300 ${barsCount >= 2 ? barColor : 'bg-white/20'}`} />
+              <div className={`w-[3px] h-3.5 rounded-sm transition-all duration-300 ${barsCount >= 3 ? barColor : 'bg-white/20'}`} />
+              <div className={`w-[3px] h-4.5 rounded-sm transition-all duration-300 ${barsCount >= 4 ? barColor : 'bg-white/20'}`} />
+            </div>
+            <div>
+              <div className="flex items-baseline gap-1">
+                <span className={`text-base font-black font-mono leading-none ${pingColor}`}>
+                  {isConn ? ping : '---'}
+                </span>
+                <span className="text-[10px] font-bold text-white/60">ms</span>
+              </div>
+              <p className={`text-[10px] font-bold mt-0.5 ${qualityTextColor}`}>
+                {qualityText}
+              </p>
+            </div>
+          </div>
+
+          <div className="text-left">
+            <span className={`inline-block px-2 py-0.5 rounded-full text-[9px] font-black border ${statusBadgeClass}`}>
+              {statusBadge}
+            </span>
+          </div>
+        </div>
+
+        {/* Visual Meter Bar */}
+        <div className="space-y-1">
+          <div className="w-full bg-slate-800/80 rounded-full h-2 overflow-hidden border border-white/10 p-[1px]">
+            <div 
+              className={`h-full rounded-full transition-all duration-500 ${meterBarColor}`}
+              style={{ width: `${meterPercentage}%` }}
+            />
+          </div>
+          <div className="flex justify-between text-[8px] text-white/40 font-mono">
+            <span>0ms ({lang === 'en' ? 'Fast' : 'فائق'})</span>
+            <span>150ms ({lang === 'en' ? 'Good' : 'جيد'})</span>
+            <span>280ms ({lang === 'en' ? 'Med' : 'متوسط'})</span>
+            <span>400ms+ ({lang === 'en' ? 'Slow' : 'ضعيف'})</span>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderErrorToast = (customClass = 'bottom-14 left-4 right-4') => {
+    if (!errorMsg) return null;
+    return (
+      <div className={`fixed ${customClass} bg-red-600/95 backdrop-blur-md text-white px-4 py-2.5 rounded-2xl font-bold shadow-2xl z-[500] text-xs flex items-center justify-between gap-2 border border-red-400/40 animate-in fade-in slide-in-from-bottom-2`}>
+        <span className="flex-1 text-center font-cairo leading-relaxed">{errorMsg}</span>
+        <button 
+          onClick={() => setErrorMsg('')} 
+          className="w-6 h-6 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center text-sm font-black transition shrink-0 active:scale-90"
+          title={lang === 'en' ? 'Close' : 'إغلاق'}
+        >
+          ✕
+        </button>
+      </div>
+    );
+  };
+
   const handleGuestPlay = () => {
     localStorage.setItem('catch_is_guest', 'true');
     setIsGuest(true);
@@ -2119,6 +2341,7 @@ function App() {
     // Realtime connection tracking
     socket.on('connect', () => {
       setConnectionStatus('connected');
+      socket.emit('ping_check', Date.now());
       const storedToken = localStorage.getItem('catch_token');
       const storedUid = localStorage.getItem('catch_user_id') || userId;
       if (storedToken && storedUid && !String(storedUid).startsWith('u_')) {
@@ -2137,6 +2360,14 @@ function App() {
       }
     });
 
+    // Realtime accurate ping measurement response
+    socket.on('pong_check', (clientTs) => {
+      if (typeof clientTs === 'number') {
+        const rtt = Math.max(1, Date.now() - clientTs);
+        setPing(rtt);
+      }
+    });
+
     // Single-device session termination (kick when logged in elsewhere)
     socket.on('session_terminated', ({ message, reason }) => {
       handleSessionTerminated(message || (lang === 'en' ? '⚠️ Logged in from another device!' : '⚠️ تم فتح هذا الحساب من جهاز آخر! تم تسجيل الخروج تلقائياً.'));
@@ -2144,10 +2375,12 @@ function App() {
 
     socket.on('disconnect', () => {
       setConnectionStatus('disconnected');
+      setPing(null);
     });
 
     socket.on('connect_error', (err) => {
       setConnectionStatus('disconnected');
+      setPing(null);
       console.warn('Socket connect_error:', err?.message || err);
     });
 
@@ -2374,6 +2607,31 @@ function App() {
       socket.disconnect();
     };
   }, []);
+
+  // Recurring Live Ping Measurement (every 3.5s)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (socketRef.current?.connected) {
+        socketRef.current.emit('ping_check', Date.now());
+      } else {
+        setPing(null);
+      }
+    }, 3500);
+    if (socketRef.current?.connected) {
+      socketRef.current.emit('ping_check', Date.now());
+    }
+    return () => clearInterval(timer);
+  }, [connectionStatus]);
+
+  // Auto-dismiss stuck error messages after 4.5 seconds
+  useEffect(() => {
+    if (errorMsg) {
+      const timer = setTimeout(() => {
+        setErrorMsg('');
+      }, 4500);
+      return () => clearTimeout(timer);
+    }
+  }, [errorMsg]);
 
   // Real-time Active Session Heartbeat: checks /api/me every 6s and on app focus/visibility
   // Instantly kicks previous device even when WebSocket is idle, backgrounded, or asleep
@@ -3006,8 +3264,9 @@ function App() {
             </div>
           </div>
 
-          {/* Right: Avatar Pill & Settings */}
+          {/* Right: Signal Bars, Avatar Pill & Settings */}
           <div className="flex items-center gap-1.5">
+            {renderSignalBars(ping, connectionStatus)}
             <div onClick={() => setIsEditingProfile(true)}
                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl border border-purple-400/30 bg-slate-800/90 cursor-pointer transition hover:bg-slate-700/90 shadow-sm">
               <div className="w-6 h-6 rounded-full flex items-center justify-center text-sm border-2 border-purple-400 bg-purple-950/60">
@@ -3588,6 +3847,9 @@ function App() {
                   </button>
                 </div>
 
+                {/* Real-time Network & Ping Diagnostics */}
+                {renderPingMeterCard()}
+
                 {/* Account & Profile Persistence Card */}
                 {currentUser ? (
                   <div className="bg-gradient-to-r from-purple-950/70 to-black/70 p-3 rounded-2xl border border-purple-500/40 space-y-2">
@@ -3867,7 +4129,7 @@ function App() {
           </div>
         )}
 
-        {errorMsg && <div className="fixed bottom-14 left-4 right-4 bg-red-600 text-white px-4 py-2 rounded-2xl font-bold shadow-2xl z-50 text-xs text-center">{errorMsg}</div>}
+        {renderErrorToast('bottom-14 left-4 right-4')}
 
         {/* SINGLE-DEVICE LOGIN TERMINATION MODAL */}
         {renderSessionTerminatedModal()}
@@ -3898,7 +4160,10 @@ function App() {
           <button onClick={requestLeaveRoom} className="btn-ruby text-white px-2.5 py-1 rounded-xl text-xs font-black active:scale-95 transition">
             {t('leaveTable')}
           </button>
-          <span className="text-xs font-black text-amber-300">{t('tableNumber')} [{roomState.code}]</span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-black text-amber-300">{t('tableNumber')} [{roomState.code}]</span>
+            {renderSignalBars(ping, connectionStatus)}
+          </div>
           <button onClick={handleToggleVoiceChat}
                   className={`px-2.5 py-1 rounded-xl text-xs font-bold border transition ${
                     voiceChatActive ? 'bg-emerald-600 border-emerald-400 text-white animate-pulse' : 'bg-white/10 text-white border-white/20'
@@ -4036,7 +4301,7 @@ function App() {
           )}
         </div>
 
-        {errorMsg && <div className="fixed bottom-6 bg-red-600 text-white px-6 py-2 rounded-2xl font-bold shadow-2xl z-50 text-xs">{errorMsg}</div>}
+        {renderErrorToast('bottom-6 left-4 right-4')}
 
         {/* SINGLE-DEVICE LOGIN TERMINATION MODAL */}
         {renderSessionTerminatedModal()}
@@ -4273,10 +4538,13 @@ function App() {
       <header className="w-full shrink-0 flex items-center justify-between px-2.5 z-30"
               style={{height:'50px', paddingTop:'max(6px,env(safe-area-inset-top))'}}>
         <div className="w-full bg-[#1e0407]/90 backdrop-blur-md border border-amber-500/40 rounded-2xl px-3 py-1 flex items-center justify-between shadow-lg">
-          <button onClick={requestLeaveRoom} className="text-amber-200/90 hover:text-white flex items-center gap-1.5 text-xs font-black transition px-2 py-1 rounded-xl bg-red-950/40 hover:bg-red-950/80 border border-red-500/30 active:scale-95 shadow-sm">
-            <span className="text-red-400 font-bold">✕</span>
-            <span>خروج</span>
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button onClick={requestLeaveRoom} className="text-amber-200/90 hover:text-white flex items-center gap-1.5 text-xs font-black transition px-2 py-1 rounded-xl bg-red-950/40 hover:bg-red-950/80 border border-red-500/30 active:scale-95 shadow-sm">
+              <span className="text-red-400 font-bold">✕</span>
+              <span>خروج</span>
+            </button>
+            {renderSignalBars(ping, connectionStatus)}
+          </div>
 
           {/* Turn / Player Name & Countdown Timer (Mockup style with Danger Pulse FX) */}
           <div className={`flex flex-col items-center px-2.5 py-0.5 rounded-xl transition-all duration-300 ${
@@ -6152,7 +6420,7 @@ function App() {
         lang={lang}
       />
 
-      {errorMsg && <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-red-600 text-white px-6 py-2.5 rounded-2xl font-bold shadow-2xl z-50 text-sm">{errorMsg}</div>}
+      {renderErrorToast('bottom-24 left-4 right-4 max-w-sm mx-auto')}
     </div>
   );
 }

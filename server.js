@@ -2515,6 +2515,11 @@ function registerSocketHandlers(socket) {
     userSockets.set(numId, socket);
   }
 
+  // Realtime High-Accuracy Ping Gauge
+  socket.on('ping_check', (clientTs) => {
+    socket.emit('pong_check', clientTs);
+  });
+
   // User Session Registration (Enforces single-device login & real-time user sync)
   socket.on('set_user_session', ({ userId, sessionToken } = {}) => {
     if (!userId) return;
