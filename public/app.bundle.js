@@ -2349,6 +2349,9 @@ function App() {
     socket.on('room_state', state => {
       setRoomState(state);
       setHandSorted(false); // Reset hand sort when room changes
+      if (state) {
+        setIsMatchmaking(false);
+      }
       if (state && state.code) {
         localStorage.setItem('catch_last_room', state.code);
         setLastRoomCode(state.code);
@@ -3931,7 +3934,12 @@ function App() {
       className: "text-[10px] text-amber-200/60 text-center font-bold leading-tight"
     }, "💡 التسجيل بيحفظ لِمّاتك ورتبتك وكوينزاتك دايماً!"))), errorMsg && /*#__PURE__*/React.createElement("div", {
       className: "fixed bottom-14 left-4 right-4 bg-red-600 text-white px-4 py-2 rounded-2xl font-bold shadow-2xl z-50 text-xs text-center"
-    }, errorMsg));
+    }, errorMsg), isMatchmaking && /*#__PURE__*/React.createElement(MatchmakingScreen, {
+      matchmakingTime: matchmakingTime,
+      matchmakingPlayers: matchmakingPlayers,
+      onCancel: handleCancelMatchmaking,
+      lang: lang
+    }));
   }
 
   // --- LOBBY SCREEN ---

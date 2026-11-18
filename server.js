@@ -2491,14 +2491,16 @@ function registerSocketHandlers(socket) {
       queuedAt: Date.now()
     });
 
-    socket.emit('matchmaking_status', {
-      status: 'searching',
-      position: matchmakingQueue.length,
-      min: 4,
-      max: 8,
-      total: 8,
-      estimatedSeconds: 3
-    });
+    for (const q of matchmakingQueue) {
+      q.socket.emit('matchmaking_status', {
+        status: 'searching',
+        position: matchmakingQueue.length,
+        min: 4,
+        max: 8,
+        total: 8,
+        estimatedSeconds: 3
+      });
+    }
 
     if (!matchmakingInterval) {
       matchmakingInterval = setInterval(processMatchmakingQueue, 1000);
@@ -2513,6 +2515,16 @@ function registerSocketHandlers(socket) {
       matchmakingQueue.splice(idx, 1);
     }
     socket.emit('matchmaking_status', { status: 'cancelled' });
+    for (const q of matchmakingQueue) {
+      q.socket.emit('matchmaking_status', {
+        status: 'searching',
+        position: matchmakingQueue.length,
+        min: 4,
+        max: 8,
+        total: 8,
+        estimatedSeconds: 3
+      });
+    }
   });
 
   // Reconnect Room (Secure Token-Based Recovery, Seat-Hijacking Protected)

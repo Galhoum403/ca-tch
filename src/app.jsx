@@ -2037,6 +2037,9 @@ function App() {
     socket.on('room_state', (state) => {
       setRoomState(state);
       setHandSorted(false); // Reset hand sort when room changes
+      if (state) {
+        setIsMatchmaking(false);
+      }
       if (state && state.code) {
         localStorage.setItem('catch_last_room', state.code);
         setLastRoomCode(state.code);
@@ -3634,6 +3637,16 @@ function App() {
         )}
 
         {errorMsg && <div className="fixed bottom-14 left-4 right-4 bg-red-600 text-white px-4 py-2 rounded-2xl font-bold shadow-2xl z-50 text-xs text-center">{errorMsg}</div>}
+
+        {/* SMART MATCHMAKING RADAR SEARCH MODAL */}
+        {isMatchmaking && (
+          <MatchmakingScreen
+            matchmakingTime={matchmakingTime}
+            matchmakingPlayers={matchmakingPlayers}
+            onCancel={handleCancelMatchmaking}
+            lang={lang}
+          />
+        )}
       </div>
     );
   }
