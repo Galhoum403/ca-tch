@@ -2185,6 +2185,13 @@ function App() {
     setIsMatchmaking(false);
     setActiveTab('home');
 
+    // Close any other open modals so termination modal is completely unobscured
+    setShowSettingsModal(false);
+    setShowPlayModal(false);
+    setShowAuthModal(false);
+    setIsEditingProfile(false);
+    setShowRulesModal(false);
+
     // Disconnect old socket session
     if (socketRef.current) {
       try {
@@ -2195,6 +2202,13 @@ function App() {
     setShowSessionTerminatedModal(true);
     setErrorMsg(msg);
     showVoiceNotice('⚠️ تم تسجيل الخروج: الحساب مفتوح من جهاز آخر!');
+
+    // Bulletproof Mobile Fallback: Native browser alert so user NEVER misses the notice
+    setTimeout(() => {
+      try {
+        window.alert('⚠️ تنبيه أمان CATCH:\nتم تسجيل الدخول بحسابك من جهاز آخر (كمبيوتر / متصفح آخر) الآن!\nتم تسجيل خروجك من هذا الجهاز وتحويلك كزائر لحماية حسابك ورصيدك.');
+      } catch (e) {}
+    }, 150);
   };
   const dismissSessionTerminatedModal = () => {
     try {
@@ -2207,7 +2221,10 @@ function App() {
   const renderSessionTerminatedModal = () => {
     if (!showSessionTerminatedModal) return null;
     return /*#__PURE__*/React.createElement("div", {
-      className: "fixed inset-0 z-[9999] bg-black/95 backdrop-blur-lg flex items-center justify-center p-4"
+      style: {
+        zIndex: 9999999
+      },
+      className: "fixed inset-0 bg-black/95 backdrop-blur-lg flex items-center justify-center p-4 animate-in fade-in"
     }, /*#__PURE__*/React.createElement("div", {
       className: "w-full max-w-sm bg-gradient-to-b from-slate-900 via-slate-950 to-black border-2 border-red-500 rounded-3xl p-6 shadow-[0_0_50px_rgba(239,68,68,0.5)] text-center space-y-4 font-cairo"
     }, /*#__PURE__*/React.createElement("div", {
@@ -2467,6 +2484,12 @@ function App() {
 
   // Verify stored token on startup
   useEffect(() => {
+    // 1. Check if previous session was terminated first (guarantee modal shows on reload)
+    if (localStorage.getItem('catch_session_terminated_alert') === 'true') {
+      const savedMsg = localStorage.getItem('catch_session_terminated_msg');
+      if (savedMsg) setSessionTerminatedReason(savedMsg);
+      setShowSessionTerminatedModal(true);
+    }
     const token = localStorage.getItem('catch_token');
     const guest = localStorage.getItem('catch_is_guest') === 'true';
     const base = getServerBaseUrl();
@@ -2543,9 +2566,7 @@ function App() {
         console.warn('Auth check error:', err);
       });
     } else if (!guest) {
-      if (localStorage.getItem('catch_session_terminated_alert') === 'true') {
-        setShowSessionTerminatedModal(true);
-      } else {
+      if (localStorage.getItem('catch_session_terminated_alert') !== 'true') {
         setShowAuthModal(true);
       }
     }
