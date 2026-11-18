@@ -2949,9 +2949,11 @@ function App() {
       if (state && state.status === 'gameover' && roomStateRef.current?.status !== 'gameover') {
         triggerScreenShake();
       }
+      if (state && state.code !== roomStateRef.current?.code) {
+        setHandSorted(false); // Only reset hand sort when entering a new room
+      }
       setRoomState(state);
       roomStateRef.current = state;
-      setHandSorted(false); // Reset hand sort when room changes
       if (state) {
         setIsMatchmaking(false);
       }
@@ -3250,18 +3252,32 @@ function App() {
   const isHost = me?.isHost;
 
   // Sorted Hand: Numbers (0-10, CA 11, TCH 12) -> Action cards
-  // handSorted=true: groups numbers by frequency (most duplicates first), then by value
+  // handSorted=false: Natural deal/draw order
+  // handSorted=true: Clean numeric order (0-12) with duplicates adjacent + actions grouped by type
   const sortedHand = useMemo(() => {
     if (!me?.hand) return [];
-    const numbers = me.hand.filter(c => c.type === 'number');
-    const actions = me.hand.filter(c => c.type !== 'number');
-    if (handSorted) {
-      const freq = {};
-      numbers.forEach(c => { freq[c.value] = (freq[c.value] || 0) + 1; });
-      numbers.sort((a, b) => freq[b.value] - freq[a.value] || a.value - b.value);
-    } else {
-      numbers.sort((a, b) => a.value - b.value);
+    if (!handSorted) {
+      return [...me.hand];
     }
+    const numbers = me.hand
+      .filter(c => c.type === 'number')
+      .sort((a, b) => Number(a.value) - Number(b.value));
+
+    const actionOrder = {
+      'hat_enta': 1,
+      'kdab': 2,
+      'magnatees': 3,
+      'el_basha': 4,
+      'sayad': 5,
+      'basra': 6,
+      'e2leb_el_tameez': 7,
+      'sharmata': 8,
+      'joker': 9
+    };
+    const actions = me.hand
+      .filter(c => c.type !== 'number')
+      .sort((a, b) => (actionOrder[a.type] || 99) - (actionOrder[b.type] || 99));
+
     return [...numbers, ...actions];
   }, [me?.hand, handSorted]);
 
@@ -6085,9 +6101,9 @@ function App() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 shrink-0">
             <button onClick={handleStartVoiceCommand}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition active:scale-95 ${
+                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-black transition active:scale-95 shrink-0 ${
                       isListening 
                         ? 'btn-neon-red' 
                         : 'btn-neon-gold'
@@ -6096,23 +6112,11 @@ function App() {
               <span className="text-xs">🎤</span>
             </button>
             <button onClick={() => setShowEmojiWheel(true)}
-                    className="px-3 py-1.5 rounded-xl text-xs font-black transition border flex items-center gap-1 active:scale-95 shadow-md"
+                    className="px-2.5 py-1.5 rounded-xl text-xs font-black transition border flex items-center gap-1 active:scale-95 shadow-md shrink-0"
                     style={{border:'1.5px solid rgba(52,211,153,0.5)', background:'rgba(52,211,153,0.12)', color:'#34d399'}}
                     title="عجلة الإيموجي والتفاعلات">
               <span className="text-sm">😊</span>
               <span className="text-[10px] font-bold">تفاعل</span>
-            </button>
-            {/* Auto-Sort Hand Button */}
-            <button
-              onClick={() => { soundFx.play('snap'); setHandSorted(v => !v); }}
-              className={`px-3 py-1.5 rounded-xl text-[10px] font-black transition border flex items-center gap-1 active:scale-95 shadow-md ${
-                handSorted
-                  ? 'border-amber-400/80 bg-amber-400/20 text-amber-300'
-                  : 'border-white/20 bg-white/5 text-white/50 hover:text-white/80 hover:bg-white/10'
-              }`}
-              title="ترتيب الكروت تلقائياً حسب التكرار">
-              <span className="text-sm">🔃</span>
-              <span>{handSorted ? 'مرتب' : 'رتّب'}</span>
             </button>
           </div>
         </div>
@@ -6142,6 +6146,30 @@ function App() {
             </button>
           </div>
         )}
+
+        {/* Hand Cards Area Header / Sort Toolbar */}
+        <div className="w-full max-w-[420px] mx-auto px-3 pt-1 flex items-center justify-between z-30">
+          <div className="flex items-center gap-1.5 text-[11px] font-black text-amber-200/90">
+            <span>🎴 كروتك في إيدك ({me.hand.length})</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              soundFx.init();
+              soundFx.play('card');
+              setHandSorted(v => !v);
+              showVoiceNotice(!handSorted ? '🗂️ تم ترتيب الكروت بالأرقام والأكشن!' : 'تم العودة للترتيب الأصلي');
+            }}
+            className={`px-3 py-1 rounded-xl text-[11px] font-black transition flex items-center gap-1.5 active:scale-95 shadow-md border ${
+              handSorted
+                ? 'bg-gradient-to-r from-yellow-500 via-amber-400 to-yellow-500 text-black border-yellow-200 shadow-[0_0_12px_rgba(250,204,21,0.6)] animate-pulse'
+                : 'bg-black/60 hover:bg-black/80 text-amber-300 border-amber-500/40 hover:border-amber-400'
+            }`}
+            title="اضغط لترتيب الكروت تصاعدياً وتجميع المتشابهات">
+            <span className="text-xs">🔃</span>
+            <span>{handSorted ? '✓ مرتّب بالأرقام' : 'رتّب الورق'}</span>
+          </button>
+        </div>
 
         {/* Hand Cards — EXPANDED BOUNDED FAN LAYOUT (Always fully on-screen & easily readable) */}
         <div className="w-full px-1 pt-1 pb-1 flex justify-center overflow-visible">
