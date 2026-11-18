@@ -370,7 +370,7 @@ const TRANSLATIONS = {
     micOn: '🎙️ مايك شغال',
     quickMatchmaking: 'بحث سريع ومنافسة فورية ⚡',
     searchingMatch: 'جاري البحث عن طاولة ومنافسين... 🔍',
-    findingPlayersDesc: 'يتم تجميع 4 لاعبين أو إكمال المقاعد بالبوتات الذكية فوراً.',
+    findingPlayersDesc: 'الطاولة تتسع من 4 إلى 8 لاعبين — تبدأ الجولة فور اكتمال الحد الأدنى.',
     cancelSearch: 'إلغاء البحث ✕',
   },
   en: {
@@ -426,7 +426,7 @@ const TRANSLATIONS = {
     micOn: '🎙️ Mic Active',
     quickMatchmaking: 'Quick Play & Matchmaking ⚡',
     searchingMatch: 'Searching for table & players... 🔍',
-    findingPlayersDesc: 'Matching 4 players or instantly filling seats with smart bots.',
+    findingPlayersDesc: 'Tables seat 4 to 8 players — starts as soon as minimum players join.',
     cancelSearch: 'Cancel Search ✕',
   }
 };
@@ -1143,11 +1143,11 @@ const MATCHMAKING_TIPS = [
   'تابع كروت خصمك كويس.. والملاحظة سلاحك الأكبر',
   'لما تقفل لِمّة أرقام، بتاخد نقطة وبتقلل الكروت!',
   'الـ Joker ممكن يكون رقم أي حاجة تحتاجها',
-  '4 لاعبين في الأوضة = أقوى تجربة!',
+  'اللعبة بتتلعب من 4 إلى 8 لاعبين.. كل ما زاد العدد زاد الحماس والغدر!',
   'فكّر قبل ما تطلب.. ممكن تديه كارت يساعده!',
 ];
 
-function MatchmakingScreen({ matchmakingTime, matchmakingPlayers, matchmakingTotal, onCancel, lang }) {
+function MatchmakingScreen({ matchmakingTime, matchmakingPlayers, onCancel, lang }) {
   const [tipIdx, setTipIdx] = React.useState(0);
   const [dotCount, setDotCount] = React.useState(1);
 
@@ -1164,70 +1164,102 @@ function MatchmakingScreen({ matchmakingTime, matchmakingPlayers, matchmakingTot
   const mins = Math.floor(matchmakingTime / 60);
   const secs = (matchmakingTime % 60).toString().padStart(2, '0');
   const dots = '.'.repeat(dotCount);
-  const foundCount = matchmakingPlayers || 1;
-  const totalSeats = matchmakingTotal || 4;
+  const foundCount = Math.max(1, matchmakingPlayers || 1);
 
-  // Player seat indicators (dynamic based on room max)
-  const seats = Array.from({ length: totalSeats }, (_, i) => ({
+  // 8 seats representation: 1-4 are primary minimum, 5-8 are additional spots
+  const seats = Array.from({ length: 8 }, (_, i) => ({
+    num: i + 1,
+    isMin: i < 4,
     filled: i < foundCount,
     isMe: i === 0,
   }));
 
   return (
     <div className="fixed inset-0 z-[450] bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="w-full max-w-sm bg-gradient-to-b from-slate-900 to-slate-950 border-2 border-amber-400/70 rounded-3xl p-6 shadow-2xl text-center space-y-5 font-cairo">
+      <div className="w-full max-w-sm bg-gradient-to-b from-slate-900 to-slate-950 border-2 border-amber-400/70 rounded-3xl p-5 shadow-2xl text-center space-y-4 font-cairo">
 
         {/* Animated Radar */}
-        <div className="relative w-28 h-28 mx-auto flex items-center justify-center">
+        <div className="relative w-24 h-24 mx-auto flex items-center justify-center">
           <div className="absolute inset-0 rounded-full border-2 border-emerald-400 animate-ping opacity-40"></div>
-          <div className="absolute inset-3 rounded-full border-2 border-amber-400 animate-ping opacity-30" style={{animationDelay:'0.4s'}}></div>
-          <div className="absolute inset-5 rounded-full border-2 border-emerald-300 animate-pulse"></div>
-          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-slate-800 to-slate-700 border-2 border-amber-400/60 flex items-center justify-center text-3xl shadow-inner">
+          <div className="absolute inset-2.5 rounded-full border-2 border-amber-400 animate-ping opacity-30" style={{animationDelay:'0.4s'}}></div>
+          <div className="absolute inset-4 rounded-full border-2 border-emerald-300 animate-pulse"></div>
+          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-slate-800 to-slate-700 border-2 border-amber-400/60 flex items-center justify-center text-2xl shadow-inner">
             🃏
           </div>
         </div>
 
         {/* Title */}
         <div>
-          <h3 className="text-lg font-black text-white">🔍 جارٍ البحث{dots}</h3>
-          <p className="text-xs text-slate-400 mt-1">ابحث عن منافسين لطاولة CATCH</p>
+          <h3 className="text-base font-black text-white">🔍 جارٍ البحث عن طاولة{dots}</h3>
+          <p className="text-[11px] text-amber-300/90 font-bold mt-0.5">من 4 إلى 8 لاعبين • تبدأ الجولة فور اكتمال الحد الأدنى</p>
         </div>
 
-        {/* Player seats */}
-        <div className="flex justify-center gap-3">
-          {seats.map((seat, i) => (
-            <div key={i} className={`flex flex-col items-center gap-1`}>
-              <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center text-xl transition-all duration-500 ${
-                seat.filled
-                  ? seat.isMe
-                    ? 'border-amber-400 bg-amber-400/20 shadow-[0_0_10px_#f59e0b80]'
-                    : 'border-emerald-400 bg-emerald-400/15 shadow-[0_0_8px_#34d39950]'
-                  : 'border-slate-700 bg-slate-800/60'
-              }`}>
-                {seat.filled ? (seat.isMe ? '😎' : '👤') : '⬜'}
-              </div>
-              <span className={`text-[9px] font-bold ${seat.filled ? (seat.isMe ? 'text-amber-300' : 'text-emerald-400') : 'text-slate-600'}`}>
-                {seat.filled ? (seat.isMe ? 'أنت' : 'لاعب') : 'فارغ'}
-              </span>
-            </div>
-          ))}
-        </div>
-
-        {/* Count + Timer */}
-        <div className="flex gap-3 justify-center">
-          <div className="bg-slate-800/90 border border-emerald-500/40 rounded-2xl py-2 px-4 flex items-center gap-2 shadow-inner">
-            <span className="text-xs text-emerald-300 font-bold">👥</span>
-            <span className="text-sm font-black text-white">{foundCount} / {totalSeats}</span>
+        {/* Table seats: 8-seat layout */}
+        <div className="bg-slate-800/40 border border-slate-700/60 rounded-2xl p-2.5 space-y-2">
+          <div className="flex items-center justify-between text-[10px] font-bold px-1">
+            <span className="text-emerald-400 flex items-center gap-1">
+              <span>●</span> الحد الأدنى للبدء (4 مقاعد):
+            </span>
+            <span className="text-amber-400/80 flex items-center gap-1">
+              <span>○</span> إضافي (حتى 8):
+            </span>
           </div>
-          <div className="bg-slate-800/90 border border-amber-500/40 rounded-2xl py-2 px-4 flex items-center gap-2 shadow-inner">
+
+          {/* Row 1: Seats 1-4 */}
+          <div className="grid grid-cols-4 gap-2">
+            {seats.slice(0, 4).map((seat) => (
+              <div key={seat.num} className="flex flex-col items-center gap-0.5">
+                <div className={`w-9 h-9 rounded-full border-2 flex items-center justify-center text-lg transition-all duration-500 ${
+                  seat.filled
+                    ? seat.isMe
+                      ? 'border-amber-400 bg-amber-400/20 shadow-[0_0_8px_#f59e0b80]'
+                      : 'border-emerald-400 bg-emerald-400/20 shadow-[0_0_8px_#34d39960]'
+                    : 'border-slate-700 bg-slate-900/60 border-dashed'
+                }`}>
+                  {seat.filled ? (seat.isMe ? '😎' : '👤') : <span className="text-[10px] text-slate-500 font-mono">#{seat.num}</span>}
+                </div>
+                <span className={`text-[8px] font-bold ${seat.filled ? (seat.isMe ? 'text-amber-300' : 'text-emerald-400') : 'text-slate-500'}`}>
+                  {seat.filled ? (seat.isMe ? 'أنت' : 'جاهز ✓') : `مقعد ${seat.num}`}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* Row 2: Seats 5-8 */}
+          <div className="grid grid-cols-4 gap-2 pt-1.5 border-t border-slate-700/50">
+            {seats.slice(4, 8).map((seat) => (
+              <div key={seat.num} className="flex flex-col items-center gap-0.5">
+                <div className={`w-9 h-9 rounded-full border-2 flex items-center justify-center text-lg transition-all duration-500 ${
+                  seat.filled
+                    ? 'border-purple-400 bg-purple-400/20 shadow-[0_0_8px_#c084fc60]'
+                    : 'border-slate-700/60 bg-slate-900/40 border-dotted'
+                }`}>
+                  {seat.filled ? '👤' : <span className="text-[10px] text-slate-600 font-mono">#{seat.num}</span>}
+                </div>
+                <span className={`text-[8px] font-bold ${seat.filled ? 'text-purple-300' : 'text-slate-600'}`}>
+                  {seat.filled ? 'منضم' : `مفتوح`}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Count + Timer Badges */}
+        <div className="flex gap-2 justify-center">
+          <div className="bg-slate-800/90 border border-emerald-500/40 rounded-xl py-1.5 px-3 flex items-center gap-1.5 shadow-inner">
+            <span className="text-xs text-emerald-300 font-bold">👥</span>
+            <span className="text-xs font-black text-white">{foundCount} منضمين</span>
+            <span className="text-[10px] text-slate-400 font-bold">(الحد الأدنى 4)</span>
+          </div>
+          <div className="bg-slate-800/90 border border-amber-500/40 rounded-xl py-1.5 px-3 flex items-center gap-1.5 shadow-inner">
             <span className="text-xs text-amber-300 font-bold">⏱️</span>
-            <span className="text-sm font-mono font-black text-white">{mins}:{secs}</span>
+            <span className="text-xs font-mono font-black text-white">{mins}:{secs}</span>
           </div>
         </div>
 
         {/* Rotating Tip */}
-        <div className="bg-slate-800/60 border border-slate-700/70 rounded-2xl px-4 py-3 min-h-[52px] flex items-center justify-center">
-          <p className="text-xs text-amber-200/90 font-medium leading-relaxed">
+        <div className="bg-slate-800/60 border border-slate-700/70 rounded-2xl px-3.5 py-2.5 min-h-[48px] flex items-center justify-center">
+          <p className="text-[11px] text-amber-200/90 font-medium leading-relaxed">
             💡 <span key={tipIdx} style={{animation:'fadeIn 0.4s ease'}}>{MATCHMAKING_TIPS[tipIdx]}</span>
           </p>
         </div>
@@ -1235,7 +1267,7 @@ function MatchmakingScreen({ matchmakingTime, matchmakingPlayers, matchmakingTot
         {/* Cancel */}
         <button
           onClick={onCancel}
-          className="w-full py-2.5 bg-slate-800 hover:bg-red-900/50 active:scale-95 text-slate-300 hover:text-red-300 font-bold text-sm rounded-xl border border-slate-700 hover:border-red-700/60 transition"
+          className="w-full py-2.5 bg-slate-800 hover:bg-red-900/50 active:scale-95 text-slate-300 hover:text-red-300 font-bold text-xs rounded-xl border border-slate-700 hover:border-red-700/60 transition"
         >
           ❌ إلغاء البحث
         </button>

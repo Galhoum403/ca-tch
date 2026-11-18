@@ -2261,17 +2261,18 @@ function processMatchmakingQueue() {
 
   const now = Date.now();
 
-  // If 4 or more real players waiting -> launch immediately!
+  // If 4 or more real players waiting -> launch with available players (up to 8)!
   while (matchmakingQueue.length >= 4) {
-    const matched = matchmakingQueue.splice(0, 4);
+    const takeCount = Math.min(matchmakingQueue.length, 8);
+    const matched = matchmakingQueue.splice(0, takeCount);
     launchMatchmakingRoom(matched);
   }
 
-  // If oldest player in queue waited >= 3.5 seconds -> start match with available humans + bots
+  // If oldest player in queue waited >= 3.5 seconds -> start match with available humans + bots (min 4, max 8)
   if (matchmakingQueue.length > 0) {
     const oldest = matchmakingQueue[0];
     if (now - oldest.queuedAt >= 3500) {
-      const takeCount = Math.min(matchmakingQueue.length, 4);
+      const takeCount = Math.min(matchmakingQueue.length, 8);
       const matched = matchmakingQueue.splice(0, takeCount);
       launchMatchmakingRoom(matched);
     }
@@ -2286,7 +2287,6 @@ function launchMatchmakingRoom(matchedPlayers) {
 
   host.socket.join(room.code);
   host.socket.currentRoomCode = room.code;
-  host.socket.emit('match_found', { code: room.code, playersCount: 4 });
 
   for (let i = 1; i < matchedPlayers.length; i++) {
     const p = matchedPlayers[i];
@@ -2308,11 +2308,10 @@ function launchMatchmakingRoom(matchedPlayers) {
       extraTurns: 0,
       botMemory: {}
     });
-    p.socket.emit('match_found', { code: room.code, playersCount: 4 });
   }
 
-  // Fill empty spots up to 4 with smart bots
-  const neededBots = 4 - room.players.length;
+  // Fill empty spots up to minimum 4 with smart bots
+  const neededBots = Math.max(0, 4 - room.players.length);
   for (let b = 0; b < neededBots; b++) {
     const bName = BOT_NAMES[(room.players.length + b) % BOT_NAMES.length];
     const bAvatar = BOT_AVATARS[(room.players.length + b) % BOT_AVATARS.length];
@@ -2331,6 +2330,12 @@ function launchMatchmakingRoom(matchedPlayers) {
       botMemory: {}
     });
     room.logs.push(`🤖 انضم ${bName} إلى طاولة اللعب السريع.`);
+  }
+
+  // Notify all matched human players
+  host.socket.emit('match_found', { code: room.code, playersCount: room.players.length, minPlayers: 4, maxPlayers: 8 });
+  for (let i = 1; i < matchedPlayers.length; i++) {
+    matchedPlayers[i].socket.emit('match_found', { code: room.code, playersCount: room.players.length, minPlayers: 4, maxPlayers: 8 });
   }
 
   startGameInstance(room);
@@ -2489,7 +2494,9 @@ function registerSocketHandlers(socket) {
     socket.emit('matchmaking_status', {
       status: 'searching',
       position: matchmakingQueue.length,
-      total: 4,
+      min: 4,
+      max: 8,
+      total: 8,
       estimatedSeconds: 3
     });
 
