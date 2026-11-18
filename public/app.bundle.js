@@ -1835,7 +1835,7 @@ function App() {
   const [selectedTier, setSelectedTier] = useState('casual');
   const TABLE_TIERS = [{
     id: 'casual',
-    name: 'طاولة الحارة الودية',
+    name: 'طاولة المبتدئين الودية',
     fee: 50,
     prize: 200,
     gemsPrize: 0,
@@ -2651,56 +2651,61 @@ function App() {
     socketRef.current.emit('ping_check', Date.now());
     showVoiceNotice(lang === 'en' ? '⚡ Measuring server ping...' : '⚡ جاري قياس سرعة الاتصال بالسيرفر...');
   };
-  const renderSignalBars = (p, status, showText = true, className = '') => {
+  const renderWifiIcon = (p, status, className = '') => {
     const isConn = status === 'connected' && p !== null;
-    let barsCount = 0;
-    let barColor = 'bg-slate-600';
-    let textBadge = '...';
-    let textColor = 'text-slate-400';
+    let activeLevel = 0;
+    let strokeColor = '#ef4444';
     if (!isConn) {
-      barsCount = 0;
-      barColor = 'bg-red-500';
-      textBadge = lang === 'en' ? 'Offline' : 'منقطع';
-      textColor = 'text-red-400';
+      activeLevel = 0;
+      strokeColor = '#ef4444';
     } else if (p < 90) {
-      barsCount = 4;
-      barColor = 'bg-emerald-400';
-      textBadge = `${p}ms`;
-      textColor = 'text-emerald-400';
+      activeLevel = 4;
+      strokeColor = '#10b981'; // emerald
     } else if (p < 160) {
-      barsCount = 3;
-      barColor = 'bg-emerald-400';
-      textBadge = `${p}ms`;
-      textColor = 'text-emerald-300';
+      activeLevel = 3;
+      strokeColor = '#22c55e'; // green
     } else if (p < 280) {
-      barsCount = 2;
-      barColor = 'bg-yellow-400';
-      textBadge = `${p}ms`;
-      textColor = 'text-yellow-400';
+      activeLevel = 2;
+      strokeColor = '#facc15'; // yellow
     } else {
-      barsCount = 1;
-      barColor = 'bg-red-500';
-      textBadge = `${p}ms`;
-      textColor = 'text-red-400';
+      activeLevel = 1;
+      strokeColor = '#ef4444'; // red
     }
-    return /*#__PURE__*/React.createElement("div", {
-      onClick: () => setShowSettingsModal(true),
-      className: `flex items-center gap-1.5 px-2 py-1 rounded-xl bg-black/50 hover:bg-black/70 border border-white/10 cursor-pointer transition select-none shadow-sm active:scale-95 ${className}`,
-      title: `البينج: ${p !== null ? p + 'ms' : 'غير متصل'} (اضغط لعرض مقياس الاتصال في الإعدادات)`
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "flex items-end gap-[2px] h-3.5 w-3.5 pb-0.5 justify-center"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: `w-[2px] h-1 rounded-sm transition-all duration-300 ${barsCount >= 1 ? barColor : 'bg-white/20'}`
-    }), /*#__PURE__*/React.createElement("div", {
-      className: `w-[2px] h-1.5 rounded-sm transition-all duration-300 ${barsCount >= 2 ? barColor : 'bg-white/20'}`
-    }), /*#__PURE__*/React.createElement("div", {
-      className: `w-[2px] h-2.5 rounded-sm transition-all duration-300 ${barsCount >= 3 ? barColor : 'bg-white/20'}`
-    }), /*#__PURE__*/React.createElement("div", {
-      className: `w-[2px] h-3.5 rounded-sm transition-all duration-300 ${barsCount >= 4 ? barColor : 'bg-white/20'}`
-    })), showText && /*#__PURE__*/React.createElement("span", {
-      className: `text-[10px] font-black font-mono leading-none ${textColor}`
-    }, textBadge));
+    const inactiveColor = 'rgba(255, 255, 255, 0.2)';
+    return /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: () => {
+        soundFx.init();
+        soundFx.play('snap');
+        setShowSettingsModal(true);
+      },
+      className: `w-8 h-8 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 flex items-center justify-center cursor-pointer transition active:scale-95 shrink-0 shadow-sm ${className}`,
+      title: lang === 'en' ? `Network: ${isConn ? p + 'ms' : 'Offline'} (Tap for Diagnostics in Settings)` : `الشبكة: ${isConn ? p + 'ms' : 'منقطع'} (اضغط لقياس البينج في الإعدادات)`
+    }, /*#__PURE__*/React.createElement("svg", {
+      viewBox: "0 0 24 24",
+      className: "w-4 h-4",
+      fill: "none",
+      strokeWidth: "2.5",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    }, /*#__PURE__*/React.createElement("path", {
+      d: "M1.42 9a16 16 0 0 1 21.16 0",
+      stroke: activeLevel >= 4 ? strokeColor : inactiveColor
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M5 12.55a11 11 0 0 1 14.08 0",
+      stroke: activeLevel >= 3 ? strokeColor : inactiveColor
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M8.53 16.11a6 6 0 0 1 6.95 0",
+      stroke: activeLevel >= 2 ? strokeColor : inactiveColor
+    }), /*#__PURE__*/React.createElement("circle", {
+      cx: "12",
+      cy: "20",
+      r: "1.5",
+      fill: activeLevel >= 1 ? strokeColor : '#ef4444',
+      stroke: "none"
+    })));
   };
+  const renderSignalBars = (p, status, showText = false, className = '') => renderWifiIcon(p, status, className);
   const renderPingMeterCard = () => {
     const isConn = connectionStatus === 'connected' && ping !== null;
     let barsCount = 0;
@@ -4074,13 +4079,13 @@ function App() {
         paddingTop: 'max(10px, env(safe-area-inset-top))'
       }
     }, /*#__PURE__*/React.createElement("div", {
-      className: "flex items-center gap-2"
+      className: "flex items-center gap-1.5 shrink-0"
     }, /*#__PURE__*/React.createElement("div", {
       onClick: () => {
         setActiveTab('shop');
         setShopSubtab('currency');
       },
-      className: "flex items-center gap-1.5 px-2.5 py-1 rounded-xl border border-sky-400/30 bg-slate-800/90 text-sky-300 text-xs font-black cursor-pointer transition hover:bg-slate-700/90 active:scale-95 shadow-sm",
+      className: "flex items-center gap-1.5 px-2 py-1 rounded-xl border border-sky-400/30 bg-slate-800/90 text-sky-300 text-xs font-black cursor-pointer transition hover:bg-slate-700/90 active:scale-95 shadow-sm",
       title: "المتجر وبنك الجواهر"
     }, /*#__PURE__*/React.createElement("span", null, "💎"), /*#__PURE__*/React.createElement("span", null, gems), /*#__PURE__*/React.createElement("span", {
       className: "text-[10px] opacity-70 font-bold"
@@ -4089,22 +4094,22 @@ function App() {
         setActiveTab('shop');
         setShopSubtab('currency');
       },
-      className: "flex items-center gap-1.5 px-2.5 py-1 rounded-xl border border-amber-400/30 bg-slate-800/90 text-amber-300 text-xs font-black cursor-pointer transition hover:bg-slate-700/90 active:scale-95 shadow-sm",
+      className: "flex items-center gap-1.5 px-2 py-1 rounded-xl border border-amber-400/30 bg-slate-800/90 text-amber-300 text-xs font-black cursor-pointer transition hover:bg-slate-700/90 active:scale-95 shadow-sm",
       title: "المتجر وبنك العملات"
     }, /*#__PURE__*/React.createElement("span", null, "⭐"), /*#__PURE__*/React.createElement("span", null, coins), /*#__PURE__*/React.createElement("span", {
       className: "text-[10px] opacity-70 font-bold"
     }, "+"))), /*#__PURE__*/React.createElement("div", {
-      className: "flex items-center gap-1.5"
+      className: "flex items-center gap-1.5 shrink-0"
     }, renderSignalBars(ping, connectionStatus), /*#__PURE__*/React.createElement("div", {
       onClick: () => setIsEditingProfile(true),
-      className: "flex items-center gap-1.5 px-2.5 py-1 rounded-xl border border-purple-400/30 bg-slate-800/90 cursor-pointer transition hover:bg-slate-700/90 shadow-sm"
+      className: "flex items-center gap-1.5 px-2 py-1 rounded-xl border border-purple-400/30 bg-slate-800/90 cursor-pointer transition hover:bg-slate-700/90 shadow-sm shrink-0"
     }, /*#__PURE__*/React.createElement("div", {
-      className: "w-6 h-6 rounded-full flex items-center justify-center text-sm border-2 border-purple-400 bg-purple-950/60"
+      className: "w-6 h-6 rounded-full flex items-center justify-center text-sm border-2 border-purple-400 bg-purple-950/60 shrink-0"
     }, avatar), /*#__PURE__*/React.createElement("span", {
-      className: "text-[11px] font-black max-w-[65px] truncate text-purple-200"
+      className: "text-[11px] font-black max-w-[55px] sm:max-w-[70px] truncate text-purple-200"
     }, playerName || (lang === 'en' ? 'Player' : 'لاعب'))), /*#__PURE__*/React.createElement("button", {
       onClick: () => setShowSettingsModal(true),
-      className: "w-8 h-8 rounded-xl flex items-center justify-center text-sm transition border border-slate-700 bg-slate-800/80 text-slate-300 hover:text-white hover:bg-slate-700/80",
+      className: "w-8 h-8 rounded-xl flex items-center justify-center text-sm transition border border-slate-700 bg-slate-800/80 text-slate-300 hover:text-white hover:bg-slate-700/80 shrink-0 active:scale-95 shadow-sm",
       title: lang === 'en' ? 'Settings' : 'الإعدادات'
     }, "⚙️"))), sessionTerminatedReason && /*#__PURE__*/React.createElement("div", {
       className: "mx-3 mt-2 bg-gradient-to-r from-red-950 via-slate-900 to-red-950 border border-red-500/80 rounded-2xl p-2.5 flex items-center justify-between shadow-lg z-30 animate-pulse"
@@ -4250,7 +4255,7 @@ function App() {
         className: "text-lg"
       }, tier.icon), /*#__PURE__*/React.createElement("p", {
         className: `text-[11px] font-black mt-0.5 leading-tight ${isSelected ? 'text-yellow-300' : 'text-white'}`
-      }, tier.id === 'casual' ? 'الحارة' : tier.id === 'pro' ? 'القهوة' : 'كبار الكاتش'), /*#__PURE__*/React.createElement("span", {
+      }, tier.id === 'casual' ? 'المبتدئين' : tier.id === 'pro' ? 'القهوة' : 'كبار الكاتش'), /*#__PURE__*/React.createElement("span", {
         className: "text-[10px] font-bold text-emerald-400 mt-0.5"
       }, "فوز ", tier.prize >= 1000 ? `${tier.prize / 1000}k` : tier.prize, " ⭐"), /*#__PURE__*/React.createElement("span", {
         className: "text-[9px] text-amber-200/60 font-semibold"
@@ -4273,7 +4278,7 @@ function App() {
       className: "btn-neon-green w-full py-3.5 rounded-2xl text-base sm:text-lg font-black flex items-center justify-center gap-2 transition active:scale-95 shadow-xl"
     }, /*#__PURE__*/React.createElement("span", {
       className: "text-xl"
-    }, "⚡"), /*#__PURE__*/React.createElement("span", null, "العب الآن [", selectedTier === 'legend' ? 'كبار الكاتش 👑' : selectedTier === 'pro' ? 'القهوة 🏆' : 'الحارة ☕', "]")), /*#__PURE__*/React.createElement("div", {
+    }, "⚡"), /*#__PURE__*/React.createElement("span", null, "العب الآن [", selectedTier === 'legend' ? 'كبار الكاتش 👑' : selectedTier === 'pro' ? 'القهوة 🏆' : 'المبتدئين ☕', "]")), /*#__PURE__*/React.createElement("div", {
       className: "grid grid-cols-2 gap-2.5"
     }, /*#__PURE__*/React.createElement("button", {
       onClick: () => setShowPrivateRoomModal(true),
@@ -4481,7 +4486,7 @@ function App() {
     [{
       tier: '🥉 لاعب هاوي',
       req: '0 فوز',
-      prize: 'طاولة الحارة الودية',
+      prize: 'طاولة المبتدئين الودية',
       perk: 'لعب خفيف ومبتدئ بدون مخاطرة',
       active: vipRank.badge.includes('برونزي')
     }, {
@@ -4751,7 +4756,7 @@ function App() {
       className: "text-xs font-black"
     }, pendingTableInvite.fromName, " يدعوك للانضمام!"), /*#__PURE__*/React.createElement("p", {
       className: "text-[10px] font-bold text-amber-950"
-    }, "طاولة #", pendingTableInvite.roomCode, " [", pendingTableInvite.tier === 'legend' ? 'كبار الكاتش' : pendingTableInvite.tier === 'pro' ? 'القهوة' : 'الحارة', "]"))), /*#__PURE__*/React.createElement("div", {
+    }, "طاولة #", pendingTableInvite.roomCode, " [", pendingTableInvite.tier === 'legend' ? 'كبار الكاتش' : pendingTableInvite.tier === 'pro' ? 'القهوة' : 'المبتدئين', "]"))), /*#__PURE__*/React.createElement("div", {
       className: "flex items-center gap-1.5"
     }, /*#__PURE__*/React.createElement("button", {
       onClick: () => {
@@ -5699,7 +5704,7 @@ function App() {
     className: "text-red-400 font-bold"
   }, "✕"), /*#__PURE__*/React.createElement("span", null, "خروج")), renderSignalBars(ping, connectionStatus), /*#__PURE__*/React.createElement("span", {
     className: "hidden xs:inline-block text-[10px] font-black px-2 py-0.5 rounded-lg bg-amber-500/20 text-yellow-300 border border-amber-400/40 shadow-sm"
-  }, roomState.tier === 'legend' ? '👑 كبار الكاتش' : roomState.tier === 'pro' ? '🏆 القهوة' : '☕ الحارة')), /*#__PURE__*/React.createElement("div", {
+  }, roomState.tier === 'legend' ? '👑 كبار الكاتش' : roomState.tier === 'pro' ? '🏆 القهوة' : '☕ المبتدئين')), /*#__PURE__*/React.createElement("div", {
     className: `flex flex-col items-center px-2.5 py-0.5 rounded-xl transition-all duration-300 ${turnTimer <= 10 ? 'bg-red-950/85 border border-red-500 shadow-[0_0_18px_rgba(239,68,68,0.9)] animate-pulse' : ''}`
   }, /*#__PURE__*/React.createElement("span", {
     className: `text-xs font-black leading-tight ${turnTimer <= 10 ? 'text-red-300' : 'text-amber-200'}`
@@ -6485,7 +6490,7 @@ function App() {
       className: "text-xs font-black text-amber-900 mt-2 bg-gradient-to-r from-yellow-200 via-amber-100 to-yellow-200 py-1.5 px-3 rounded-xl border border-yellow-400 shadow-sm flex items-center justify-between"
     }, /*#__PURE__*/React.createElement("span", {
       className: "flex items-center gap-1"
-    }, /*#__PURE__*/React.createElement("span", null, "🏆"), /*#__PURE__*/React.createElement("span", null, "جائزة ", roomState.winnerPrize.tier === 'legend' ? 'طاولة كبار الكاتش' : roomState.winnerPrize.tier === 'pro' ? 'طاولة القهوة' : 'طاولة الحارة', ":")), /*#__PURE__*/React.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", null, "🏆"), /*#__PURE__*/React.createElement("span", null, "جائزة ", roomState.winnerPrize.tier === 'legend' ? 'طاولة كبار الكاتش' : roomState.winnerPrize.tier === 'pro' ? 'طاولة القهوة' : 'طاولة المبتدئين', ":")), /*#__PURE__*/React.createElement("span", {
       className: "text-emerald-700 font-black"
     }, "+", roomState.winnerPrize.coins, " ⭐ ", roomState.winnerPrize.gems > 0 ? `+${roomState.winnerPrize.gems} 💎` : ''))), /*#__PURE__*/React.createElement("div", {
       className: "space-y-1.5 mb-3.5"

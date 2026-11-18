@@ -1568,7 +1568,7 @@ function App() {
   // Table Prize Tiers ('casual' | 'pro' | 'legend')
   const [selectedTier, setSelectedTier] = useState('casual');
   const TABLE_TIERS = [
-    { id: 'casual', name: 'طاولة الحارة الودية', fee: 50, prize: 200, gemsPrize: 0, icon: '☕', desc: 'لعب ودي خفيف ومناسب للمبتدئين بدون مخاطرة' },
+    { id: 'casual', name: 'طاولة المبتدئين الودية', fee: 50, prize: 200, gemsPrize: 0, icon: '☕', desc: 'لعب ودي خفيف ومناسب للمبتدئين بدون مخاطرة' },
     { id: 'pro', name: 'طاولة القهوة للحريفة', fee: 500, prize: 2000, gemsPrize: 2, icon: '🏆', desc: 'تحدي قوي بين الحريفة وجائزة 2000 كوينز + جواهر' },
     { id: 'legend', name: 'طاولة كبار الكاتش VIP', fee: 2500, prize: 10000, gemsPrize: 10, icon: '👑', desc: 'لأساطير اللعبة وجائزة كبرى 10,000 كوينز + 10 جواهر' }
   ];
@@ -2350,61 +2350,52 @@ function App() {
     showVoiceNotice(lang === 'en' ? '⚡ Measuring server ping...' : '⚡ جاري قياس سرعة الاتصال بالسيرفر...');
   };
 
-  const renderSignalBars = (p, status, showText = true, className = '') => {
+  const renderWifiIcon = (p, status, className = '') => {
     const isConn = status === 'connected' && p !== null;
-    let barsCount = 0;
-    let barColor = 'bg-slate-600';
-    let textBadge = '...';
-    let textColor = 'text-slate-400';
+    let activeLevel = 0;
+    let strokeColor = '#ef4444';
 
     if (!isConn) {
-      barsCount = 0;
-      barColor = 'bg-red-500';
-      textBadge = lang === 'en' ? 'Offline' : 'منقطع';
-      textColor = 'text-red-400';
+      activeLevel = 0;
+      strokeColor = '#ef4444';
     } else if (p < 90) {
-      barsCount = 4;
-      barColor = 'bg-emerald-400';
-      textBadge = `${p}ms`;
-      textColor = 'text-emerald-400';
+      activeLevel = 4;
+      strokeColor = '#10b981'; // emerald
     } else if (p < 160) {
-      barsCount = 3;
-      barColor = 'bg-emerald-400';
-      textBadge = `${p}ms`;
-      textColor = 'text-emerald-300';
+      activeLevel = 3;
+      strokeColor = '#22c55e'; // green
     } else if (p < 280) {
-      barsCount = 2;
-      barColor = 'bg-yellow-400';
-      textBadge = `${p}ms`;
-      textColor = 'text-yellow-400';
+      activeLevel = 2;
+      strokeColor = '#facc15'; // yellow
     } else {
-      barsCount = 1;
-      barColor = 'bg-red-500';
-      textBadge = `${p}ms`;
-      textColor = 'text-red-400';
+      activeLevel = 1;
+      strokeColor = '#ef4444'; // red
     }
 
+    const inactiveColor = 'rgba(255, 255, 255, 0.2)';
+
     return (
-      <div 
-        onClick={() => setShowSettingsModal(true)}
-        className={`flex items-center gap-1.5 px-2 py-1 rounded-xl bg-black/50 hover:bg-black/70 border border-white/10 cursor-pointer transition select-none shadow-sm active:scale-95 ${className}`}
-        title={`البينج: ${p !== null ? p + 'ms' : 'غير متصل'} (اضغط لعرض مقياس الاتصال في الإعدادات)`}
+      <button 
+        type="button"
+        onClick={() => { soundFx.init(); soundFx.play('snap'); setShowSettingsModal(true); }}
+        className={`w-8 h-8 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 flex items-center justify-center cursor-pointer transition active:scale-95 shrink-0 shadow-sm ${className}`}
+        title={lang === 'en' ? `Network: ${isConn ? p + 'ms' : 'Offline'} (Tap for Diagnostics in Settings)` : `الشبكة: ${isConn ? p + 'ms' : 'منقطع'} (اضغط لقياس البينج في الإعدادات)`}
       >
-        {/* 4 Signal Bars Graphic */}
-        <div className="flex items-end gap-[2px] h-3.5 w-3.5 pb-0.5 justify-center">
-          <div className={`w-[2px] h-1 rounded-sm transition-all duration-300 ${barsCount >= 1 ? barColor : 'bg-white/20'}`} />
-          <div className={`w-[2px] h-1.5 rounded-sm transition-all duration-300 ${barsCount >= 2 ? barColor : 'bg-white/20'}`} />
-          <div className={`w-[2px] h-2.5 rounded-sm transition-all duration-300 ${barsCount >= 3 ? barColor : 'bg-white/20'}`} />
-          <div className={`w-[2px] h-3.5 rounded-sm transition-all duration-300 ${barsCount >= 4 ? barColor : 'bg-white/20'}`} />
-        </div>
-        {showText && (
-          <span className={`text-[10px] font-black font-mono leading-none ${textColor}`}>
-            {textBadge}
-          </span>
-        )}
-      </div>
+        <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          {/* Top Outer Arc */}
+          <path d="M1.42 9a16 16 0 0 1 21.16 0" stroke={activeLevel >= 4 ? strokeColor : inactiveColor} />
+          {/* Middle Arc */}
+          <path d="M5 12.55a11 11 0 0 1 14.08 0" stroke={activeLevel >= 3 ? strokeColor : inactiveColor} />
+          {/* Inner Arc */}
+          <path d="M8.53 16.11a6 6 0 0 1 6.95 0" stroke={activeLevel >= 2 ? strokeColor : inactiveColor} />
+          {/* Bottom Dot */}
+          <circle cx="12" cy="20" r="1.5" fill={activeLevel >= 1 ? strokeColor : '#ef4444'} stroke="none" />
+        </svg>
+      </button>
     );
   };
+
+  const renderSignalBars = (p, status, showText = false, className = '') => renderWifiIcon(p, status, className);
 
   const renderPingMeterCard = () => {
     const isConn = connectionStatus === 'connected' && ping !== null;
@@ -3692,16 +3683,16 @@ function App() {
                 style={{ paddingTop: 'max(10px, env(safe-area-inset-top))' }}>
           
           {/* Left: Gems & Coins (Click opens Shop) */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 shrink-0">
             <div onClick={() => { setActiveTab('shop'); setShopSubtab('currency'); }}
-                 className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl border border-sky-400/30 bg-slate-800/90 text-sky-300 text-xs font-black cursor-pointer transition hover:bg-slate-700/90 active:scale-95 shadow-sm"
+                 className="flex items-center gap-1.5 px-2 py-1 rounded-xl border border-sky-400/30 bg-slate-800/90 text-sky-300 text-xs font-black cursor-pointer transition hover:bg-slate-700/90 active:scale-95 shadow-sm"
                  title="المتجر وبنك الجواهر">
               <span>💎</span>
               <span>{gems}</span>
               <span className="text-[10px] opacity-70 font-bold">+</span>
             </div>
             <div onClick={() => { setActiveTab('shop'); setShopSubtab('currency'); }}
-                 className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl border border-amber-400/30 bg-slate-800/90 text-amber-300 text-xs font-black cursor-pointer transition hover:bg-slate-700/90 active:scale-95 shadow-sm"
+                 className="flex items-center gap-1.5 px-2 py-1 rounded-xl border border-amber-400/30 bg-slate-800/90 text-amber-300 text-xs font-black cursor-pointer transition hover:bg-slate-700/90 active:scale-95 shadow-sm"
                  title="المتجر وبنك العملات">
               <span>⭐</span>
               <span>{coins}</span>
@@ -3710,19 +3701,19 @@ function App() {
           </div>
 
           {/* Right: Signal Bars, Avatar Pill & Settings */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 shrink-0">
             {renderSignalBars(ping, connectionStatus)}
             <div onClick={() => setIsEditingProfile(true)}
-                 className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl border border-purple-400/30 bg-slate-800/90 cursor-pointer transition hover:bg-slate-700/90 shadow-sm">
-              <div className="w-6 h-6 rounded-full flex items-center justify-center text-sm border-2 border-purple-400 bg-purple-950/60">
+                 className="flex items-center gap-1.5 px-2 py-1 rounded-xl border border-purple-400/30 bg-slate-800/90 cursor-pointer transition hover:bg-slate-700/90 shadow-sm shrink-0">
+              <div className="w-6 h-6 rounded-full flex items-center justify-center text-sm border-2 border-purple-400 bg-purple-950/60 shrink-0">
                 {avatar}
               </div>
-              <span className="text-[11px] font-black max-w-[65px] truncate text-purple-200">
+              <span className="text-[11px] font-black max-w-[55px] sm:max-w-[70px] truncate text-purple-200">
                 {playerName || (lang === 'en' ? 'Player' : 'لاعب')}
               </span>
             </div>
             <button onClick={() => setShowSettingsModal(true)}
-                    className="w-8 h-8 rounded-xl flex items-center justify-center text-sm transition border border-slate-700 bg-slate-800/80 text-slate-300 hover:text-white hover:bg-slate-700/80"
+                    className="w-8 h-8 rounded-xl flex items-center justify-center text-sm transition border border-slate-700 bg-slate-800/80 text-slate-300 hover:text-white hover:bg-slate-700/80 shrink-0 active:scale-95 shadow-sm"
                     title={lang === 'en' ? 'Settings' : 'الإعدادات'}>
               ⚙️
             </button>
@@ -3874,7 +3865,7 @@ function App() {
                         }`}>
                         <span className="text-lg">{tier.icon}</span>
                         <p className={`text-[11px] font-black mt-0.5 leading-tight ${isSelected ? 'text-yellow-300' : 'text-white'}`}>
-                          {tier.id === 'casual' ? 'الحارة' : tier.id === 'pro' ? 'القهوة' : 'كبار الكاتش'}
+                          {tier.id === 'casual' ? 'المبتدئين' : tier.id === 'pro' ? 'القهوة' : 'كبار الكاتش'}
                         </p>
                         <span className="text-[10px] font-bold text-emerald-400 mt-0.5">
                           فوز {tier.prize >= 1000 ? `${tier.prize / 1000}k` : tier.prize} ⭐
@@ -3907,7 +3898,7 @@ function App() {
                   <span className="text-xl">⚡</span>
                   <span>
                     العب الآن [
-                    {selectedTier === 'legend' ? 'كبار الكاتش 👑' : selectedTier === 'pro' ? 'القهوة 🏆' : 'الحارة ☕'}
+                    {selectedTier === 'legend' ? 'كبار الكاتش 👑' : selectedTier === 'pro' ? 'القهوة 🏆' : 'المبتدئين ☕'}
                     ]
                   </span>
                 </button>
@@ -4153,7 +4144,7 @@ function App() {
                 {leaderboardTab === 'vip' ? (
                   // Royal VIP tiers overview
                   [
-                    { tier: '🥉 لاعب هاوي', req: '0 فوز', prize: 'طاولة الحارة الودية', perk: 'لعب خفيف ومبتدئ بدون مخاطرة', active: vipRank.badge.includes('برونزي') },
+                    { tier: '🥉 لاعب هاوي', req: '0 فوز', prize: 'طاولة المبتدئين الودية', perk: 'لعب خفيف ومبتدئ بدون مخاطرة', active: vipRank.badge.includes('برونزي') },
                     { tier: '🥈 صائد فضي', req: '3 انتصارات', prize: 'طاولة القهوة للحريفة', perk: 'أولوية التحديات والريماتش', active: vipRank.badge.includes('فضي') },
                     { tier: '🥇 كابتن ذهبي', req: '6 انتصارات', prize: 'جائزة فوز 2000 عملة', perk: 'مضاعفة نقاط الكروت الخاصة', active: vipRank.badge.includes('ذهبي') },
                     { tier: '💎 دايموند VIP', req: '12 انتصاراً', prize: 'طاولة كبار الكاتش', perk: 'خلفية ذهبية حصرية للطاولة', active: vipRank.badge.includes('دايموند') },
@@ -4429,7 +4420,7 @@ function App() {
               <span className="text-3xl">{pendingTableInvite.fromAvatar || '👑'}</span>
               <div>
                 <p className="text-xs font-black">{pendingTableInvite.fromName} يدعوك للانضمام!</p>
-                <p className="text-[10px] font-bold text-amber-950">طاولة #{pendingTableInvite.roomCode} [{pendingTableInvite.tier === 'legend' ? 'كبار الكاتش' : pendingTableInvite.tier === 'pro' ? 'القهوة' : 'الحارة'}]</p>
+                <p className="text-[10px] font-bold text-amber-950">طاولة #{pendingTableInvite.roomCode} [{pendingTableInvite.tier === 'legend' ? 'كبار الكاتش' : pendingTableInvite.tier === 'pro' ? 'القهوة' : 'المبتدئين'}]</p>
               </div>
             </div>
             <div className="flex items-center gap-1.5">
@@ -5478,7 +5469,7 @@ function App() {
             {renderSignalBars(ping, connectionStatus)}
             {/* Table Tier Badge */}
             <span className="hidden xs:inline-block text-[10px] font-black px-2 py-0.5 rounded-lg bg-amber-500/20 text-yellow-300 border border-amber-400/40 shadow-sm">
-              {roomState.tier === 'legend' ? '👑 كبار الكاتش' : roomState.tier === 'pro' ? '🏆 القهوة' : '☕ الحارة'}
+              {roomState.tier === 'legend' ? '👑 كبار الكاتش' : roomState.tier === 'pro' ? '🏆 القهوة' : '☕ المبتدئين'}
             </span>
           </div>
 
@@ -6485,7 +6476,7 @@ function App() {
                   <div className="text-xs font-black text-amber-900 mt-2 bg-gradient-to-r from-yellow-200 via-amber-100 to-yellow-200 py-1.5 px-3 rounded-xl border border-yellow-400 shadow-sm flex items-center justify-between">
                     <span className="flex items-center gap-1">
                       <span>🏆</span>
-                      <span>جائزة {roomState.winnerPrize.tier === 'legend' ? 'طاولة كبار الكاتش' : roomState.winnerPrize.tier === 'pro' ? 'طاولة القهوة' : 'طاولة الحارة'}:</span>
+                      <span>جائزة {roomState.winnerPrize.tier === 'legend' ? 'طاولة كبار الكاتش' : roomState.winnerPrize.tier === 'pro' ? 'طاولة القهوة' : 'طاولة المبتدئين'}:</span>
                     </span>
                     <span className="text-emerald-700 font-black">
                       +{roomState.winnerPrize.coins} ⭐ {roomState.winnerPrize.gems > 0 ? `+${roomState.winnerPrize.gems} 💎` : ''}
