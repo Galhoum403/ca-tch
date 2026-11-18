@@ -1135,6 +1135,114 @@ function ExitConfirmModal({ isOpen, onClose, onConfirm, isPlaying, lang }) {
   );
 }
 
+// --- MATCHMAKING WAITING SCREEN ---
+const MATCHMAKING_TIPS = [
+  'اللي عنده أكتر من كارت بنفس الرقم أقوى! حاول تجمّع',
+  'كارت الـ CATCH بيفضح لما حد عنده 4 كروت بنفس الرقم',
+  'كروت الأكشن زي السيف بتستغلها في أي وقت!',
+  'تابع كروت خصمك كويس.. والملاحظة سلاحك الأكبر',
+  'لما تقفل لِمّة أرقام، بتاخد نقطة وبتقلل الكروت!',
+  'الـ Joker ممكن يكون رقم أي حاجة تحتاجها',
+  '4 لاعبين في الأوضة = أقوى تجربة!',
+  'فكّر قبل ما تطلب.. ممكن تديه كارت يساعده!',
+];
+
+function MatchmakingScreen({ matchmakingTime, matchmakingPlayers, onCancel, lang }) {
+  const [tipIdx, setTipIdx] = React.useState(0);
+  const [dotCount, setDotCount] = React.useState(1);
+
+  React.useEffect(() => {
+    const tipTimer = setInterval(() => {
+      setTipIdx(i => (i + 1) % MATCHMAKING_TIPS.length);
+    }, 3000);
+    const dotTimer = setInterval(() => {
+      setDotCount(d => d < 3 ? d + 1 : 1);
+    }, 500);
+    return () => { clearInterval(tipTimer); clearInterval(dotTimer); };
+  }, []);
+
+  const mins = Math.floor(matchmakingTime / 60);
+  const secs = (matchmakingTime % 60).toString().padStart(2, '0');
+  const dots = '.'.repeat(dotCount);
+  const foundCount = matchmakingPlayers || 1;
+
+  // Player seat indicators (4 seats max)
+  const seats = [1, 2, 3, 4].map(n => ({
+    filled: n <= foundCount,
+    isMe: n === 1,
+  }));
+
+  return (
+    <div className="fixed inset-0 z-[450] bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+      <div className="w-full max-w-sm bg-gradient-to-b from-slate-900 to-slate-950 border-2 border-amber-400/70 rounded-3xl p-6 shadow-2xl text-center space-y-5 font-cairo">
+
+        {/* Animated Radar */}
+        <div className="relative w-28 h-28 mx-auto flex items-center justify-center">
+          <div className="absolute inset-0 rounded-full border-2 border-emerald-400 animate-ping opacity-40"></div>
+          <div className="absolute inset-3 rounded-full border-2 border-amber-400 animate-ping opacity-30" style={{animationDelay:'0.4s'}}></div>
+          <div className="absolute inset-5 rounded-full border-2 border-emerald-300 animate-pulse"></div>
+          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-slate-800 to-slate-700 border-2 border-amber-400/60 flex items-center justify-center text-3xl shadow-inner">
+            🃏
+          </div>
+        </div>
+
+        {/* Title */}
+        <div>
+          <h3 className="text-lg font-black text-white">🔍 جارٍ البحث{dots}</h3>
+          <p className="text-xs text-slate-400 mt-1">ابحث عن منافسين لطاولة CATCH</p>
+        </div>
+
+        {/* Player seats */}
+        <div className="flex justify-center gap-3">
+          {seats.map((seat, i) => (
+            <div key={i} className={`flex flex-col items-center gap-1`}>
+              <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center text-xl transition-all duration-500 ${
+                seat.filled
+                  ? seat.isMe
+                    ? 'border-amber-400 bg-amber-400/20 shadow-[0_0_10px_#f59e0b80]'
+                    : 'border-emerald-400 bg-emerald-400/15 shadow-[0_0_8px_#34d39950]'
+                  : 'border-slate-700 bg-slate-800/60'
+              }`}>
+                {seat.filled ? (seat.isMe ? '😎' : '👤') : '⬜'}
+              </div>
+              <span className={`text-[9px] font-bold ${seat.filled ? (seat.isMe ? 'text-amber-300' : 'text-emerald-400') : 'text-slate-600'}`}>
+                {seat.filled ? (seat.isMe ? 'أنت' : 'لاعب') : 'فارغ'}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* Count + Timer */}
+        <div className="flex gap-3 justify-center">
+          <div className="bg-slate-800/90 border border-emerald-500/40 rounded-2xl py-2 px-4 flex items-center gap-2 shadow-inner">
+            <span className="text-xs text-emerald-300 font-bold">👥</span>
+            <span className="text-sm font-black text-white">{foundCount} / 4</span>
+          </div>
+          <div className="bg-slate-800/90 border border-amber-500/40 rounded-2xl py-2 px-4 flex items-center gap-2 shadow-inner">
+            <span className="text-xs text-amber-300 font-bold">⏱️</span>
+            <span className="text-sm font-mono font-black text-white">{mins}:{secs}</span>
+          </div>
+        </div>
+
+        {/* Rotating Tip */}
+        <div className="bg-slate-800/60 border border-slate-700/70 rounded-2xl px-4 py-3 min-h-[52px] flex items-center justify-center">
+          <p className="text-xs text-amber-200/90 font-medium leading-relaxed">
+            💡 <span key={tipIdx} style={{animation:'fadeIn 0.4s ease'}}>{MATCHMAKING_TIPS[tipIdx]}</span>
+          </p>
+        </div>
+
+        {/* Cancel */}
+        <button
+          onClick={onCancel}
+          className="w-full py-2.5 bg-slate-800 hover:bg-red-900/50 active:scale-95 text-slate-300 hover:text-red-300 font-bold text-sm rounded-xl border border-slate-700 hover:border-red-700/60 transition"
+        >
+          ❌ إلغاء البحث
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const socketRef = useRef(null);
   const [roomState, setRoomState] = useState(null);
@@ -1317,6 +1425,10 @@ function App() {
   // Smart 1-Click Matchmaking Queue State
   const [isMatchmaking, setIsMatchmaking] = useState(false);
   const [matchmakingTime, setMatchmakingTime] = useState(0);
+  const [matchmakingPlayers, setMatchmakingPlayers] = useState(0);
+
+  // Hand Auto-Sort State
+  const [handSorted, setHandSorted] = useState(false);
 
   useEffect(() => {
     let timer = null;
@@ -1865,8 +1977,17 @@ function App() {
       setIsMatchmaking(false);
     });
 
+    socket.on('matchmaking_status', ({ status, position }) => {
+      if (status === 'searching' && position) {
+        setMatchmakingPlayers(position);
+      } else if (status === 'cancelled') {
+        setMatchmakingPlayers(0);
+      }
+    });
+
     socket.on('match_found', ({ code }) => {
       setIsMatchmaking(false);
+      setMatchmakingPlayers(0);
       setShowPlayModal(false);
       localStorage.setItem('catch_last_room', code);
       setLastRoomCode(code);
@@ -1877,6 +1998,7 @@ function App() {
 
     socket.on('room_state', (state) => {
       setRoomState(state);
+      setHandSorted(false); // Reset hand sort when room changes
       if (state && state.code) {
         localStorage.setItem('catch_last_room', state.code);
         setLastRoomCode(state.code);
@@ -2071,12 +2193,20 @@ function App() {
   const isHost = me?.isHost;
 
   // Sorted Hand: Numbers (0-10, CA 11, TCH 12) -> Action cards
+  // handSorted=true: groups numbers by frequency (most duplicates first), then by value
   const sortedHand = useMemo(() => {
     if (!me?.hand) return [];
-    const numbers = me.hand.filter(c => c.type === 'number').sort((a, b) => a.value - b.value);
+    const numbers = me.hand.filter(c => c.type === 'number');
     const actions = me.hand.filter(c => c.type !== 'number');
+    if (handSorted) {
+      const freq = {};
+      numbers.forEach(c => { freq[c.value] = (freq[c.value] || 0) + 1; });
+      numbers.sort((a, b) => freq[b.value] - freq[a.value] || a.value - b.value);
+    } else {
+      numbers.sort((a, b) => a.value - b.value);
+    }
     return [...numbers, ...actions];
-  }, [me?.hand]);
+  }, [me?.hand, handSorted]);
 
   // Unique numbers in hand for Magnet / easy selection
   const handNumberCards = useMemo(() => {
@@ -3625,41 +3755,12 @@ function App() {
 
         {/* SMART MATCHMAKING RADAR SEARCH MODAL */}
       {isMatchmaking && (
-        <div className="fixed inset-0 z-[450] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-sm bg-slate-900 border-2 border-amber-400/80 rounded-3xl p-6 shadow-2xl text-center space-y-4 font-cairo">
-            {/* Radar Pulse Effect */}
-            <div className="relative w-24 h-24 mx-auto flex items-center justify-center">
-              <div className="absolute inset-0 rounded-full border-2 border-emerald-400 animate-ping opacity-60"></div>
-              <div className="absolute inset-2 rounded-full border-2 border-amber-400 animate-pulse"></div>
-              <div className="w-16 h-16 rounded-full bg-slate-800 border border-amber-400/60 flex items-center justify-center text-3xl shadow-inner">
-                🃏
-              </div>
-            </div>
-
-            <div>
-              <h3 className="text-base font-black text-white">
-                {t('searchingMatch')}
-              </h3>
-              <p className="text-xs text-slate-300 font-medium mt-1 leading-relaxed">
-                {t('findingPlayersDesc')}
-              </p>
-            </div>
-
-            <div className="bg-slate-800/90 border border-slate-700 rounded-2xl py-2 px-4 inline-flex items-center gap-2 shadow-inner">
-              <span className="text-xs text-amber-300 font-bold">⏱️ الوقت:</span>
-              <span className="text-sm font-mono font-black text-white">
-                {Math.floor(matchmakingTime / 60)}:{(matchmakingTime % 60).toString().padStart(2, '0')}
-              </span>
-            </div>
-
-            <button
-              onClick={handleCancelMatchmaking}
-              className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 hover:text-white font-bold text-xs rounded-xl border border-slate-700 transition"
-            >
-              {t('cancelSearch')}
-            </button>
-          </div>
-        </div>
+        <MatchmakingScreen
+          matchmakingTime={matchmakingTime}
+          matchmakingPlayers={matchmakingPlayers}
+          onCancel={handleCancelMatchmaking}
+          lang={lang}
+        />
       )}
 
       <ExitConfirmModal
@@ -4361,6 +4462,18 @@ function App() {
                     title="عجلة الإيموجي والتفاعلات">
               <span className="text-sm">😊</span>
               <span className="text-[10px] font-bold">تفاعل</span>
+            </button>
+            {/* Auto-Sort Hand Button */}
+            <button
+              onClick={() => { soundFx.play('snap'); setHandSorted(v => !v); }}
+              className={`px-3 py-1.5 rounded-xl text-[10px] font-black transition border flex items-center gap-1 active:scale-95 shadow-md ${
+                handSorted
+                  ? 'border-amber-400/80 bg-amber-400/20 text-amber-300'
+                  : 'border-white/20 bg-white/5 text-white/50 hover:text-white/80 hover:bg-white/10'
+              }`}
+              title="ترتيب الكروت تلقائياً حسب التكرار">
+              <span className="text-sm">🔃</span>
+              <span>{handSorted ? 'مرتب' : 'رتّب'}</span>
             </button>
           </div>
         </div>
