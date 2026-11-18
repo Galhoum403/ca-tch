@@ -1279,6 +1279,7 @@ function MatchmakingScreen({ matchmakingTime, matchmakingPlayers, onCancel, lang
 function App() {
   const socketRef = useRef(null);
   const [roomState, setRoomState] = useState(null);
+  const roomStateRef = useRef(null);
   const [showExitConfirmModal, setShowExitConfirmModal] = useState(false);
   const [playerName, setPlayerName] = useState(() => localStorage.getItem('catch_name') || '');
   const [avatar, setAvatar] = useState(() => localStorage.getItem('catch_avatar') || '😎');
@@ -1606,15 +1607,28 @@ function App() {
   // Instant 1-Click Smart Matchmaking
   const handleStartMatchmaking = () => {
     soundFx.init();
-    if (!ensureConnected()) return;
     soundFx.play('snap');
     const finalName = playerName.trim() || (lang === 'en' ? 'VIP Player' : 'لاعب VIP');
     setPlayerName(finalName);
     localStorage.setItem('catch_name', finalName);
     localStorage.setItem('catch_avatar', avatar);
+    localStorage.removeItem('catch_last_room');
+    setLastRoomCode('');
     setShowPlayModal(false);
     setIsMatchmaking(true);
-    socketRef.current?.emit('join_matchmaking', { name: finalName, avatar, userId, sessionToken });
+    setMatchmakingPlayers(1);
+    setMatchmakingTime(0);
+
+    const emitJoin = () => {
+      socketRef.current?.emit('join_matchmaking', { name: finalName, avatar, userId, sessionToken });
+    };
+
+    if (socketRef.current?.connected) {
+      emitJoin();
+    } else {
+      try { socketRef.current?.connect?.(); } catch(e){}
+      socketRef.current?.once?.('connect', emitJoin);
+    }
   };
 
   const handleCancelMatchmaking = () => {
@@ -1953,7 +1967,8 @@ function App() {
       socket.emit('set_user_session', { userId, sessionToken: localStorage.getItem('catch_token') });
       const savedRoom = localStorage.getItem('catch_last_room');
       const savedName = localStorage.getItem('catch_name') || playerName;
-      if (savedRoom) {
+      // Only auto-reconnect if user was actively in an ongoing game/room
+      if (savedRoom && roomStateRef.current) {
         socket.emit('reconnect_room', {
           code: savedRoom,
           userId,
@@ -2010,6 +2025,7 @@ function App() {
       localStorage.removeItem('catch_last_room');
       setLastRoomCode('');
       setRoomState(null);
+      roomStateRef.current = null;
       setIsMatchmaking(false);
     });
 
@@ -2036,6 +2052,7 @@ function App() {
 
     socket.on('room_state', (state) => {
       setRoomState(state);
+      roomStateRef.current = state;
       setHandSorted(false); // Reset hand sort when room changes
       if (state) {
         setIsMatchmaking(false);
