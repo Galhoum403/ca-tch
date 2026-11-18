@@ -1334,7 +1334,36 @@ function App() {
     return { games: 0, wins: 0, sets: 0 };
   });
 
-  const [lastRoomCode, setLastRoomCode] = useState(() => localStorage.getItem('catch_last_room') || '');
+  const [lastRoomCode, setLastRoomCode] = useState(() => {
+    try {
+      const code = localStorage.getItem('catch_last_room');
+      const owner = localStorage.getItem('catch_last_room_user_id');
+      const currentUid = localStorage.getItem('catch_user_id');
+      if (code && owner && currentUid && String(owner) === String(currentUid)) {
+        return code;
+      }
+    } catch(e) {}
+    return '';
+  });
+
+  // Strict Account-Scoped Active Room Management (Prevents cross-account session pollution)
+  const persistActiveRoom = (code, ownerId = null) => {
+    const owner = ownerId || currentUser?.id || userId;
+    if (!code || !owner) return;
+    try {
+      localStorage.setItem('catch_last_room', code);
+      localStorage.setItem('catch_last_room_user_id', String(owner));
+    } catch(e){}
+    setLastRoomCode(code);
+  };
+
+  const clearActiveRoom = () => {
+    try {
+      localStorage.removeItem('catch_last_room');
+      localStorage.removeItem('catch_last_room_user_id');
+    } catch(e){}
+    setLastRoomCode('');
+  };
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [showRulesModal, setShowRulesModal] = useState(false);
   const recordedGameRef = useRef(null);
@@ -1627,8 +1656,7 @@ function App() {
     setPlayerName(finalName);
     localStorage.setItem('catch_name', finalName);
     localStorage.setItem('catch_avatar', avatar);
-    localStorage.removeItem('catch_last_room');
-    setLastRoomCode('');
+    clearActiveRoom();
     setShowPlayModal(false);
     setIsMatchmaking(true);
     setMatchmakingPlayers(1);
@@ -1796,6 +1824,16 @@ function App() {
         return;
       }
 
+      // Complete Account Isolation: Clear previous account's rooms and leave any active room
+      clearActiveRoom();
+      setRoomState(null);
+      roomStateRef.current = null;
+      setIsMatchmaking(false);
+      if (socketRef.current?.connected) {
+        socketRef.current.emit('leave_room');
+        socketRef.current.emit('cancel_matchmaking');
+      }
+
       // Persist auth session
       localStorage.setItem('catch_token', data.token);
       localStorage.setItem('catch_user_id', data.user.id);
@@ -1872,7 +1910,7 @@ function App() {
       localStorage.removeItem('catch_coins');
       localStorage.removeItem('catch_gems');
       localStorage.removeItem('catch_avatar');
-      localStorage.removeItem('catch_last_room');
+      clearActiveRoom();
       localStorage.setItem('catch_is_guest', 'true');
     } catch(e){}
 
@@ -2199,6 +2237,10 @@ function App() {
   };
 
   const handleGuestPlay = () => {
+    clearActiveRoom();
+    setRoomState(null);
+    roomStateRef.current = null;
+    setIsMatchmaking(false);
     localStorage.setItem('catch_is_guest', 'true');
     setIsGuest(true);
     setShowAuthModal(false);
@@ -2217,13 +2259,20 @@ function App() {
   };
 
   const handleLogout = () => {
+    clearActiveRoom();
+    setRoomState(null);
+    roomStateRef.current = null;
+    setIsMatchmaking(false);
+    if (socketRef.current?.connected) {
+      socketRef.current.emit('leave_room');
+      socketRef.current.emit('cancel_matchmaking');
+    }
     localStorage.removeItem('catch_token');
     localStorage.removeItem('catch_user_id');
     localStorage.removeItem('catch_name');
     localStorage.removeItem('catch_coins');
     localStorage.removeItem('catch_gems');
     localStorage.removeItem('catch_avatar');
-    localStorage.removeItem('catch_last_room');
     localStorage.setItem('catch_is_guest', 'true');
     const freshGuestId = 'u_' + Math.random().toString(36).slice(2, 9) + '_' + Date.now().toString(36);
     const freshGuestName = `صياد_${Math.floor(Math.random() * 899 + 100)}`;
@@ -2416,21 +2465,25 @@ function App() {
     } catch(e) {}
 
     socket.on('reconnect_success', ({ code, name }) => {
-      localStorage.setItem('catch_last_room', code);
-      setLastRoomCode(code);
+      persistActiveRoom(code);
       showVoiceNotice(`⚡ مرحباً بعودتك يا ${name}! تم استعادة مقعدك.`);
     });
 
-    socket.on('reconnect_failed', () => {
-      localStorage.removeItem('catch_last_room');
-      setLastRoomCode('');
+    socket.on('reconnect_failed', ({ reason } = {}) => {
+      clearActiveRoom();
       setRoomState(null);
       roomStateRef.current = null;
+      if (reason === 'game_already_over') {
+        showVoiceNotice(lang === 'en' ? '🏁 This round has already ended!' : '🏁 انتهت تلك الجولة بالفعل!');
+      } else if (reason === 'player_not_found') {
+        showVoiceNotice(lang === 'en' ? '⚠️ Your seat is no longer active in that round.' : '⚠️ مقعدك في تلك الجولة لم يعد متاحاً أو يتبع حساباً آخر.');
+      } else {
+        showVoiceNotice(lang === 'en' ? '⚠️ Could not recover round' : '⚠️ تعذر استعادة الجولة، تم تحويلك للرئيسية.');
+      }
     });
 
     socket.on('left_room_success', () => {
-      localStorage.removeItem('catch_last_room');
-      setLastRoomCode('');
+      clearActiveRoom();
       setRoomState(null);
       roomStateRef.current = null;
       setIsMatchmaking(false);
@@ -2450,8 +2503,7 @@ function App() {
       setMatchmakingPlayers(0);
       setMatchmakingTotal(4);
       setShowPlayModal(false);
-      localStorage.setItem('catch_last_room', code);
-      setLastRoomCode(code);
+      persistActiveRoom(code);
       soundFx.init();
       soundFx.play('celebration');
       showVoiceNotice(lang === 'en' ? 'Match Found! Game Starting... 🚀' : 'تم العثور على طاولة ومنافسين! تبدأ الجولة الآن... 🚀');
@@ -2464,9 +2516,10 @@ function App() {
       if (state) {
         setIsMatchmaking(false);
       }
-      if (state && state.code) {
-        localStorage.setItem('catch_last_room', state.code);
-        setLastRoomCode(state.code);
+      if (state && state.code && state.status !== 'gameover') {
+        persistActiveRoom(state.code);
+      } else if (state && state.status === 'gameover') {
+        clearActiveRoom();
       }
       if (state && state.status === 'lobby' && autoStartBotsRef.current) {
         autoStartBotsRef.current = false;
@@ -3137,8 +3190,7 @@ function App() {
   };
 
   const handleLeaveRoom = () => {
-    localStorage.removeItem('catch_last_room');
-    setLastRoomCode('');
+    clearActiveRoom();
     if (socketRef.current) socketRef.current.emit('leave_room');
     setRoomState(null);
     roomStateRef.current = null;
@@ -3376,8 +3428,8 @@ function App() {
                 </div>
               </div>
 
-              {/* Ongoing Game Recovery Card */}
-              {lastRoomCode && (
+              {/* Ongoing Game Recovery Card (Strictly Isolated to Active User) */}
+              {lastRoomCode && localStorage.getItem('catch_last_room_user_id') === String(currentUser?.id || userId) && (
                 <div className="w-full bg-gradient-to-r from-red-950/90 via-[#451c04]/90 to-red-950/90 border-2 border-yellow-400 rounded-2xl p-2.5 shadow-xl text-center flex items-center justify-between my-1 animate-pulse">
                   <div className="text-right">
                     <span className="text-xs font-black text-yellow-300 block">⚡ {lang === 'en' ? `Saved Active Round! [${lastRoomCode}]` : `جولة جارية محفوظة! [${lastRoomCode}]`}</span>
@@ -3391,10 +3443,7 @@ function App() {
                     }} className="btn-gold px-3 py-1.5 rounded-xl text-xs font-black shadow">
                       {lang === 'en' ? 'Resume 🚀' : 'استكمال 🚀'}
                     </button>
-                    <button onClick={() => {
-                      localStorage.removeItem('catch_last_room');
-                      setLastRoomCode('');
-                    }} className="bg-red-900/60 hover:bg-red-800 text-red-200 px-2 py-1.5 rounded-xl text-xs font-bold">
+                    <button onClick={clearActiveRoom} className="bg-red-900/60 hover:bg-red-800 text-red-200 px-2 py-1.5 rounded-xl text-xs font-bold" title="إلغاء">
                       ✕
                     </button>
                   </div>

@@ -2665,14 +2665,29 @@ function registerSocketHandlers(socket) {
       return;
     }
 
-    const existingPlayer = room.players.find(pl => 
-      !pl.isBot && (
-        (sessionToken && pl.sessionToken && pl.sessionToken === sessionToken) ||
-        (userId && pl.userId && pl.userId === userId)
-      )
-    );
+    if (room.status === 'gameover') {
+      socket.emit('reconnect_failed', { reason: 'game_already_over', code: rCode });
+      return;
+    }
+
+    // Strict Account & Identity Matching (No seat hijacking between accounts)
+    const existingPlayer = room.players.find(pl => {
+      if (pl.isBot) return false;
+      // 1. Registered Session Token Match
+      if (sessionToken && pl.sessionToken && pl.sessionToken === sessionToken) {
+        return true;
+      }
+      // 2. Strict User ID Match
+      if (userId && pl.userId && String(pl.userId) === String(userId)) {
+        // If seat was registered with a sessionToken, reject unauthenticated guest takeover
+        if (pl.sessionToken && !sessionToken) return false;
+        return true;
+      }
+      return false;
+    });
 
     if (!existingPlayer) {
+      console.log(`🔒 Reconnect rejected for socket ${socket.id} in room ${rCode}: player identity mismatch.`);
       socket.emit('reconnect_failed', { reason: 'player_not_found', code: rCode });
       return;
     }
