@@ -1600,8 +1600,8 @@ function App() {
     }
     return id;
   });
-  const [sessionToken] = useState(() => {
-    let token = localStorage.getItem('catch_session_token');
+  const [sessionToken, setSessionToken] = useState(() => {
+    let token = localStorage.getItem('catch_token') || localStorage.getItem('catch_session_token');
     if (!token) {
       token = 'tok_' + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
       localStorage.setItem('catch_session_token', token);
@@ -1835,28 +1835,28 @@ function App() {
   const [selectedTier, setSelectedTier] = useState('casual');
   const TABLE_TIERS = [{
     id: 'casual',
-    name: 'طاولة المبتدئين الودية',
+    name: 'روم البرونز',
     fee: 50,
     prize: 200,
     gemsPrize: 0,
-    icon: '☕',
-    desc: 'لعب ودي خفيف ومناسب للمبتدئين بدون مخاطرة'
+    icon: '🎯',
+    desc: 'لعب خفيف وسريع برهان رمزي 50 عملة'
   }, {
     id: 'pro',
-    name: 'طاولة القهوة للحريفة',
+    name: 'روم المحترفين',
     fee: 500,
     prize: 2000,
     gemsPrize: 2,
     icon: '🏆',
-    desc: 'تحدي قوي بين الحريفة وجائزة 2000 كوينز + جواهر'
+    desc: 'تحدي قوي بين المحترفين وجائزة 2000 عملة + 2 جوهرة'
   }, {
     id: 'legend',
-    name: 'طاولة كبار الكاتش VIP',
+    name: 'روم VIP',
     fee: 2500,
     prize: 10000,
     gemsPrize: 10,
     icon: '👑',
-    desc: 'لأساطير اللعبة وجائزة كبرى 10,000 كوينز + 10 جواهر'
+    desc: 'لأساطير اللعبة وجائزة كبرى 10,000 عملة + 10 جواهر'
   }];
 
   // Daily Lucky Wheel
@@ -2060,10 +2060,13 @@ function App() {
 
   // Load Streak Info & Check Spin Date on Mount / Login
   useEffect(() => {
+    loadStreak();
+    const today = new Date().toISOString().slice(0, 10);
     if (currentUser?.id) {
-      loadStreak();
-      const today = new Date().toISOString().slice(0, 10);
       setHasSpunToday(currentUser.last_spin_date === today);
+    } else {
+      const guestLastSpin = localStorage.getItem('catch_last_spin');
+      setHasSpunToday(guestLastSpin === today);
     }
   }, [currentUser]);
 
@@ -2182,16 +2185,19 @@ function App() {
       soundFx.play('tick');
     }, 140);
     try {
+      const activeToken = localStorage.getItem('catch_token') || sessionToken;
       const res = await fetch(`${getServerBaseUrl()}/api/spin-wheel`, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${sessionToken}`
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${activeToken}`
         }
       });
       const data = await res.json();
       if (!data.success) {
         clearInterval(tickInterval);
         setIsSpinning(false);
+        soundFx.play('buzz');
         setErrorMsg(data.error || 'تعذر لف العجلة اليوم');
         setTimeout(() => setErrorMsg(''), 3000);
         return;
@@ -2204,9 +2210,28 @@ function App() {
         clearInterval(tickInterval);
         setIsSpinning(false);
         setWheelReward(data.reward);
-        setCoins(data.coins);
-        setGems(data.gems);
+        if (typeof data.coins === 'number') {
+          setCoins(data.coins);
+          localStorage.setItem('catch_coins', data.coins);
+        } else if (data.reward?.type === 'coins') {
+          setCoins(c => {
+            const next = c + (data.reward.amount || 0);
+            localStorage.setItem('catch_coins', next);
+            return next;
+          });
+        }
+        if (typeof data.gems === 'number') {
+          setGems(data.gems);
+          localStorage.setItem('catch_gems', data.gems);
+        } else if (data.reward?.type === 'gems') {
+          setGems(g => {
+            const next = g + (data.reward.amount || 0);
+            localStorage.setItem('catch_gems', next);
+            return next;
+          });
+        }
         setHasSpunToday(true);
+        localStorage.setItem('catch_last_spin', new Date().toISOString().slice(0, 10));
         soundFx.play('celebration');
         triggerScreenShake();
       }, 4200);
@@ -2218,16 +2243,43 @@ function App() {
     }
   };
   const loadStreak = async () => {
-    if (!currentUser?.id) return;
     try {
+      const activeToken = localStorage.getItem('catch_token') || sessionToken;
       const res = await fetch(`${getServerBaseUrl()}/api/streak-info`, {
         headers: {
-          Authorization: `Bearer ${sessionToken}`
+          Authorization: `Bearer ${activeToken}`
         }
       });
       const data = await res.json();
       if (data.success && data.info) {
-        setStreakInfo(data.info);
+        if (data.isGuest) {
+          const guestLastClaim = localStorage.getItem('catch_guest_streak_claim');
+          const today = new Date().toISOString().slice(0, 10);
+          const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+          let guestStreak = parseInt(localStorage.getItem('catch_guest_streak') || '1', 10);
+          const canClaim = guestLastClaim !== today;
+          if (guestLastClaim && guestLastClaim !== today && guestLastClaim !== yesterday) {
+            guestStreak = 1;
+            localStorage.setItem('catch_guest_streak', '1');
+          }
+          let activeDay = guestStreak;
+          if (canClaim) {
+            if (guestLastClaim === yesterday) {
+              activeDay = guestStreak >= 7 ? 1 : guestStreak + 1;
+            } else {
+              activeDay = 1;
+            }
+          }
+          setStreakInfo({
+            streak: guestStreak,
+            activeDay,
+            canClaimToday: canClaim,
+            lastClaimDate: guestLastClaim,
+            rewards: data.info.rewards
+          });
+        } else {
+          setStreakInfo(data.info);
+        }
       }
     } catch (e) {}
   };
@@ -2235,21 +2287,66 @@ function App() {
     if (streakLoading) return;
     setStreakLoading(true);
     try {
+      const activeToken = localStorage.getItem('catch_token') || sessionToken;
+      const targetStreak = streakInfo?.activeDay || 1;
       const res = await fetch(`${getServerBaseUrl()}/api/claim-streak`, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${sessionToken}`
-        }
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${activeToken}`
+        },
+        body: JSON.stringify({
+          guestStreak: targetStreak
+        })
       });
       const data = await res.json();
       if (data.success) {
-        setCoins(data.coins);
-        setGems(data.gems);
+        const today = new Date().toISOString().slice(0, 10);
+        if (data.isGuest) {
+          localStorage.setItem('catch_guest_streak_claim', today);
+          localStorage.setItem('catch_guest_streak', String(data.streak || targetStreak));
+          if (data.reward?.type === 'coins') {
+            setCoins(c => {
+              const next = c + (data.reward.amount || 0);
+              localStorage.setItem('catch_coins', next);
+              return next;
+            });
+          } else if (data.reward?.type === 'gems') {
+            setGems(g => {
+              const next = g + (data.reward.amount || 0);
+              localStorage.setItem('catch_gems', next);
+              return next;
+            });
+          } else if (data.reward?.type === 'both') {
+            setCoins(c => {
+              const next = c + (data.reward.coins || 0);
+              localStorage.setItem('catch_coins', next);
+              return next;
+            });
+            setGems(g => {
+              const next = g + (data.reward.gems || 0);
+              localStorage.setItem('catch_gems', next);
+              return next;
+            });
+          }
+        } else {
+          if (typeof data.coins === 'number') {
+            setCoins(data.coins);
+            localStorage.setItem('catch_coins', data.coins);
+          }
+          if (typeof data.gems === 'number') {
+            setGems(data.gems);
+            localStorage.setItem('catch_gems', data.gems);
+          }
+        }
         soundFx.init();
         soundFx.play('celebration');
         triggerScreenShake();
+        showVoiceNotice(lang === 'en' ? '🎁 Daily Reward Claimed!' : '🎁 تم استلام مكافأة اليوم بنجاح!');
         loadStreak();
       } else {
+        soundFx.init();
+        soundFx.play('buzz');
         setErrorMsg(data.error || 'تعذر استلام المكافأة اليوم');
         setTimeout(() => setErrorMsg(''), 3000);
       }
@@ -2277,6 +2374,14 @@ function App() {
   const handleStartMatchmaking = () => {
     soundFx.init();
     soundFx.play('snap');
+    const tierObj = TABLE_TIERS.find(t => t.id === selectedTier) || TABLE_TIERS[0];
+    if (coins < tierObj.fee) {
+      soundFx.play('buzz');
+      showVoiceNotice(lang === 'en' ? `Insufficient coins! You need at least ${tierObj.fee} coins to enter ${tierObj.name}.` : `⚠️ رصيدك (${coins} عملة) غير كافٍ لدخول ${tierObj.name}! تحتاج ${tierObj.fee} عملة على الأقل.`);
+      setErrorMsg(`رصيدك غير كافٍ لدخول ${tierObj.name} (تحتاج ${tierObj.fee} عملة ⭐)`);
+      setTimeout(() => setErrorMsg(''), 4000);
+      return;
+    }
     const finalName = playerName.trim() || (lang === 'en' ? 'VIP Player' : 'لاعب VIP');
     setPlayerName(finalName);
     localStorage.setItem('catch_name', finalName);
@@ -2479,6 +2584,7 @@ function App() {
       localStorage.setItem('catch_coins', data.user.coins);
       localStorage.setItem('catch_gems', data.user.gems);
       localStorage.removeItem('catch_is_guest');
+      setSessionToken(data.token);
       setCurrentUser(data.user);
       setUserId(data.user.id);
       setPlayerName(data.user.username);
@@ -2559,6 +2665,7 @@ function App() {
       localStorage.removeItem('catch_avatar');
       clearActiveRoom();
       localStorage.setItem('catch_is_guest', 'true');
+      setSessionToken(localStorage.getItem('catch_session_token') || '');
     } catch (e) {}
     const freshGuestId = 'u_' + Math.random().toString(36).slice(2, 9) + '_' + Date.now().toString(36);
     const freshGuestName = `صياد_${Math.floor(Math.random() * 899 + 100)}`;
@@ -2871,6 +2978,7 @@ function App() {
     localStorage.removeItem('catch_gems');
     localStorage.removeItem('catch_avatar');
     localStorage.setItem('catch_is_guest', 'true');
+    setSessionToken(localStorage.getItem('catch_session_token') || '');
     const freshGuestId = 'u_' + Math.random().toString(36).slice(2, 9) + '_' + Date.now().toString(36);
     const freshGuestName = `صياد_${Math.floor(Math.random() * 899 + 100)}`;
     localStorage.setItem('catch_user_id', freshGuestId);
@@ -3129,6 +3237,44 @@ function App() {
       soundFx.init();
       soundFx.play('celebration');
       showVoiceNotice(lang === 'en' ? 'Match Found! Game Starting... 🚀' : 'تم العثور على طاولة ومنافسين! تبدأ الجولة الآن... 🚀');
+    });
+    socket.on('table_fee_deducted', ({
+      fee,
+      tableName,
+      newCoins
+    }) => {
+      if (typeof newCoins === 'number') {
+        setCoins(newCoins);
+        localStorage.setItem('catch_coins', newCoins);
+      } else {
+        setCoins(prev => {
+          const next = Math.max(0, prev - fee);
+          localStorage.setItem('catch_coins', next);
+          return next;
+        });
+      }
+      soundFx.init();
+      soundFx.play('impact');
+      showVoiceNotice(`💸 تم خصم ${fee} عملة رسوم دخول ${tableName}`);
+    });
+    socket.on('matchmaking_error', ({
+      message
+    }) => {
+      setIsMatchmaking(false);
+      soundFx.init();
+      soundFx.play('buzz');
+      setErrorMsg(message || 'تعذر الانضمام للبحث السريع');
+      showVoiceNotice(`⚠️ ${message}`);
+      setTimeout(() => setErrorMsg(''), 4000);
+    });
+    socket.on('room_error', ({
+      message
+    }) => {
+      soundFx.init();
+      soundFx.play('buzz');
+      setErrorMsg(message || 'تعذر الانضمام للطاولة');
+      showVoiceNotice(`⚠️ ${message}`);
+      setTimeout(() => setErrorMsg(''), 4000);
     });
     socket.on('room_state', state => {
       if (state && state.status === 'playing' && roomStateRef.current?.status !== 'playing') {
@@ -3905,6 +4051,14 @@ function App() {
   const handleCreateRoom = () => {
     soundFx.init();
     if (!ensureConnected()) return;
+    const tierObj = TABLE_TIERS.find(t => t.id === selectedTier) || TABLE_TIERS[0];
+    if (coins < tierObj.fee) {
+      soundFx.play('buzz');
+      showVoiceNotice(lang === 'en' ? `Insufficient coins! You need at least ${tierObj.fee} coins to create ${tierObj.name}.` : `⚠️ رصيدك (${coins} عملة) غير كافٍ لإنشاء ${tierObj.name}! تحتاج ${tierObj.fee} عملة.`);
+      setErrorMsg(`رصيدك غير كافٍ لإنشاء ${tierObj.name} (تحتاج ${tierObj.fee} عملة ⭐)`);
+      setTimeout(() => setErrorMsg(''), 4000);
+      return;
+    }
     soundFx.play('celebration');
     const finalName = playerName.trim() || (lang === 'en' ? 'VIP Player' : 'لاعب VIP');
     setPlayerName(finalName);
@@ -4220,6 +4374,7 @@ function App() {
       onClick: () => {
         soundFx.init();
         soundFx.play('snap');
+        loadStreak();
         setShowStreakModal(true);
       },
       className: "bg-gradient-to-r from-purple-900/40 via-indigo-900/30 to-purple-900/40 border border-purple-400/50 hover:border-purple-300 rounded-2xl p-2 flex items-center justify-between text-right transition active:scale-95 shadow"
@@ -4231,7 +4386,7 @@ function App() {
       className: "text-xs font-black text-purple-300"
     }, "مكافأة 7 أيام"), /*#__PURE__*/React.createElement("p", {
       className: "text-[10px] text-purple-200/80 font-bold"
-    }, "اليوم ", streakInfo?.streak || 1, "/7"))), streakInfo?.canClaimToday && /*#__PURE__*/React.createElement("span", {
+    }, "اليوم ", streakInfo?.activeDay || streakInfo?.streak || 1, "/7"))), streakInfo?.canClaimToday && /*#__PURE__*/React.createElement("span", {
       className: "w-2.5 h-2.5 rounded-full bg-yellow-400 shadow-[0_0_8px_#facc15] animate-ping"
     }))), /*#__PURE__*/React.createElement("div", {
       className: "bg-black/50 border border-amber-500/30 rounded-2xl p-2 my-1 space-y-1.5"
@@ -4255,7 +4410,7 @@ function App() {
         className: "text-lg"
       }, tier.icon), /*#__PURE__*/React.createElement("p", {
         className: `text-[11px] font-black mt-0.5 leading-tight ${isSelected ? 'text-yellow-300' : 'text-white'}`
-      }, tier.id === 'casual' ? 'المبتدئين' : tier.id === 'pro' ? 'القهوة' : 'كبار الكاتش'), /*#__PURE__*/React.createElement("span", {
+      }, tier.name), /*#__PURE__*/React.createElement("span", {
         className: "text-[10px] font-bold text-emerald-400 mt-0.5"
       }, "فوز ", tier.prize >= 1000 ? `${tier.prize / 1000}k` : tier.prize, " ⭐"), /*#__PURE__*/React.createElement("span", {
         className: "text-[9px] text-amber-200/60 font-semibold"
@@ -4278,7 +4433,7 @@ function App() {
       className: "btn-neon-green w-full py-3.5 rounded-2xl text-base sm:text-lg font-black flex items-center justify-center gap-2 transition active:scale-95 shadow-xl"
     }, /*#__PURE__*/React.createElement("span", {
       className: "text-xl"
-    }, "⚡"), /*#__PURE__*/React.createElement("span", null, "العب الآن [", selectedTier === 'legend' ? 'كبار الكاتش 👑' : selectedTier === 'pro' ? 'القهوة 🏆' : 'المبتدئين ☕', "]")), /*#__PURE__*/React.createElement("div", {
+    }, "⚡"), /*#__PURE__*/React.createElement("span", null, "العب الآن [", selectedTier === 'legend' ? 'روم VIP 👑' : selectedTier === 'pro' ? 'روم المحترفين 🏆' : 'روم البرونز 🎯', "]")), /*#__PURE__*/React.createElement("div", {
       className: "grid grid-cols-2 gap-2.5"
     }, /*#__PURE__*/React.createElement("button", {
       onClick: () => setShowPrivateRoomModal(true),
@@ -4486,13 +4641,13 @@ function App() {
     [{
       tier: '🥉 لاعب هاوي',
       req: '0 فوز',
-      prize: 'طاولة المبتدئين الودية',
-      perk: 'لعب خفيف ومبتدئ بدون مخاطرة',
+      prize: 'روم البرونز',
+      perk: 'لعب خفيف وسريع برهان رمزي 50 عملة',
       active: vipRank.badge.includes('برونزي')
     }, {
       tier: '🥈 صائد فضي',
       req: '3 انتصارات',
-      prize: 'طاولة القهوة للحريفة',
+      prize: 'روم المحترفين',
       perk: 'أولوية التحديات والريماتش',
       active: vipRank.badge.includes('فضي')
     }, {
@@ -4504,7 +4659,7 @@ function App() {
     }, {
       tier: '💎 دايموند VIP',
       req: '12 انتصاراً',
-      prize: 'طاولة كبار الكاتش',
+      prize: 'روم VIP',
       perk: 'خلفية ذهبية حصرية للطاولة',
       active: vipRank.badge.includes('دايموند')
     }, {
@@ -4756,13 +4911,22 @@ function App() {
       className: "text-xs font-black"
     }, pendingTableInvite.fromName, " يدعوك للانضمام!"), /*#__PURE__*/React.createElement("p", {
       className: "text-[10px] font-bold text-amber-950"
-    }, "طاولة #", pendingTableInvite.roomCode, " [", pendingTableInvite.tier === 'legend' ? 'كبار الكاتش' : pendingTableInvite.tier === 'pro' ? 'القهوة' : 'المبتدئين', "]"))), /*#__PURE__*/React.createElement("div", {
+    }, "طاولة #", pendingTableInvite.roomCode, " [", pendingTableInvite.tier === 'legend' ? 'روم VIP' : pendingTableInvite.tier === 'pro' ? 'روم المحترفين' : 'روم البرونز', "]"))), /*#__PURE__*/React.createElement("div", {
       className: "flex items-center gap-1.5"
     }, /*#__PURE__*/React.createElement("button", {
       onClick: () => {
         soundFx.init();
         soundFx.play('snap');
         const code = pendingTableInvite.roomCode;
+        const invTier = pendingTableInvite.tier || 'casual';
+        const invFee = invTier === 'legend' ? 2500 : invTier === 'pro' ? 500 : 50;
+        const invName = invTier === 'legend' ? 'روم VIP' : invTier === 'pro' ? 'روم المحترفين' : 'روم البرونز';
+        if (coins < invFee) {
+          soundFx.play('buzz');
+          showVoiceNotice(`⚠️ رصيدك (${coins} عملة) غير كافٍ لدخول ${invName}! تحتاج ${invFee} عملة.`);
+          setPendingTableInvite(null);
+          return;
+        }
         setPendingTableInvite(null);
         if (!ensureConnected()) return;
         const finalName = playerName.trim() || 'لاعب VIP';
@@ -5704,7 +5868,7 @@ function App() {
     className: "text-red-400 font-bold"
   }, "✕"), /*#__PURE__*/React.createElement("span", null, "خروج")), renderSignalBars(ping, connectionStatus), /*#__PURE__*/React.createElement("span", {
     className: "hidden xs:inline-block text-[10px] font-black px-2 py-0.5 rounded-lg bg-amber-500/20 text-yellow-300 border border-amber-400/40 shadow-sm"
-  }, roomState.tier === 'legend' ? '👑 كبار الكاتش' : roomState.tier === 'pro' ? '🏆 القهوة' : '☕ المبتدئين')), /*#__PURE__*/React.createElement("div", {
+  }, roomState.tier === 'legend' ? '👑 روم VIP' : roomState.tier === 'pro' ? '🏆 روم المحترفين' : '🎯 روم البرونز')), /*#__PURE__*/React.createElement("div", {
     className: `flex flex-col items-center px-2.5 py-0.5 rounded-xl transition-all duration-300 ${turnTimer <= 10 ? 'bg-red-950/85 border border-red-500 shadow-[0_0_18px_rgba(239,68,68,0.9)] animate-pulse' : ''}`
   }, /*#__PURE__*/React.createElement("span", {
     className: `text-xs font-black leading-tight ${turnTimer <= 10 ? 'text-red-300' : 'text-amber-200'}`
@@ -6490,7 +6654,7 @@ function App() {
       className: "text-xs font-black text-amber-900 mt-2 bg-gradient-to-r from-yellow-200 via-amber-100 to-yellow-200 py-1.5 px-3 rounded-xl border border-yellow-400 shadow-sm flex items-center justify-between"
     }, /*#__PURE__*/React.createElement("span", {
       className: "flex items-center gap-1"
-    }, /*#__PURE__*/React.createElement("span", null, "🏆"), /*#__PURE__*/React.createElement("span", null, "جائزة ", roomState.winnerPrize.tier === 'legend' ? 'طاولة كبار الكاتش' : roomState.winnerPrize.tier === 'pro' ? 'طاولة القهوة' : 'طاولة المبتدئين', ":")), /*#__PURE__*/React.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", null, "🏆"), /*#__PURE__*/React.createElement("span", null, "جائزة ", roomState.winnerPrize.tier === 'legend' ? 'روم VIP' : roomState.winnerPrize.tier === 'pro' ? 'روم المحترفين' : 'روم البرونز', ":")), /*#__PURE__*/React.createElement("span", {
       className: "text-emerald-700 font-black"
     }, "+", roomState.winnerPrize.coins, " ⭐ ", roomState.winnerPrize.gems > 0 ? `+${roomState.winnerPrize.gems} 💎` : ''))), /*#__PURE__*/React.createElement("div", {
       className: "space-y-1.5 mb-3.5"

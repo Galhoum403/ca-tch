@@ -582,14 +582,26 @@ function getStreakInfo(userId) {
   const lastClaim = user.last_streak_claim_date || null;
   const canClaimToday = lastClaim !== today;
 
+  // If player missed a day (neither today nor yesterday), reset streak back to Day 1!
   if (lastClaim && lastClaim !== today && lastClaim !== yesterday) {
     streak = 1;
     user.login_streak = 1;
     saveDb();
   }
 
+  // Calculate active day for claiming
+  let activeDay = streak;
+  if (canClaimToday) {
+    if (lastClaim === yesterday) {
+      activeDay = streak >= 7 ? 1 : streak + 1;
+    } else {
+      activeDay = 1;
+    }
+  }
+
   return {
     streak: Math.min(7, Math.max(1, streak)),
+    activeDay: Math.min(7, Math.max(1, activeDay)),
     canClaimToday,
     lastClaimDate: lastClaim,
     rewards: STREAK_REWARDS
@@ -603,17 +615,18 @@ function claimLoginStreak(userId) {
   const today = new Date().toISOString().slice(0, 10);
   const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
   if (user.last_streak_claim_date === today) {
-    throw new Error('لقد استلمت مكافأة الدخول اليوم بالفعل!');
+    throw new Error('لقد استلمت مكافأة الدخول اليوم بالفعل! عد غداً للمزيد.');
   }
 
-  let currentStreak = typeof user.login_streak === 'number' ? user.login_streak : 1;
+  let nextStreak = typeof user.login_streak === 'number' ? user.login_streak : 1;
   if (user.last_streak_claim_date === yesterday) {
-    currentStreak = currentStreak >= 7 ? 1 : currentStreak + 1;
-  } else if (user.last_streak_claim_date && user.last_streak_claim_date !== yesterday) {
-    currentStreak = 1;
+    nextStreak = nextStreak >= 7 ? 1 : nextStreak + 1;
+  } else {
+    // Missed one or more days -> Reset back to Day 1
+    nextStreak = 1;
   }
 
-  const reward = STREAK_REWARDS[currentStreak - 1];
+  const reward = STREAK_REWARDS[nextStreak - 1];
   if (reward.type === 'coins') {
     user.coins = (user.coins || 0) + reward.amount;
   } else if (reward.type === 'gems') {
@@ -623,13 +636,15 @@ function claimLoginStreak(userId) {
     user.gems = (user.gems || 0) + (reward.gems || 0);
   }
 
-  user.login_streak = currentStreak;
+  user.login_streak = nextStreak;
   user.last_streak_claim_date = today;
   saveDb();
 
   return {
     success: true,
-    streak: currentStreak,
+    streak: nextStreak,
+    activeDay: nextStreak,
+    canClaimToday: false,
     reward,
     coins: user.coins,
     gems: user.gems,
@@ -788,6 +803,15 @@ function awardTablePrize(userId, prizeCoins = 0, prizeGems = 0) {
   return { coins: user.coins, gems: user.gems };
 }
 
+function deductTableFee(userId, fee = 0) {
+  const user = dbData.users.find(u => u.id === Number(userId));
+  if (!user) return null;
+  const numFee = Math.max(0, parseInt(fee, 10) || 0);
+  user.coins = Math.max(0, (user.coins || 0) - numFee);
+  saveDb();
+  return { coins: user.coins, gems: user.gems };
+}
+
 module.exports = {
   db: null,
   registerUser,
@@ -808,6 +832,7 @@ module.exports = {
   spinLuckyWheel,
   getStreakInfo,
   claimLoginStreak,
+  deductTableFee,
   sendFriendRequest,
   respondFriendRequest,
   removeFriend,

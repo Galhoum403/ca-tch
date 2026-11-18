@@ -222,33 +222,85 @@ app.post('/api/claim-quest', (req, res) => {
 app.post('/api/spin-wheel', (req, res) => {
   const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
   const user = db.getUserByToken(token);
-  if (!user) return res.status(401).json({ success: false, error: 'غير مصرح أو الجلسة منتهية' });
-  try {
-    const result = db.spinLuckyWheel(user.id);
-    res.json(result);
-  } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
+  if (user) {
+    try {
+      const result = db.spinLuckyWheel(user.id);
+      return res.json(result);
+    } catch (err) {
+      return res.status(400).json({ success: false, error: err.message });
+    }
   }
+
+  // Guest Fallback: allow guest to spin once per day without session error
+  const today = new Date().toISOString().slice(0, 10);
+  const totalWeight = db.WHEEL_SLICES.reduce((sum, s) => sum + s.weight, 0);
+  let random = Math.random() * totalWeight;
+  let chosenIdx = 0;
+  for (let i = 0; i < db.WHEEL_SLICES.length; i++) {
+    if (random < db.WHEEL_SLICES[i].weight) {
+      chosenIdx = i;
+      break;
+    }
+    random -= db.WHEEL_SLICES[i].weight;
+  }
+  const prize = db.WHEEL_SLICES[chosenIdx];
+  return res.json({
+    success: true,
+    isGuest: true,
+    sliceIndex: chosenIdx,
+    reward: prize,
+    last_spin_date: today
+  });
 });
 
 app.get('/api/streak-info', (req, res) => {
   const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
   const user = db.getUserByToken(token);
-  if (!user) return res.status(401).json({ success: false, error: 'غير مصرح' });
-  const info = db.getStreakInfo(user.id);
-  res.json({ success: true, info });
+  if (user) {
+    const info = db.getStreakInfo(user.id);
+    return res.json({ success: true, info });
+  }
+
+  // Guest Fallback: return default 7-day streak info
+  return res.json({
+    success: true,
+    isGuest: true,
+    info: {
+      streak: 1,
+      activeDay: 1,
+      canClaimToday: true,
+      lastClaimDate: null,
+      rewards: db.STREAK_REWARDS
+    }
+  });
 });
 
 app.post('/api/claim-streak', (req, res) => {
   const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
   const user = db.getUserByToken(token);
-  if (!user) return res.status(401).json({ success: false, error: 'غير مصرح أو الجلسة منتهية' });
-  try {
-    const result = db.claimLoginStreak(user.id);
-    res.json(result);
-  } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
+  if (user) {
+    try {
+      const result = db.claimLoginStreak(user.id);
+      return res.json(result);
+    } catch (err) {
+      return res.status(400).json({ success: false, error: err.message });
+    }
   }
+
+  // Guest Fallback: allow guest to claim today's streak reward
+  const { guestStreak = 1 } = req.body || {};
+  const currentStreak = Math.min(7, Math.max(1, parseInt(guestStreak, 10) || 1));
+  const reward = db.STREAK_REWARDS[currentStreak - 1];
+  const today = new Date().toISOString().slice(0, 10);
+  return res.json({
+    success: true,
+    isGuest: true,
+    streak: currentStreak,
+    activeDay: currentStreak,
+    canClaimToday: false,
+    reward,
+    last_streak_claim_date: today
+  });
 });
 
 app.get('/api/friends', (req, res) => {
@@ -2402,6 +2454,28 @@ function handlePlayAction(room, player, card, extraData = {}, isChameleonSub = f
 function startGameInstance(room) {
   clearRoomTimers(room);
 
+  // Deduct Table Entry Fee Immediately at Game Start
+  const tier = room.tier || 'casual';
+  const tierFee = tier === 'legend' ? 2500 : tier === 'pro' ? 500 : 50;
+  const tierName = tier === 'legend' ? 'روم VIP' : tier === 'pro' ? 'روم المحترفين' : 'روم البرونز';
+
+  for (const player of room.players) {
+    if (!player.isBot) {
+      let updatedCoins = null;
+      if (player.userId) {
+        const res = db.deductTableFee(player.userId, tierFee);
+        if (res) updatedCoins = res.coins;
+      }
+      io.to(player.id).emit('table_fee_deducted', {
+        fee: tierFee,
+        tier,
+        tableName: tierName,
+        newCoins: updatedCoins
+      });
+    }
+  }
+  room.logs.push(`💰 تم خصم رسوم الدخول (${tierFee} عملة) من كل لاعب لبدء التحدي في ${tierName}!`);
+
   // Build & Deal Deck
   room.deck = shuffle(buildDeck());
   room.discardPile = [];
@@ -2470,21 +2544,29 @@ function processMatchmakingQueue() {
   }
 
   const now = Date.now();
+  const tiers = ['casual', 'pro', 'legend'];
 
-  // If 4 or more real players waiting -> launch with available players (up to 8)!
-  while (matchmakingQueue.length >= 4) {
-    const takeCount = Math.min(matchmakingQueue.length, 8);
-    const matched = matchmakingQueue.splice(0, takeCount);
-    launchMatchmakingRoom(matched);
-  }
-
-  // If oldest player in queue waited >= 3.5 seconds -> start match with available humans + bots (min 4, max 8)
-  if (matchmakingQueue.length > 0) {
-    const oldest = matchmakingQueue[0];
-    if (now - oldest.queuedAt >= 3500) {
-      const takeCount = Math.min(matchmakingQueue.length, 8);
-      const matched = matchmakingQueue.splice(0, takeCount);
+  for (const t of tiers) {
+    const tierQueue = matchmakingQueue.filter(q => (q.tier || 'casual') === t);
+    if (tierQueue.length >= 4) {
+      const takeCount = Math.min(tierQueue.length, 8);
+      const matched = tierQueue.slice(0, takeCount);
+      for (const m of matched) {
+        const idx = matchmakingQueue.findIndex(q => q.socket.id === m.socket.id);
+        if (idx !== -1) matchmakingQueue.splice(idx, 1);
+      }
       launchMatchmakingRoom(matched);
+    } else if (tierQueue.length > 0) {
+      const oldest = tierQueue[0];
+      if (now - oldest.queuedAt >= 3500) {
+        const takeCount = Math.min(tierQueue.length, 8);
+        const matched = tierQueue.slice(0, takeCount);
+        for (const m of matched) {
+          const idx = matchmakingQueue.findIndex(q => q.socket.id === m.socket.id);
+          if (idx !== -1) matchmakingQueue.splice(idx, 1);
+        }
+        launchMatchmakingRoom(matched);
+      }
     }
   }
 }
@@ -2663,9 +2745,19 @@ function registerSocketHandlers(socket) {
   // Create Room
   socket.on('create_room', ({ name, avatar, userId, sessionToken, tier } = {}) => {
     if (!checkRateLimit()) return;
+    const selectedTier = tier || 'casual';
+    const tierFee = selectedTier === 'legend' ? 2500 : selectedTier === 'pro' ? 500 : 50;
+    const tierName = selectedTier === 'legend' ? 'روم VIP' : selectedTier === 'pro' ? 'روم المحترفين' : 'روم البرونز';
+    if (userId) {
+      const u = db.getUserById(userId);
+      if (u && (u.coins || 0) < tierFee) {
+        socket.emit('room_error', { message: `رصيدك (${u.coins || 0} عملة) غير كافٍ لإنشاء ${tierName}! تحتاج ${tierFee} عملة.` });
+        return;
+      }
+    }
     bindUserToSocket(userId);
     const cleanName = sanitizeName(name, 'لاعب VIP');
-    const room = createRoom(socket.id, cleanName, avatar, userId, sessionToken, tier || 'casual');
+    const room = createRoom(socket.id, cleanName, avatar, userId, sessionToken, selectedTier);
     currentRoomCode = room.code;
     socket.currentRoomCode = room.code;
     socket.join(room.code);
@@ -2728,6 +2820,16 @@ function registerSocketHandlers(socket) {
   // Smart Matchmaking Queue: 1-Click Join (Instant Play Now)
   socket.on('join_matchmaking', ({ name, avatar, userId, sessionToken, tier } = {}) => {
     if (!checkRateLimit()) return;
+    const selectedTier = tier || 'casual';
+    const tierFee = selectedTier === 'legend' ? 2500 : selectedTier === 'pro' ? 500 : 50;
+    const tierName = selectedTier === 'legend' ? 'روم VIP' : selectedTier === 'pro' ? 'روم المحترفين' : 'روم البرونز';
+    if (userId) {
+      const u = db.getUserById(userId);
+      if (u && (u.coins || 0) < tierFee) {
+        socket.emit('matchmaking_error', { message: `رصيدك (${u.coins || 0} عملة) غير كافٍ لدخول ${tierName}! تحتاج ${tierFee} عملة على الأقل.` });
+        return;
+      }
+    }
     bindUserToSocket(userId);
     const cleanName = sanitizeName(name, 'لاعب VIP');
 
@@ -2741,7 +2843,7 @@ function registerSocketHandlers(socket) {
       avatar: avatar || '😎',
       userId: userId || null,
       sessionToken: sessionToken || null,
-      tier: tier || 'casual',
+      tier: selectedTier,
       queuedAt: Date.now()
     });
 
@@ -2866,6 +2968,17 @@ function registerSocketHandlers(socket) {
     if (room.players.length >= room.maxPlayers) {
       socket.emit('error_message', 'الغرفة ممتلئة (الحد الأقصى 8 لاعبين)!');
       return;
+    }
+
+    const rTier = room.tier || 'casual';
+    const rFee = rTier === 'legend' ? 2500 : rTier === 'pro' ? 500 : 50;
+    const rName = rTier === 'legend' ? 'روم VIP' : rTier === 'pro' ? 'روم المحترفين' : 'روم البرونز';
+    if (userId) {
+      const u = db.getUserById(userId);
+      if (u && (u.coins || 0) < rFee) {
+        socket.emit('error_message', `رصيدك (${u.coins || 0} عملة) غير كافٍ لدخول ${rName}! تحتاج ${rFee} عملة.`);
+        return;
+      }
     }
 
     const cleanName = sanitizeName(name, `لاعب ${room.players.length + 1}`);
