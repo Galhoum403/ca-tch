@@ -1315,6 +1315,7 @@ function App() {
   const [authPassword, setAuthPassword] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState('');
+  const [showSessionTerminatedModal, setShowSessionTerminatedModal] = useState(false);
 
   const [stats, setStats] = useState(() => {
     try {
@@ -1908,8 +1909,13 @@ function App() {
           localStorage.setItem('catch_coins', data.user.coins);
           localStorage.setItem('catch_gems', data.user.gems);
           localStorage.setItem('catch_user_id', data.user.id);
+          const notifyAuthSocket = () => {
+            socketRef.current?.emit('set_user_session', { userId: data.user.id, sessionToken: token });
+          };
           if (socketRef.current?.connected) {
-            socketRef.current.emit('set_user_session', { userId: data.user.id });
+            notifyAuthSocket();
+          } else {
+            socketRef.current?.once?.('connect', notifyAuthSocket);
           }
         } else {
           localStorage.removeItem('catch_token');
@@ -1964,7 +1970,11 @@ function App() {
     // Realtime connection tracking
     socket.on('connect', () => {
       setConnectionStatus('connected');
-      socket.emit('set_user_session', { userId, sessionToken: localStorage.getItem('catch_token') });
+      const storedToken = localStorage.getItem('catch_token');
+      const storedUid = localStorage.getItem('catch_user_id') || userId;
+      if (storedUid) {
+        socket.emit('set_user_session', { userId: storedUid, sessionToken: storedToken || undefined });
+      }
       const savedRoom = localStorage.getItem('catch_last_room');
       const savedName = localStorage.getItem('catch_name') || playerName;
       // Only auto-reconnect if user was actively in an ongoing game/room
@@ -1985,10 +1995,13 @@ function App() {
       localStorage.removeItem('catch_token');
       localStorage.removeItem('catch_last_room');
       setCurrentUser(null);
+      setRoomState(null);
+      roomStateRef.current = null;
       setIsGuest(true);
       setIsInGame(false);
       setIsMatchmaking(false);
       setActiveTab('home');
+      setShowSessionTerminatedModal(true);
       setErrorMsg(message || (lang === 'en' ? '⚠️ Logged in from another device!' : '⚠️ تم فتح هذا الحساب من جهاز آخر! تم تسجيل الخروج تلقائياً.'));
     });
 
@@ -3655,6 +3668,40 @@ function App() {
 
         {errorMsg && <div className="fixed bottom-14 left-4 right-4 bg-red-600 text-white px-4 py-2 rounded-2xl font-bold shadow-2xl z-50 text-xs text-center">{errorMsg}</div>}
 
+        {/* SINGLE-DEVICE LOGIN TERMINATION MODAL */}
+        {showSessionTerminatedModal && (
+          <div className="fixed inset-0 z-[500] bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+            <div className="w-full max-w-sm bg-gradient-to-b from-slate-900 to-slate-950 border-2 border-red-500/80 rounded-3xl p-6 shadow-2xl text-center space-y-4 font-cairo">
+              <div className="w-16 h-16 mx-auto rounded-full bg-red-500/20 border-2 border-red-500 flex items-center justify-center text-3xl animate-bounce">
+                ⚠️
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-white">تم فتح الحساب من جهاز آخر</h3>
+                <p className="text-xs text-slate-300 font-medium mt-1.5 leading-relaxed">
+                  تم تسجيل الدخول بحسابك على جهاز آخر الآن. للحفاظ على أمان حسابك، تم تسجيل الخروج من هذا الجهاز تلقائياً.
+                </p>
+              </div>
+              <div className="space-y-2 pt-2">
+                <button
+                  onClick={() => {
+                    setShowSessionTerminatedModal(false);
+                    setShowAuthModal(true);
+                  }}
+                  className="btn-gold w-full py-3 rounded-2xl text-sm font-black shadow-lg"
+                >
+                  🔐 تسجيل الدخول مجدداً
+                </button>
+                <button
+                  onClick={() => setShowSessionTerminatedModal(false)}
+                  className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl border border-slate-700 transition"
+                >
+                  المتابعة كزائر 👤
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* SMART MATCHMAKING RADAR SEARCH MODAL */}
         {isMatchmaking && (
           <MatchmakingScreen
@@ -3820,6 +3867,40 @@ function App() {
         </div>
 
         {errorMsg && <div className="fixed bottom-6 bg-red-600 text-white px-6 py-2 rounded-2xl font-bold shadow-2xl z-50 text-xs">{errorMsg}</div>}
+
+        {/* SINGLE-DEVICE LOGIN TERMINATION MODAL */}
+        {showSessionTerminatedModal && (
+          <div className="fixed inset-0 z-[500] bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+            <div className="w-full max-w-sm bg-gradient-to-b from-slate-900 to-slate-950 border-2 border-red-500/80 rounded-3xl p-6 shadow-2xl text-center space-y-4 font-cairo">
+              <div className="w-16 h-16 mx-auto rounded-full bg-red-500/20 border-2 border-red-500 flex items-center justify-center text-3xl animate-bounce">
+                ⚠️
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-white">تم فتح الحساب من جهاز آخر</h3>
+                <p className="text-xs text-slate-300 font-medium mt-1.5 leading-relaxed">
+                  تم تسجيل الدخول بحسابك على جهاز آخر الآن. للحفاظ على أمان حسابك، تم تسجيل الخروج من هذا الجهاز تلقائياً.
+                </p>
+              </div>
+              <div className="space-y-2 pt-2">
+                <button
+                  onClick={() => {
+                    setShowSessionTerminatedModal(false);
+                    setShowAuthModal(true);
+                  }}
+                  className="btn-gold w-full py-3 rounded-2xl text-sm font-black shadow-lg"
+                >
+                  🔐 تسجيل الدخول مجدداً
+                </button>
+                <button
+                  onClick={() => setShowSessionTerminatedModal(false)}
+                  className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl border border-slate-700 transition"
+                >
+                  المتابعة كزائر 👤
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* SMART MATCHMAKING RADAR SEARCH MODAL */}
       {isMatchmaking && (

@@ -28,25 +28,74 @@ const WebSocket = require('ws');
 const wsSockets = new Map();
 const wsRooms = new Map();
 const userSockets = new Map(); // Map<userId, socket> for single-device session enforcement
+const matchmakingQueue = [];
+let matchmakingInterval = null;
 
 function kickPreviousUserSession(userId, exceptSocketId = null) {
   if (!userId) return;
   const uid = Number(userId);
-  const existingSocket = userSockets.get(uid);
-  if (existingSocket && existingSocket.id !== exceptSocketId) {
-    console.log(`🔒 User ${uid} connected from another device. Kicking previous socket ${existingSocket.id}`);
-    existingSocket.emit('session_terminated', {
-      reason: 'multiple_logins',
-      message: '⚠️ تم فتح هذا الحساب من جهاز آخر! تم تسجيل الخروج من هذا الجهاز تلقائياً.'
-    });
-    // Remove from queue if waiting
-    const qIdx = matchmakingQueue.findIndex(q => q.socket.id === existingSocket.id);
-    if (qIdx !== -1) matchmakingQueue.splice(qIdx, 1);
-    setTimeout(() => {
-      try { existingSocket.disconnect(true); } catch(e){}
-    }, 400);
-    userSockets.delete(uid);
+  if (!uid || isNaN(uid)) return;
+
+  const msg = {
+    reason: 'multiple_logins',
+    message: '⚠️ تم فتح هذا الحساب من جهاز آخر! تم تسجيل الخروج تلقائياً.'
+  };
+
+  const toDisconnect = new Set();
+
+  // 1. Kick via Socket.IO Room 'user_' + uid
+  const roomName = `user_${uid}`;
+  const roomSockets = io?.sockets?.adapter?.rooms?.get(roomName);
+  if (roomSockets) {
+    for (const sId of Array.from(roomSockets)) {
+      if (sId !== exceptSocketId) {
+        const s = io.sockets.sockets.get(sId);
+        if (s) toDisconnect.add(s);
+      }
+    }
   }
+
+  // 2. Scan all active sockets in io.sockets.sockets
+  if (io?.sockets?.sockets) {
+    for (const [sId, s] of io.sockets.sockets) {
+      if (sId !== exceptSocketId && (s.userId === uid || Number(s.userId) === uid)) {
+        toDisconnect.add(s);
+      }
+    }
+  }
+
+  // 3. Check userSockets map
+  const mapped = userSockets.get(uid);
+  if (mapped && mapped.id !== exceptSocketId) {
+    toDisconnect.add(mapped);
+  }
+
+  // Execute kick on all found sockets
+  for (const s of toDisconnect) {
+    try {
+      console.log(`🔒 User ${uid}: Kicking socket ${s.id} due to login on another device`);
+      s.emit('session_terminated', msg);
+
+      // Remove from matchmaking queue if waiting
+      const qIdx = matchmakingQueue.findIndex(q => q.socket.id === s.id);
+      if (qIdx !== -1) matchmakingQueue.splice(qIdx, 1);
+
+      // Leave room if in game/lobby
+      const r = getRoomForSocket(s);
+      if (r) {
+        r.players = r.players.filter(pl => pl.id !== s.id);
+        broadcastRoomState(r);
+      }
+
+      setTimeout(() => {
+        try { s.disconnect(true); } catch(e){}
+      }, 300);
+    } catch (e) {
+      console.warn(`Error kicking socket ${s?.id}:`, e);
+    }
+  }
+
+  userSockets.delete(uid);
 }
 
 function emitToRoom(roomCode, event, data) {
@@ -2240,9 +2289,6 @@ function startGameInstance(room) {
 }
 
 // ====== SMART MATCHMAKING QUEUE (1-CLICK PLAY NOW) ======
-const matchmakingQueue = [];
-let matchmakingInterval = null;
-
 function processMatchmakingQueue() {
   // Filter out disconnected sockets
   for (let i = matchmakingQueue.length - 1; i >= 0; i--) {
@@ -2404,10 +2450,20 @@ function registerSocketHandlers(socket) {
     broadcastRoomState(room);
   }
 
+  function bindUserToSocket(uId) {
+    if (!uId) return;
+    const numId = Number(uId);
+    if (!numId || isNaN(numId)) return;
+    socket.userId = numId;
+    socket.join(`user_${numId}`);
+    userSockets.set(numId, socket);
+  }
+
   // User Session Registration (Enforces single-device login & real-time user sync)
   socket.on('set_user_session', ({ userId, sessionToken } = {}) => {
     if (!userId) return;
     const uid = Number(userId);
+    if (!uid || isNaN(uid)) return;
 
     if (sessionToken) {
       const user = db.getUserByToken(sessionToken);
@@ -2421,14 +2477,13 @@ function registerSocketHandlers(socket) {
     }
 
     kickPreviousUserSession(uid, socket.id);
-    userSockets.set(uid, socket);
-    socket.userId = uid;
+    bindUserToSocket(uid);
   });
 
   // Create Room
   socket.on('create_room', ({ name, avatar, userId, sessionToken } = {}) => {
     if (!checkRateLimit()) return;
-    if (userId) socket.userId = userId;
+    bindUserToSocket(userId);
     const cleanName = sanitizeName(name, 'لاعب VIP');
     const room = createRoom(socket.id, cleanName, avatar, userId, sessionToken);
     currentRoomCode = room.code;
@@ -2441,7 +2496,7 @@ function registerSocketHandlers(socket) {
   // Create Bot Training Room (Instant 1-Click Game against 3 Bots)
   socket.on('create_bot_room', ({ name, avatar, userId, sessionToken } = {}) => {
     if (!checkRateLimit()) return;
-    if (userId) socket.userId = userId;
+    bindUserToSocket(userId);
     const cleanName = sanitizeName(name, 'لاعب VIP');
     const room = createRoom(socket.id, cleanName, avatar, userId, sessionToken);
     currentRoomCode = room.code;
@@ -2475,7 +2530,7 @@ function registerSocketHandlers(socket) {
   // Smart Matchmaking Queue: 1-Click Join (Instant Play Now)
   socket.on('join_matchmaking', ({ name, avatar, userId, sessionToken } = {}) => {
     if (!checkRateLimit()) return;
-    if (userId) socket.userId = userId;
+    bindUserToSocket(userId);
     const cleanName = sanitizeName(name, 'لاعب VIP');
 
     // Remove if already in queue
@@ -2530,7 +2585,7 @@ function registerSocketHandlers(socket) {
   // Reconnect Room (Secure Token-Based Recovery, Seat-Hijacking Protected)
   socket.on('reconnect_room', ({ code, userId, sessionToken } = {}) => {
     if (!checkRateLimit()) return;
-    if (userId) socket.userId = userId;
+    bindUserToSocket(userId);
     const rCode = (code || '').toUpperCase().trim();
     const room = rooms.get(rCode);
     if (!room) {
@@ -2556,7 +2611,7 @@ function registerSocketHandlers(socket) {
   // Join Room
   socket.on('join_room', ({ code, name, avatar, userId, sessionToken } = {}) => {
     if (!checkRateLimit()) return;
-    if (userId) socket.userId = userId;
+    bindUserToSocket(userId);
     const rCode = (code || '').toUpperCase().trim();
     const room = rooms.get(rCode);
 
