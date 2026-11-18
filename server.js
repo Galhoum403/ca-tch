@@ -2489,6 +2489,7 @@ function registerSocketHandlers(socket) {
     socket.emit('matchmaking_status', {
       status: 'searching',
       position: matchmakingQueue.length,
+      total: 4,
       estimatedSeconds: 3
     });
 

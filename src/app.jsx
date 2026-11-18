@@ -1147,7 +1147,7 @@ const MATCHMAKING_TIPS = [
   'فكّر قبل ما تطلب.. ممكن تديه كارت يساعده!',
 ];
 
-function MatchmakingScreen({ matchmakingTime, matchmakingPlayers, onCancel, lang }) {
+function MatchmakingScreen({ matchmakingTime, matchmakingPlayers, matchmakingTotal, onCancel, lang }) {
   const [tipIdx, setTipIdx] = React.useState(0);
   const [dotCount, setDotCount] = React.useState(1);
 
@@ -1165,11 +1165,12 @@ function MatchmakingScreen({ matchmakingTime, matchmakingPlayers, onCancel, lang
   const secs = (matchmakingTime % 60).toString().padStart(2, '0');
   const dots = '.'.repeat(dotCount);
   const foundCount = matchmakingPlayers || 1;
+  const totalSeats = matchmakingTotal || 4;
 
-  // Player seat indicators (4 seats max)
-  const seats = [1, 2, 3, 4].map(n => ({
-    filled: n <= foundCount,
-    isMe: n === 1,
+  // Player seat indicators (dynamic based on room max)
+  const seats = Array.from({ length: totalSeats }, (_, i) => ({
+    filled: i < foundCount,
+    isMe: i === 0,
   }));
 
   return (
@@ -1216,7 +1217,7 @@ function MatchmakingScreen({ matchmakingTime, matchmakingPlayers, onCancel, lang
         <div className="flex gap-3 justify-center">
           <div className="bg-slate-800/90 border border-emerald-500/40 rounded-2xl py-2 px-4 flex items-center gap-2 shadow-inner">
             <span className="text-xs text-emerald-300 font-bold">👥</span>
-            <span className="text-sm font-black text-white">{foundCount} / 4</span>
+            <span className="text-sm font-black text-white">{foundCount} / {totalSeats}</span>
           </div>
           <div className="bg-slate-800/90 border border-amber-500/40 rounded-2xl py-2 px-4 flex items-center gap-2 shadow-inner">
             <span className="text-xs text-amber-300 font-bold">⏱️</span>
@@ -1426,6 +1427,7 @@ function App() {
   const [isMatchmaking, setIsMatchmaking] = useState(false);
   const [matchmakingTime, setMatchmakingTime] = useState(0);
   const [matchmakingPlayers, setMatchmakingPlayers] = useState(0);
+  const [matchmakingTotal, setMatchmakingTotal] = useState(4);
 
   // Hand Auto-Sort State
   const [handSorted, setHandSorted] = useState(false);
@@ -1587,6 +1589,8 @@ function App() {
     soundFx.init();
     soundFx.play('snap');
     setIsMatchmaking(false);
+    setMatchmakingPlayers(0);
+    setMatchmakingTotal(4);
     socketRef.current?.emit('cancel_matchmaking');
   };
 
@@ -1977,9 +1981,10 @@ function App() {
       setIsMatchmaking(false);
     });
 
-    socket.on('matchmaking_status', ({ status, position }) => {
+    socket.on('matchmaking_status', ({ status, position, total }) => {
       if (status === 'searching' && position) {
         setMatchmakingPlayers(position);
+        if (total) setMatchmakingTotal(total);
       } else if (status === 'cancelled') {
         setMatchmakingPlayers(0);
       }
@@ -1988,6 +1993,7 @@ function App() {
     socket.on('match_found', ({ code }) => {
       setIsMatchmaking(false);
       setMatchmakingPlayers(0);
+      setMatchmakingTotal(4);
       setShowPlayModal(false);
       localStorage.setItem('catch_last_room', code);
       setLastRoomCode(code);
@@ -3758,6 +3764,7 @@ function App() {
         <MatchmakingScreen
           matchmakingTime={matchmakingTime}
           matchmakingPlayers={matchmakingPlayers}
+          matchmakingTotal={matchmakingTotal}
           onCancel={handleCancelMatchmaking}
           lang={lang}
         />

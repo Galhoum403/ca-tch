@@ -1399,6 +1399,7 @@ const MATCHMAKING_TIPS = ['اللي عنده أكتر من كارت بنفس ا�
 function MatchmakingScreen({
   matchmakingTime,
   matchmakingPlayers,
+  matchmakingTotal,
   onCancel,
   lang
 }) {
@@ -1420,11 +1421,14 @@ function MatchmakingScreen({
   const secs = (matchmakingTime % 60).toString().padStart(2, '0');
   const dots = '.'.repeat(dotCount);
   const foundCount = matchmakingPlayers || 1;
+  const totalSeats = matchmakingTotal || 4;
 
-  // Player seat indicators (4 seats max)
-  const seats = [1, 2, 3, 4].map(n => ({
-    filled: n <= foundCount,
-    isMe: n === 1
+  // Player seat indicators (dynamic based on room max)
+  const seats = Array.from({
+    length: totalSeats
+  }, (_, i) => ({
+    filled: i < foundCount,
+    isMe: i === 0
   }));
   return /*#__PURE__*/React.createElement("div", {
     className: "fixed inset-0 z-[450] bg-black/85 backdrop-blur-md flex items-center justify-center p-4"
@@ -1464,7 +1468,7 @@ function MatchmakingScreen({
     className: "text-xs text-emerald-300 font-bold"
   }, "👥"), /*#__PURE__*/React.createElement("span", {
     className: "text-sm font-black text-white"
-  }, foundCount, " / 4")), /*#__PURE__*/React.createElement("div", {
+  }, foundCount, " / ", totalSeats)), /*#__PURE__*/React.createElement("div", {
     className: "bg-slate-800/90 border border-amber-500/40 rounded-2xl py-2 px-4 flex items-center gap-2 shadow-inner"
   }, /*#__PURE__*/React.createElement("span", {
     className: "text-xs text-amber-300 font-bold"
@@ -1695,6 +1699,7 @@ function App() {
   const [isMatchmaking, setIsMatchmaking] = useState(false);
   const [matchmakingTime, setMatchmakingTime] = useState(0);
   const [matchmakingPlayers, setMatchmakingPlayers] = useState(0);
+  const [matchmakingTotal, setMatchmakingTotal] = useState(4);
 
   // Hand Auto-Sort State
   const [handSorted, setHandSorted] = useState(false);
@@ -1868,6 +1873,8 @@ function App() {
     soundFx.init();
     soundFx.play('snap');
     setIsMatchmaking(false);
+    setMatchmakingPlayers(0);
+    setMatchmakingTotal(4);
     socketRef.current?.emit('cancel_matchmaking');
   };
 
@@ -2293,10 +2300,12 @@ function App() {
     });
     socket.on('matchmaking_status', ({
       status,
-      position
+      position,
+      total
     }) => {
       if (status === 'searching' && position) {
         setMatchmakingPlayers(position);
+        if (total) setMatchmakingTotal(total);
       } else if (status === 'cancelled') {
         setMatchmakingPlayers(0);
       }
@@ -2306,6 +2315,7 @@ function App() {
     }) => {
       setIsMatchmaking(false);
       setMatchmakingPlayers(0);
+      setMatchmakingTotal(4);
       setShowPlayModal(false);
       localStorage.setItem('catch_last_room', code);
       setLastRoomCode(code);
@@ -4039,6 +4049,7 @@ function App() {
     }, errorMsg), isMatchmaking && /*#__PURE__*/React.createElement(MatchmakingScreen, {
       matchmakingTime: matchmakingTime,
       matchmakingPlayers: matchmakingPlayers,
+      matchmakingTotal: matchmakingTotal,
       onCancel: handleCancelMatchmaking,
       lang: lang
     }), /*#__PURE__*/React.createElement(ExitConfirmModal, {
