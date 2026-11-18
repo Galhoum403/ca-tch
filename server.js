@@ -70,26 +70,49 @@ function kickPreviousUserSession(userId, exceptSocketId = null) {
     toDisconnect.add(mapped);
   }
 
+  // 4. Remove player from any active game room or lobby
+  for (const [rCode, room] of rooms.entries()) {
+    const playerMatch = room.players?.find(p => (p.userId === uid || Number(p.userId) === uid) && p.id !== exceptSocketId);
+    if (playerMatch) {
+      const matchSocket = io?.sockets?.sockets?.get(playerMatch.id);
+      if (matchSocket) toDisconnect.add(matchSocket);
+
+      if (room.status === 'lobby') {
+        if (playerMatch.disconnectTimer) clearTimeout(playerMatch.disconnectTimer);
+        room.players = room.players.filter(p => p.id !== playerMatch.id && p.userId !== uid);
+        room.logs.push(`⚠️ غادر ${playerMatch.name} بسبب فتح الحساب من جهاز آخر.`);
+        if (room.players.length === 0) {
+          clearRoomTimers(room);
+          rooms.delete(room.code);
+        } else if (playerMatch.isHost && room.players.length > 0) {
+          room.players[0].isHost = true;
+          room.hostId = room.players[0].id;
+        }
+      } else if (room.status === 'playing' || room.status === 'joker_showdown') {
+        playerMatch.isBot = true;
+        playerMatch.name = `${playerMatch.name} 🤖`;
+        playerMatch.connected = false;
+        room.logs.push(`🤖 تحول ${playerMatch.name} إلى بوت بسبب فتح الحساب من جهاز آخر.`);
+      }
+      broadcastRoomState(room);
+    }
+  }
+
   // Execute kick on all found sockets
   for (const s of toDisconnect) {
     try {
       console.log(`🔒 User ${uid}: Kicking socket ${s.id} due to login on another device`);
+      s.userId = null;
+      s.kicked = true;
       s.emit('session_terminated', msg);
 
       // Remove from matchmaking queue if waiting
       const qIdx = matchmakingQueue.findIndex(q => q.socket.id === s.id);
       if (qIdx !== -1) matchmakingQueue.splice(qIdx, 1);
 
-      // Leave room if in game/lobby
-      const r = getRoomForSocket(s);
-      if (r) {
-        r.players = r.players.filter(pl => pl.id !== s.id);
-        broadcastRoomState(r);
-      }
-
       setTimeout(() => {
         try { s.disconnect(true); } catch(e){}
-      }, 300);
+      }, 100);
     } catch (e) {
       console.warn(`Error kicking socket ${s?.id}:`, e);
     }
@@ -1080,30 +1103,40 @@ function getPlayerView(room, socketId) {
 function broadcastRoomState(room) {
   if (!room) return;
 
-  // 1. Emit personalized view to every socket currently joined in the room
+  const targetSockets = new Map(); // socketId -> socket
+
+  // 1. Gather all sockets in Socket.IO room adapter
   const socketIdsInRoom = io?.sockets?.adapter?.rooms?.get(room.code);
   if (socketIdsInRoom) {
     for (const sId of socketIdsInRoom) {
       const s = io.sockets.sockets.get(sId);
-      if (s) {
-        s.emit('room_state', getPlayerView(room, sId));
-      }
+      if (s) targetSockets.set(sId, s);
     }
   }
 
-  // 2. Fallback: also ensure each player in room.players receives room_state
+  // 2. Also ensure each human player in room.players has their socket included
   for (const p of room.players) {
-    if (!p.isBot && p.connected && p.id) {
-      if (!socketIdsInRoom || !socketIdsInRoom.has(p.id)) {
-        emitToPlayer(p.id, 'room_state', getPlayerView(room, p.id));
-      }
+    if (!p.isBot && p.id && !targetSockets.has(p.id)) {
+      const s = io?.sockets?.sockets?.get(p.id);
+      if (s) targetSockets.set(p.id, s);
     }
   }
 
-  // 3. WebSockets fallback if any
+  // 3. Emit personalized view to each socket safely
+  for (const [sId, s] of targetSockets) {
+    try {
+      s.emit('room_state', getPlayerView(room, sId));
+    } catch(err) {
+      console.warn(`Failed to emit room_state to socket ${sId}:`, err);
+    }
+  }
+
+  // 4. Godot Native WebSocket Bridge fallback
   if (wsRooms.has(room.code)) {
     for (const wsSock of wsRooms.get(room.code)) {
-      wsSock.emit('room_state', getPlayerView(room, wsSock.id));
+      try {
+        if (wsSock) wsSock.emit('room_state', getPlayerView(room, wsSock.id));
+      } catch(err) {}
     }
   }
 }
@@ -2488,15 +2521,26 @@ function registerSocketHandlers(socket) {
     const uid = Number(userId);
     if (!uid || isNaN(uid)) return;
 
-    if (sessionToken) {
-      const user = db.getUserByToken(sessionToken);
-      if (!user || user.id !== uid) {
-        socket.emit('session_terminated', {
-          reason: 'invalid_session',
-          message: 'انتهت صلاحية جلستك أو تم تسجيل الدخول من جهاز آخر!'
-        });
-        return;
-      }
+    // Strict validation: registered numeric user IDs MUST provide a valid, active DB session token!
+    if (!sessionToken) {
+      console.log(`🔒 Socket ${socket.id} attempted set_user_session for user ${uid} without sessionToken. Terminating.`);
+      socket.emit('session_terminated', {
+        reason: 'missing_token',
+        message: '⚠️ تم تسجيل الخروج: الجلسة غير صالحة أو تم تسجيل الدخول من جهاز آخر!'
+      });
+      setTimeout(() => { try { socket.disconnect(true); } catch(e){} }, 100);
+      return;
+    }
+
+    const user = db.getUserByToken(sessionToken);
+    if (!user || user.id !== uid) {
+      console.log(`🔒 Socket ${socket.id} provided invalid/expired sessionToken for user ${uid}. Terminating.`);
+      socket.emit('session_terminated', {
+        reason: 'invalid_session',
+        message: '⚠️ انتهت صلاحية جلستك أو تم تسجيل الدخول من جهاز آخر!'
+      });
+      setTimeout(() => { try { socket.disconnect(true); } catch(e){} }, 100);
+      return;
     }
 
     kickPreviousUserSession(uid, socket.id);
@@ -2652,9 +2696,16 @@ function registerSocketHandlers(socket) {
     );
 
     if (existingPlayer) {
-      if (existingPlayer.connected && existingPlayer.id !== socket.id) {
+      const isTokenMatch = sessionToken && existingPlayer.sessionToken && existingPlayer.sessionToken === sessionToken;
+      if (existingPlayer.connected && existingPlayer.id !== socket.id && !isTokenMatch) {
         socket.emit('error_message', 'هذا اللاعب موجود بالفعل داخل الغرفة!');
         return;
+      }
+      if (existingPlayer.id !== socket.id) {
+        const oldSock = io.sockets.sockets.get(existingPlayer.id);
+        if (oldSock) {
+          try { oldSock.leave(room.code); oldSock.disconnect(true); } catch(e){}
+        }
       }
       if (avatar) existingPlayer.avatar = avatar;
       reconnectPlayer(room, existingPlayer);
@@ -3260,6 +3311,9 @@ function registerSocketHandlers(socket) {
 
   // Disconnect Handling (with 25s Grace Period for Mobile/Reload Recovery)
   socket.on('disconnect', () => {
+    // If socket was explicitly kicked by single-device login enforcement, skip
+    if (socket.kicked) return;
+
     // Clean up userSockets map
     if (socket.userId && userSockets.get(socket.userId)?.id === socket.id) {
       userSockets.delete(socket.userId);
@@ -3276,24 +3330,7 @@ function registerSocketHandlers(socket) {
     if (p) {
       p.connected = false;
 
-      // In lobby: remove immediately so other players see them leave with zero delay!
-      if (room.status === 'lobby') {
-        if (p.disconnectTimer) clearTimeout(p.disconnectTimer);
-        room.players = room.players.filter(pl => pl.id !== p.id);
-        room.logs.push(`🚪 غادر ${p.name} الطاولة.`);
-        if (room.players.length === 0) {
-          clearRoomTimers(room);
-          rooms.delete(room.code);
-          return;
-        } else if (p.isHost && room.players.length > 0) {
-          room.players[0].isHost = true;
-          room.hostId = room.players[0].id;
-        }
-        broadcastRoomState(room);
-        return;
-      }
-
-      // In active game: give 25s grace period for mobile reconnection
+      // Notice disconnection to remaining players with a grace period
       room.logs.push(`⚠️ انقطع اتصال ${p.name}... بانتظار عودته.`);
       broadcastRoomState(room);
 
@@ -3301,7 +3338,17 @@ function registerSocketHandlers(socket) {
       p.disconnectTimer = setTimeout(() => {
         if (!p.connected) {
           room.logs.push(`❌ غادر ${p.name} الطاولة نهائياً بعد انقطاع الاتصال.`);
-          if (room.status === 'playing' || room.status === 'joker_showdown') {
+          if (room.status === 'lobby') {
+            room.players = room.players.filter(pl => pl.id !== p.id);
+            if (room.players.length === 0) {
+              clearRoomTimers(room);
+              rooms.delete(room.code);
+              return;
+            } else if (p.isHost && room.players.length > 0) {
+              room.players[0].isHost = true;
+              room.hostId = room.players[0].id;
+            }
+          } else if (room.status === 'playing' || room.status === 'joker_showdown') {
             const hasConnectedHumans = room.players.some(pl => !pl.isBot && pl.connected);
             if (!hasConnectedHumans) {
               clearRoomTimers(room);

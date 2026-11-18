@@ -1824,6 +1824,11 @@ function App() {
       setAuthPassword('');
       if (socketRef.current?.connected) {
         socketRef.current.emit('set_user_session', { userId: data.user.id, sessionToken: data.token });
+      } else {
+        socketRef.current?.connect();
+        socketRef.current?.once('connect', () => {
+          socketRef.current.emit('set_user_session', { userId: data.user.id, sessionToken: data.token });
+        });
       }
       soundFx.init();
       soundFx.play('celebration');
@@ -1833,6 +1838,88 @@ function App() {
     } finally {
       setAuthLoading(false);
     }
+  };
+
+  const handleSessionTerminated = (message) => {
+    soundFx.init();
+    soundFx.play('impact');
+
+    // Wipe all authenticated storage
+    localStorage.removeItem('catch_token');
+    localStorage.removeItem('catch_user_id');
+    localStorage.removeItem('catch_name');
+    localStorage.removeItem('catch_coins');
+    localStorage.removeItem('catch_gems');
+    localStorage.removeItem('catch_avatar');
+    localStorage.removeItem('catch_last_room');
+    localStorage.setItem('catch_is_guest', 'true');
+
+    const freshGuestId = 'u_' + Math.random().toString(36).slice(2, 9) + '_' + Date.now().toString(36);
+    const freshGuestName = `صياد_${Math.floor(Math.random() * 899 + 100)}`;
+    localStorage.setItem('catch_user_id', freshGuestId);
+    localStorage.setItem('catch_name', freshGuestName);
+
+    setCurrentUser(null);
+    setUserId(freshGuestId);
+    setPlayerName(freshGuestName);
+    setIsGuest(true);
+    setRoomState(null);
+    roomStateRef.current = null;
+    setIsInGame(false);
+    setIsMatchmaking(false);
+    setActiveTab('home');
+
+    // Disconnect old socket session
+    if (socketRef.current) {
+      try {
+        socketRef.current.disconnect();
+      } catch(e){}
+    }
+
+    setShowSessionTerminatedModal(true);
+    if (message) setErrorMsg(message);
+  };
+
+  const renderSessionTerminatedModal = () => {
+    if (!showSessionTerminatedModal) return null;
+    return (
+      <div className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-md flex items-center justify-center p-4">
+        <div className="w-full max-w-sm bg-gradient-to-b from-slate-900 via-slate-950 to-black border-2 border-red-500/80 rounded-3xl p-6 shadow-2xl text-center space-y-4 font-cairo">
+          <div className="w-16 h-16 mx-auto rounded-full bg-red-500/20 border-2 border-red-500 flex items-center justify-center text-3xl animate-bounce">
+            ⚠️
+          </div>
+          <div>
+            <h3 className="text-lg font-black text-white">{lang === 'en' ? 'Logged in from another device' : 'تم فتح الحساب من جهاز آخر'}</h3>
+            <p className="text-xs text-slate-300 font-medium mt-1.5 leading-relaxed">
+              {lang === 'en'
+                ? 'Your account was accessed from another device. For security reasons, this session has been terminated automatically.'
+                : 'تم تسجيل الدخول بحسابك على جهاز أو متصفح آخر الآن. للحفاظ على أمان حسابك تم إنهاء هذه الجلسة تلقائياً.'}
+            </p>
+          </div>
+          <div className="space-y-2 pt-2">
+            <button
+              onClick={() => {
+                setShowSessionTerminatedModal(false);
+                setShowAuthModal(true);
+              }}
+              className="btn-gold w-full py-3 rounded-2xl text-sm font-black shadow-lg"
+            >
+              {lang === 'en' ? '🔑 Log In Again' : '🔐 تسجيل الدخول مجدداً'}
+            </button>
+            <button
+              onClick={() => {
+                setShowSessionTerminatedModal(false);
+                handleGuestPlay();
+                socketRef.current?.connect();
+              }}
+              className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl border border-slate-700 transition"
+            >
+              {lang === 'en' ? 'Continue as Guest 👤' : 'المتابعة كزائر 👤'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   const handleGuestPlay = () => {
@@ -1855,9 +1942,23 @@ function App() {
 
   const handleLogout = () => {
     localStorage.removeItem('catch_token');
+    localStorage.removeItem('catch_user_id');
+    localStorage.removeItem('catch_name');
+    localStorage.removeItem('catch_coins');
+    localStorage.removeItem('catch_gems');
+    localStorage.removeItem('catch_avatar');
+    localStorage.removeItem('catch_last_room');
     localStorage.setItem('catch_is_guest', 'true');
+    const freshGuestId = 'u_' + Math.random().toString(36).slice(2, 9) + '_' + Date.now().toString(36);
+    const freshGuestName = `صياد_${Math.floor(Math.random() * 899 + 100)}`;
+    localStorage.setItem('catch_user_id', freshGuestId);
+    localStorage.setItem('catch_name', freshGuestName);
     setCurrentUser(null);
+    setUserId(freshGuestId);
+    setPlayerName(freshGuestName);
     setIsGuest(true);
+    setRoomState(null);
+    roomStateRef.current = null;
     setShowSettingsModal(false);
     setShowAuthModal(true);
     soundFx.init();
@@ -1972,8 +2073,8 @@ function App() {
       setConnectionStatus('connected');
       const storedToken = localStorage.getItem('catch_token');
       const storedUid = localStorage.getItem('catch_user_id') || userId;
-      if (storedUid) {
-        socket.emit('set_user_session', { userId: storedUid, sessionToken: storedToken || undefined });
+      if (storedToken && storedUid && !String(storedUid).startsWith('u_')) {
+        socket.emit('set_user_session', { userId: storedUid, sessionToken: storedToken });
       }
       const savedRoom = localStorage.getItem('catch_last_room');
       const savedName = localStorage.getItem('catch_name') || playerName;
@@ -1981,8 +2082,8 @@ function App() {
       if (savedRoom && roomStateRef.current) {
         socket.emit('reconnect_room', {
           code: savedRoom,
-          userId,
-          sessionToken,
+          userId: storedUid,
+          sessionToken: storedToken || sessionToken,
           name: savedName
         });
       }
@@ -1990,19 +2091,7 @@ function App() {
 
     // Single-device session termination (kick when logged in elsewhere)
     socket.on('session_terminated', ({ message, reason }) => {
-      soundFx.init();
-      soundFx.play('impact');
-      localStorage.removeItem('catch_token');
-      localStorage.removeItem('catch_last_room');
-      setCurrentUser(null);
-      setRoomState(null);
-      roomStateRef.current = null;
-      setIsGuest(true);
-      setIsInGame(false);
-      setIsMatchmaking(false);
-      setActiveTab('home');
-      setShowSessionTerminatedModal(true);
-      setErrorMsg(message || (lang === 'en' ? '⚠️ Logged in from another device!' : '⚠️ تم فتح هذا الحساب من جهاز آخر! تم تسجيل الخروج تلقائياً.'));
+      handleSessionTerminated(message || (lang === 'en' ? '⚠️ Logged in from another device!' : '⚠️ تم فتح هذا الحساب من جهاز آخر! تم تسجيل الخروج تلقائياً.'));
     });
 
     socket.on('disconnect', () => {
@@ -2032,6 +2121,8 @@ function App() {
     socket.on('reconnect_failed', () => {
       localStorage.removeItem('catch_last_room');
       setLastRoomCode('');
+      setRoomState(null);
+      roomStateRef.current = null;
     });
 
     socket.on('left_room_success', () => {
@@ -2235,6 +2326,37 @@ function App() {
       socket.disconnect();
     };
   }, []);
+
+  // Real-time Active Session Heartbeat: checks /api/me every 6s and on app focus/visibility
+  // Instantly kicks previous device even when WebSocket is idle, backgrounded, or asleep
+  useEffect(() => {
+    const checkSessionAlive = async () => {
+      const token = localStorage.getItem('catch_token');
+      if (!token) return;
+      try {
+        const base = getServerBaseUrl();
+        const res = await fetch(`${base}/api/me`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.status === 401) {
+          handleSessionTerminated(lang === 'en' ? '⚠️ Logged in from another device!' : '⚠️ تم فتح هذا الحساب من جهاز آخر! تم تسجيل الخروج تلقائياً.');
+        }
+      } catch(e) {}
+    };
+
+    const interval = setInterval(checkSessionAlive, 6000);
+    window.addEventListener('focus', checkSessionAlive);
+    const handleVis = () => {
+      if (document.visibilityState === 'visible') checkSessionAlive();
+    };
+    document.addEventListener('visibilitychange', handleVis);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', checkSessionAlive);
+      document.removeEventListener('visibilitychange', handleVis);
+    };
+  }, [lang]);
 
   // Lifetime player stats tracker on round end
   useEffect(() => {
@@ -3670,38 +3792,7 @@ function App() {
         {errorMsg && <div className="fixed bottom-14 left-4 right-4 bg-red-600 text-white px-4 py-2 rounded-2xl font-bold shadow-2xl z-50 text-xs text-center">{errorMsg}</div>}
 
         {/* SINGLE-DEVICE LOGIN TERMINATION MODAL */}
-        {showSessionTerminatedModal && (
-          <div className="fixed inset-0 z-[500] bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
-            <div className="w-full max-w-sm bg-gradient-to-b from-slate-900 to-slate-950 border-2 border-red-500/80 rounded-3xl p-6 shadow-2xl text-center space-y-4 font-cairo">
-              <div className="w-16 h-16 mx-auto rounded-full bg-red-500/20 border-2 border-red-500 flex items-center justify-center text-3xl animate-bounce">
-                ⚠️
-              </div>
-              <div>
-                <h3 className="text-lg font-black text-white">تم فتح الحساب من جهاز آخر</h3>
-                <p className="text-xs text-slate-300 font-medium mt-1.5 leading-relaxed">
-                  تم تسجيل الدخول بحسابك على جهاز آخر الآن. للحفاظ على أمان حسابك، تم تسجيل الخروج من هذا الجهاز تلقائياً.
-                </p>
-              </div>
-              <div className="space-y-2 pt-2">
-                <button
-                  onClick={() => {
-                    setShowSessionTerminatedModal(false);
-                    setShowAuthModal(true);
-                  }}
-                  className="btn-gold w-full py-3 rounded-2xl text-sm font-black shadow-lg"
-                >
-                  🔐 تسجيل الدخول مجدداً
-                </button>
-                <button
-                  onClick={() => setShowSessionTerminatedModal(false)}
-                  className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl border border-slate-700 transition"
-                >
-                  المتابعة كزائر 👤
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        {renderSessionTerminatedModal()}
 
         {/* SMART MATCHMAKING RADAR SEARCH MODAL */}
         {isMatchmaking && (
@@ -3870,38 +3961,7 @@ function App() {
         {errorMsg && <div className="fixed bottom-6 bg-red-600 text-white px-6 py-2 rounded-2xl font-bold shadow-2xl z-50 text-xs">{errorMsg}</div>}
 
         {/* SINGLE-DEVICE LOGIN TERMINATION MODAL */}
-        {showSessionTerminatedModal && (
-          <div className="fixed inset-0 z-[500] bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
-            <div className="w-full max-w-sm bg-gradient-to-b from-slate-900 to-slate-950 border-2 border-red-500/80 rounded-3xl p-6 shadow-2xl text-center space-y-4 font-cairo">
-              <div className="w-16 h-16 mx-auto rounded-full bg-red-500/20 border-2 border-red-500 flex items-center justify-center text-3xl animate-bounce">
-                ⚠️
-              </div>
-              <div>
-                <h3 className="text-lg font-black text-white">تم فتح الحساب من جهاز آخر</h3>
-                <p className="text-xs text-slate-300 font-medium mt-1.5 leading-relaxed">
-                  تم تسجيل الدخول بحسابك على جهاز آخر الآن. للحفاظ على أمان حسابك، تم تسجيل الخروج من هذا الجهاز تلقائياً.
-                </p>
-              </div>
-              <div className="space-y-2 pt-2">
-                <button
-                  onClick={() => {
-                    setShowSessionTerminatedModal(false);
-                    setShowAuthModal(true);
-                  }}
-                  className="btn-gold w-full py-3 rounded-2xl text-sm font-black shadow-lg"
-                >
-                  🔐 تسجيل الدخول مجدداً
-                </button>
-                <button
-                  onClick={() => setShowSessionTerminatedModal(false)}
-                  className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl border border-slate-700 transition"
-                >
-                  المتابعة كزائر 👤
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        {renderSessionTerminatedModal()}
 
         {/* SMART MATCHMAKING RADAR SEARCH MODAL */}
       {isMatchmaking && (
@@ -4127,6 +4187,9 @@ function App() {
     <div className="w-full h-[100dvh] max-w-[480px] mx-auto portrait-game-bg text-white font-cairo flex flex-col justify-between relative overflow-hidden select-none shadow-2xl"
          onMouseMove={handleDragMove} onMouseUp={handleDragEnd}
          onTouchMove={handleDragMove} onTouchEnd={handleDragEnd}>
+
+      {/* SINGLE-DEVICE LOGIN TERMINATION MODAL */}
+      {renderSessionTerminatedModal()}
       
       {/* Top HUD — Warm Burgundy & Gold (Matching Mockup) */}
       <header className="w-full shrink-0 flex items-center justify-between px-2.5 z-30"

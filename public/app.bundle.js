@@ -2117,6 +2117,14 @@ function App() {
           userId: data.user.id,
           sessionToken: data.token
         });
+      } else {
+        socketRef.current?.connect();
+        socketRef.current?.once('connect', () => {
+          socketRef.current.emit('set_user_session', {
+            userId: data.user.id,
+            sessionToken: data.token
+          });
+        });
       }
       soundFx.init();
       soundFx.play('celebration');
@@ -2126,6 +2134,71 @@ function App() {
     } finally {
       setAuthLoading(false);
     }
+  };
+  const handleSessionTerminated = message => {
+    soundFx.init();
+    soundFx.play('impact');
+
+    // Wipe all authenticated storage
+    localStorage.removeItem('catch_token');
+    localStorage.removeItem('catch_user_id');
+    localStorage.removeItem('catch_name');
+    localStorage.removeItem('catch_coins');
+    localStorage.removeItem('catch_gems');
+    localStorage.removeItem('catch_avatar');
+    localStorage.removeItem('catch_last_room');
+    localStorage.setItem('catch_is_guest', 'true');
+    const freshGuestId = 'u_' + Math.random().toString(36).slice(2, 9) + '_' + Date.now().toString(36);
+    const freshGuestName = `صياد_${Math.floor(Math.random() * 899 + 100)}`;
+    localStorage.setItem('catch_user_id', freshGuestId);
+    localStorage.setItem('catch_name', freshGuestName);
+    setCurrentUser(null);
+    setUserId(freshGuestId);
+    setPlayerName(freshGuestName);
+    setIsGuest(true);
+    setRoomState(null);
+    roomStateRef.current = null;
+    setIsInGame(false);
+    setIsMatchmaking(false);
+    setActiveTab('home');
+
+    // Disconnect old socket session
+    if (socketRef.current) {
+      try {
+        socketRef.current.disconnect();
+      } catch (e) {}
+    }
+    setShowSessionTerminatedModal(true);
+    if (message) setErrorMsg(message);
+  };
+  const renderSessionTerminatedModal = () => {
+    if (!showSessionTerminatedModal) return null;
+    return /*#__PURE__*/React.createElement("div", {
+      className: "fixed inset-0 z-[9999] bg-black/95 backdrop-blur-md flex items-center justify-center p-4"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "w-full max-w-sm bg-gradient-to-b from-slate-900 via-slate-950 to-black border-2 border-red-500/80 rounded-3xl p-6 shadow-2xl text-center space-y-4 font-cairo"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "w-16 h-16 mx-auto rounded-full bg-red-500/20 border-2 border-red-500 flex items-center justify-center text-3xl animate-bounce"
+    }, "⚠️"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", {
+      className: "text-lg font-black text-white"
+    }, lang === 'en' ? 'Logged in from another device' : 'تم فتح الحساب من جهاز آخر'), /*#__PURE__*/React.createElement("p", {
+      className: "text-xs text-slate-300 font-medium mt-1.5 leading-relaxed"
+    }, lang === 'en' ? 'Your account was accessed from another device. For security reasons, this session has been terminated automatically.' : 'تم تسجيل الدخول بحسابك على جهاز أو متصفح آخر الآن. للحفاظ على أمان حسابك تم إنهاء هذه الجلسة تلقائياً.')), /*#__PURE__*/React.createElement("div", {
+      className: "space-y-2 pt-2"
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: () => {
+        setShowSessionTerminatedModal(false);
+        setShowAuthModal(true);
+      },
+      className: "btn-gold w-full py-3 rounded-2xl text-sm font-black shadow-lg"
+    }, lang === 'en' ? '🔑 Log In Again' : '🔐 تسجيل الدخول مجدداً'), /*#__PURE__*/React.createElement("button", {
+      onClick: () => {
+        setShowSessionTerminatedModal(false);
+        handleGuestPlay();
+        socketRef.current?.connect();
+      },
+      className: "w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl border border-slate-700 transition"
+    }, lang === 'en' ? 'Continue as Guest 👤' : 'المتابعة كزائر 👤'))));
   };
   const handleGuestPlay = () => {
     localStorage.setItem('catch_is_guest', 'true');
@@ -2145,9 +2218,23 @@ function App() {
   };
   const handleLogout = () => {
     localStorage.removeItem('catch_token');
+    localStorage.removeItem('catch_user_id');
+    localStorage.removeItem('catch_name');
+    localStorage.removeItem('catch_coins');
+    localStorage.removeItem('catch_gems');
+    localStorage.removeItem('catch_avatar');
+    localStorage.removeItem('catch_last_room');
     localStorage.setItem('catch_is_guest', 'true');
+    const freshGuestId = 'u_' + Math.random().toString(36).slice(2, 9) + '_' + Date.now().toString(36);
+    const freshGuestName = `صياد_${Math.floor(Math.random() * 899 + 100)}`;
+    localStorage.setItem('catch_user_id', freshGuestId);
+    localStorage.setItem('catch_name', freshGuestName);
     setCurrentUser(null);
+    setUserId(freshGuestId);
+    setPlayerName(freshGuestName);
     setIsGuest(true);
+    setRoomState(null);
+    roomStateRef.current = null;
     setShowSettingsModal(false);
     setShowAuthModal(true);
     soundFx.init();
@@ -2278,10 +2365,10 @@ function App() {
       setConnectionStatus('connected');
       const storedToken = localStorage.getItem('catch_token');
       const storedUid = localStorage.getItem('catch_user_id') || userId;
-      if (storedUid) {
+      if (storedToken && storedUid && !String(storedUid).startsWith('u_')) {
         socket.emit('set_user_session', {
           userId: storedUid,
-          sessionToken: storedToken || undefined
+          sessionToken: storedToken
         });
       }
       const savedRoom = localStorage.getItem('catch_last_room');
@@ -2290,8 +2377,8 @@ function App() {
       if (savedRoom && roomStateRef.current) {
         socket.emit('reconnect_room', {
           code: savedRoom,
-          userId,
-          sessionToken,
+          userId: storedUid,
+          sessionToken: storedToken || sessionToken,
           name: savedName
         });
       }
@@ -2302,19 +2389,7 @@ function App() {
       message,
       reason
     }) => {
-      soundFx.init();
-      soundFx.play('impact');
-      localStorage.removeItem('catch_token');
-      localStorage.removeItem('catch_last_room');
-      setCurrentUser(null);
-      setRoomState(null);
-      roomStateRef.current = null;
-      setIsGuest(true);
-      setIsInGame(false);
-      setIsMatchmaking(false);
-      setActiveTab('home');
-      setShowSessionTerminatedModal(true);
-      setErrorMsg(message || (lang === 'en' ? '⚠️ Logged in from another device!' : '⚠️ تم فتح هذا الحساب من جهاز آخر! تم تسجيل الخروج تلقائياً.'));
+      handleSessionTerminated(message || (lang === 'en' ? '⚠️ Logged in from another device!' : '⚠️ تم فتح هذا الحساب من جهاز آخر! تم تسجيل الخروج تلقائياً.'));
     });
     socket.on('disconnect', () => {
       setConnectionStatus('disconnected');
@@ -2343,6 +2418,8 @@ function App() {
     socket.on('reconnect_failed', () => {
       localStorage.removeItem('catch_last_room');
       setLastRoomCode('');
+      setRoomState(null);
+      roomStateRef.current = null;
     });
     socket.on('left_room_success', () => {
       localStorage.removeItem('catch_last_room');
@@ -2585,6 +2662,37 @@ function App() {
       socket.disconnect();
     };
   }, []);
+
+  // Real-time Active Session Heartbeat: checks /api/me every 6s and on app focus/visibility
+  // Instantly kicks previous device even when WebSocket is idle, backgrounded, or asleep
+  useEffect(() => {
+    const checkSessionAlive = async () => {
+      const token = localStorage.getItem('catch_token');
+      if (!token) return;
+      try {
+        const base = getServerBaseUrl();
+        const res = await fetch(`${base}/api/me`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (res.status === 401) {
+          handleSessionTerminated(lang === 'en' ? '⚠️ Logged in from another device!' : '⚠️ تم فتح هذا الحساب من جهاز آخر! تم تسجيل الخروج تلقائياً.');
+        }
+      } catch (e) {}
+    };
+    const interval = setInterval(checkSessionAlive, 6000);
+    window.addEventListener('focus', checkSessionAlive);
+    const handleVis = () => {
+      if (document.visibilityState === 'visible') checkSessionAlive();
+    };
+    document.addEventListener('visibilitychange', handleVis);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', checkSessionAlive);
+      document.removeEventListener('visibilitychange', handleVis);
+    };
+  }, [lang]);
 
   // Lifetime player stats tracker on round end
   useEffect(() => {
@@ -3966,28 +4074,7 @@ function App() {
       className: "text-[10px] text-amber-200/60 text-center font-bold leading-tight"
     }, "💡 التسجيل بيحفظ لِمّاتك ورتبتك وكوينزاتك دايماً!"))), errorMsg && /*#__PURE__*/React.createElement("div", {
       className: "fixed bottom-14 left-4 right-4 bg-red-600 text-white px-4 py-2 rounded-2xl font-bold shadow-2xl z-50 text-xs text-center"
-    }, errorMsg), showSessionTerminatedModal && /*#__PURE__*/React.createElement("div", {
-      className: "fixed inset-0 z-[500] bg-black/90 backdrop-blur-md flex items-center justify-center p-4"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "w-full max-w-sm bg-gradient-to-b from-slate-900 to-slate-950 border-2 border-red-500/80 rounded-3xl p-6 shadow-2xl text-center space-y-4 font-cairo"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "w-16 h-16 mx-auto rounded-full bg-red-500/20 border-2 border-red-500 flex items-center justify-center text-3xl animate-bounce"
-    }, "⚠️"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", {
-      className: "text-lg font-black text-white"
-    }, "تم فتح الحساب من جهاز آخر"), /*#__PURE__*/React.createElement("p", {
-      className: "text-xs text-slate-300 font-medium mt-1.5 leading-relaxed"
-    }, "تم تسجيل الدخول بحسابك على جهاز آخر الآن. للحفاظ على أمان حسابك، تم تسجيل الخروج من هذا الجهاز تلقائياً.")), /*#__PURE__*/React.createElement("div", {
-      className: "space-y-2 pt-2"
-    }, /*#__PURE__*/React.createElement("button", {
-      onClick: () => {
-        setShowSessionTerminatedModal(false);
-        setShowAuthModal(true);
-      },
-      className: "btn-gold w-full py-3 rounded-2xl text-sm font-black shadow-lg"
-    }, "🔐 تسجيل الدخول مجدداً"), /*#__PURE__*/React.createElement("button", {
-      onClick: () => setShowSessionTerminatedModal(false),
-      className: "w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl border border-slate-700 transition"
-    }, "المتابعة كزائر 👤")))), isMatchmaking && /*#__PURE__*/React.createElement(MatchmakingScreen, {
+    }, errorMsg), renderSessionTerminatedModal(), isMatchmaking && /*#__PURE__*/React.createElement(MatchmakingScreen, {
       matchmakingTime: matchmakingTime,
       matchmakingPlayers: matchmakingPlayers,
       onCancel: handleCancelMatchmaking,
@@ -4130,28 +4217,7 @@ function App() {
       className: "text-center text-amber-200 text-xs font-bold bg-black/50 py-3 rounded-2xl border border-amber-500/20 animate-pulse"
     }, lang === 'en' ? '⏳ Waiting for host to start the game...' : '⏳ في انتظار المضيف لبدء اللعبة...')), errorMsg && /*#__PURE__*/React.createElement("div", {
       className: "fixed bottom-6 bg-red-600 text-white px-6 py-2 rounded-2xl font-bold shadow-2xl z-50 text-xs"
-    }, errorMsg), showSessionTerminatedModal && /*#__PURE__*/React.createElement("div", {
-      className: "fixed inset-0 z-[500] bg-black/90 backdrop-blur-md flex items-center justify-center p-4"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "w-full max-w-sm bg-gradient-to-b from-slate-900 to-slate-950 border-2 border-red-500/80 rounded-3xl p-6 shadow-2xl text-center space-y-4 font-cairo"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "w-16 h-16 mx-auto rounded-full bg-red-500/20 border-2 border-red-500 flex items-center justify-center text-3xl animate-bounce"
-    }, "⚠️"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", {
-      className: "text-lg font-black text-white"
-    }, "تم فتح الحساب من جهاز آخر"), /*#__PURE__*/React.createElement("p", {
-      className: "text-xs text-slate-300 font-medium mt-1.5 leading-relaxed"
-    }, "تم تسجيل الدخول بحسابك على جهاز آخر الآن. للحفاظ على أمان حسابك، تم تسجيل الخروج من هذا الجهاز تلقائياً.")), /*#__PURE__*/React.createElement("div", {
-      className: "space-y-2 pt-2"
-    }, /*#__PURE__*/React.createElement("button", {
-      onClick: () => {
-        setShowSessionTerminatedModal(false);
-        setShowAuthModal(true);
-      },
-      className: "btn-gold w-full py-3 rounded-2xl text-sm font-black shadow-lg"
-    }, "🔐 تسجيل الدخول مجدداً"), /*#__PURE__*/React.createElement("button", {
-      onClick: () => setShowSessionTerminatedModal(false),
-      className: "w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl border border-slate-700 transition"
-    }, "المتابعة كزائر 👤")))), isMatchmaking && /*#__PURE__*/React.createElement(MatchmakingScreen, {
+    }, errorMsg), renderSessionTerminatedModal(), isMatchmaking && /*#__PURE__*/React.createElement(MatchmakingScreen, {
       matchmakingTime: matchmakingTime,
       matchmakingPlayers: matchmakingPlayers,
       matchmakingTotal: matchmakingTotal,
@@ -4364,7 +4430,7 @@ function App() {
     onMouseUp: handleDragEnd,
     onTouchMove: handleDragMove,
     onTouchEnd: handleDragEnd
-  }, /*#__PURE__*/React.createElement("header", {
+  }, renderSessionTerminatedModal(), /*#__PURE__*/React.createElement("header", {
     className: "w-full shrink-0 flex items-center justify-between px-2.5 z-30",
     style: {
       height: '50px',
