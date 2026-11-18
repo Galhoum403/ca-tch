@@ -1078,9 +1078,32 @@ function getPlayerView(room, socketId) {
 }
 
 function broadcastRoomState(room) {
+  if (!room) return;
+
+  // 1. Emit personalized view to every socket currently joined in the room
+  const socketIdsInRoom = io?.sockets?.adapter?.rooms?.get(room.code);
+  if (socketIdsInRoom) {
+    for (const sId of socketIdsInRoom) {
+      const s = io.sockets.sockets.get(sId);
+      if (s) {
+        s.emit('room_state', getPlayerView(room, sId));
+      }
+    }
+  }
+
+  // 2. Fallback: also ensure each player in room.players receives room_state
   for (const p of room.players) {
-    if (!p.isBot && p.connected) {
-      emitToPlayer(p.id, 'room_state', getPlayerView(room, p.id));
+    if (!p.isBot && p.connected && p.id) {
+      if (!socketIdsInRoom || !socketIdsInRoom.has(p.id)) {
+        emitToPlayer(p.id, 'room_state', getPlayerView(room, p.id));
+      }
+    }
+  }
+
+  // 3. WebSockets fallback if any
+  if (wsRooms.has(room.code)) {
+    for (const wsSock of wsRooms.get(room.code)) {
+      wsSock.emit('room_state', getPlayerView(room, wsSock.id));
     }
   }
 }
@@ -2629,6 +2652,10 @@ function registerSocketHandlers(socket) {
     );
 
     if (existingPlayer) {
+      if (existingPlayer.connected && existingPlayer.id !== socket.id) {
+        socket.emit('error_message', 'هذا اللاعب موجود بالفعل داخل الغرفة!');
+        return;
+      }
       if (avatar) existingPlayer.avatar = avatar;
       reconnectPlayer(room, existingPlayer);
       return;
@@ -3248,6 +3275,25 @@ function registerSocketHandlers(socket) {
     const p = room.players.find(pl => pl.id === socket.id);
     if (p) {
       p.connected = false;
+
+      // In lobby: remove immediately so other players see them leave with zero delay!
+      if (room.status === 'lobby') {
+        if (p.disconnectTimer) clearTimeout(p.disconnectTimer);
+        room.players = room.players.filter(pl => pl.id !== p.id);
+        room.logs.push(`🚪 غادر ${p.name} الطاولة.`);
+        if (room.players.length === 0) {
+          clearRoomTimers(room);
+          rooms.delete(room.code);
+          return;
+        } else if (p.isHost && room.players.length > 0) {
+          room.players[0].isHost = true;
+          room.hostId = room.players[0].id;
+        }
+        broadcastRoomState(room);
+        return;
+      }
+
+      // In active game: give 25s grace period for mobile reconnection
       room.logs.push(`⚠️ انقطع اتصال ${p.name}... بانتظار عودته.`);
       broadcastRoomState(room);
 
@@ -3255,17 +3301,7 @@ function registerSocketHandlers(socket) {
       p.disconnectTimer = setTimeout(() => {
         if (!p.connected) {
           room.logs.push(`❌ غادر ${p.name} الطاولة نهائياً بعد انقطاع الاتصال.`);
-          if (room.status === 'lobby') {
-            room.players = room.players.filter(pl => pl.id !== p.id);
-            if (room.players.length === 0) {
-              clearRoomTimers(room);
-              rooms.delete(room.code);
-              return;
-            } else if (p.isHost && room.players.length > 0) {
-              room.players[0].isHost = true;
-              room.hostId = room.players[0].id;
-            }
-          } else if (room.status === 'playing' || room.status === 'joker_showdown') {
+          if (room.status === 'playing' || room.status === 'joker_showdown') {
             const hasConnectedHumans = room.players.some(pl => !pl.isBot && pl.connected);
             if (!hasConnectedHumans) {
               clearRoomTimers(room);

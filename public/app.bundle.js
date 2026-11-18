@@ -3057,6 +3057,7 @@ function App() {
     setLastRoomCode('');
     if (socketRef.current) socketRef.current.emit('leave_room');
     setRoomState(null);
+    roomStateRef.current = null;
     setShowExitConfirmModal(false);
   };
   const requestLeaveRoom = () => {
